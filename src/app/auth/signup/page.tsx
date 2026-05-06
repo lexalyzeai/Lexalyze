@@ -3,7 +3,7 @@
 import { Playfair_Display } from "next/font/google";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabase";
 
 
 const playfair = Playfair_Display({
