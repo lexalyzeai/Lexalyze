@@ -92,9 +92,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ text })
 
   } catch (err) {
-    console.error('Extract error:', err)
+    const error =
+      err instanceof Error
+        ? { message: err.message, stack: err.stack }
+        : { message: String(err) }
+
+    console.error('[/api/extract-text] Extraction error', {
+      userId: user.id,
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+      error,
+    })
+
+    // Temporary: surface real error message to help debugging.
+    const clientMessage =
+      error.message || 'Could not read this file. It may be corrupted.'
+
     return NextResponse.json(
-      { error: 'Could not read this file. It may be corrupted.' },
+      {
+        error: 'Could not read this file. It may be corrupted.',
+        debugError: clientMessage,
+      },
       { status: 400 }
     )
   }
