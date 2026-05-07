@@ -2,6 +2,7 @@
 
 import { Playfair_Display } from "next/font/google";
 import { useState } from "react";
+import DocumentUpload from "../components/DocumentUpload";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -9,6 +10,7 @@ const playfair = Playfair_Display({
 });
 
 type NavId = "analyses" | "new-analysis";
+type Language = "EN" | "HI";
 
 const navItems: { id: NavId; label: string }[] = [
   { id: "analyses", label: "Analyses" },
@@ -17,6 +19,7 @@ const navItems: { id: NavId; label: string }[] = [
 
 export default function DashboardPage() {
   const [activeNav, setActiveNav] = useState<NavId>("analyses");
+  const [language, setLanguage] = useState<Language>("EN");
 
   return (
     <div className="flex h-screen min-h-0 overflow-hidden bg-[#0A0A0A]">
@@ -63,17 +66,38 @@ export default function DashboardPage() {
       </aside>
 
       <main className="flex min-h-0 min-w-0 flex-1 items-center justify-center p-6 sm:p-10">
-        <div
-          className="w-full max-w-lg rounded-2xl border border-dashed border-white/20 bg-[#1A1A1A] px-10 py-16 text-center shadow-lg shadow-black/20"
-          role="region"
-          aria-label="Upload area"
-        >
-          <p className="text-lg font-medium tracking-tight text-white sm:text-xl">
-            Upload document to analyze
+        <div className="w-full max-w-lg">
+          <p className="mb-2 text-xs font-medium tracking-wide text-neutral-500">
+            Analysis Language
           </p>
-          <p className="mt-3 text-sm text-neutral-500">
-            Drag &amp; drop or click to upload
-          </p>
+          <div className="mb-6 inline-flex rounded-full border border-white/10 bg-[#111111] p-1">
+            <button
+              type="button"
+              onClick={() => setLanguage("EN")}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                language === "EN"
+                  ? "bg-[#C9A84C] text-[#0A0A0A]"
+                  : "text-neutral-300 hover:bg-white/[0.06] hover:text-white"
+              }`}
+              aria-pressed={language === "EN"}
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              onClick={() => setLanguage("HI")}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                language === "HI"
+                  ? "bg-[#C9A84C] text-[#0A0A0A]"
+                  : "text-neutral-300 hover:bg-white/[0.06] hover:text-white"
+              }`}
+              aria-pressed={language === "HI"}
+            >
+              हिंदी
+            </button>
+          </div>
+
+          <DocumentUpload />
         </div>
       </main>
     </div>
