@@ -1,7 +1,7 @@
+import { extractText } from 'unpdf'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
-const pdf = require('pdf-parse2')
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const MAX_TEXT_LENGTH = 50000
@@ -71,8 +71,8 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer())
 
     if (file.type === 'application/pdf') {
-      const parsed = await pdf(buffer)
-      text = parsed.text
+      const { text: pdfText } = await extractText(new Uint8Array(buffer))
+      text = pdfText.join('\n')
     } else if (file.type === 'text/plain') {
       text = buffer.toString('utf-8')
     } else if (file.type === 'image/png' || file.type === 'image/jpeg') {
