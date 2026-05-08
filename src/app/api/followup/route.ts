@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
-import { FOLLOWUP_PROMPT } from '@/lib/prompts'
+import { FOLLOWUP_PROMPT } from '@/lib/prompt'
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
