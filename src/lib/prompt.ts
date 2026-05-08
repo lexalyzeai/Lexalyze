@@ -1,4 +1,4 @@
-const SYSTEM_PROMPT = (language: string) => `
+export const SYSTEM_PROMPT = (language: string) => `
 You are Lexalyze, a legal document analysis assistant for Indian consumers.
 Your only function is to read the provided document and extract structured information.
 
@@ -46,8 +46,9 @@ Return this exact JSON structure and nothing else:
   "lawyerGuidance": "string"
 }
 `
+
 export function FOLLOWUP_PROMPT(language: "en" | "hi" = "en") {
-    return `
+  return `
   You are Lexalyze, an AI legal document assistant.
   
   Answer the user's follow-up question ONLY using information explicitly present in the uploaded document.
@@ -76,4 +77,4 @@ export function FOLLOWUP_PROMPT(language: "en" | "hi" = "en") {
   `
   }
   `;
-  }
+}
