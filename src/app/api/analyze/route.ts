@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
-import { analyzeDocument } from '@/lib/gemini'
+import { analyzeDocument } from '@/lib/groq'
 
 const FREE_LIMIT = 10
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import AnalysisResult, { AnalysisResultData } from "@/app/components/AnalysisResult";
 
 const ACCEPTED_MIME_TYPES = new Set([
   "application/pdf",
@@ -11,9 +12,7 @@ const ACCEPTED_MIME_TYPES = new Set([
 
 function isAccepted(file: File): boolean {
   if (ACCEPTED_MIME_TYPES.has(file.type)) return true;
-
   const name = file.name.toLowerCase();
-
   return (
     name.endsWith(".pdf") ||
     name.endsWith(".txt") ||
@@ -23,7 +22,7 @@ function isAccepted(file: File): boolean {
   );
 }
 
-type LoadingStage = "idle" | "reading" | "extracting" | "ready";
+type LoadingStage = "idle" | "reading" | "extracting" | "ready" | "analysing";
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -34,26 +33,25 @@ export default function DocumentUpload() {
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState("");
-  const [loadingStage, setLoadingStage] =
-    useState<LoadingStage>("idle");
+  const [loadingStage, setLoadingStage] = useState<LoadingStage>("idle");
   const [extractedText, setExtractedText] = useState("");
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResultData | null>(null);
 
   const acceptAttr = useMemo(
-    () =>
-      ".pdf,.txt,.png,.jpg,.jpeg,application/pdf,text/plain,image/png,image/jpeg",
-    [],
+    () => ".pdf,.txt,.png,.jpg,.jpeg,application/pdf,text/plain,image/png,image/jpeg",
+    []
   );
 
-  const canAnalyze = extractedText.trim().length > 0;
+  const canAnalyze = extractedText.trim().length > 0 && loadingStage === "idle";
 
   async function extractText(file: File) {
     setError("");
     setExtractedText("");
+    setAnalysisResult(null);
     setLoadingStage("reading");
 
     try {
       await sleep(350);
-
       setLoadingStage("extracting");
 
       const formData = new FormData();
@@ -75,21 +73,16 @@ export default function DocumentUpload() {
       }
 
       setExtractedText(data.text);
-
       setLoadingStage("ready");
-
       await sleep(700);
-
       setLoadingStage("idle");
     } catch (err) {
       setExtractedText("");
-
       setError(
         err instanceof Error
           ? err.message
-          : "Something went wrong while extracting text.",
+          : "Something went wrong while extracting text."
       );
-
       setLoadingStage("idle");
     }
   }
@@ -97,17 +90,11 @@ export default function DocumentUpload() {
   async function setFile(file: File) {
     if (!isAccepted(file)) {
       setSelectedFile(null);
-
-      setError(
-        "Unsupported file type. Please upload a PDF, TXT, PNG, or JPG.",
-      );
-
+      setError("Unsupported file type. Please upload a PDF, TXT, PNG, or JPG.");
       return;
     }
-
     setError("");
     setSelectedFile(file);
-
     await extractText(file);
   }
 
@@ -120,14 +107,12 @@ export default function DocumentUpload() {
 
     try {
       setError("");
-
-      console.log("Sending analysis request...");
+      setAnalysisResult(null);
+      setLoadingStage("analysing");
 
       const response = await fetch("/api/analyze", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: extractedText,
           language: "en",
@@ -138,33 +123,51 @@ export default function DocumentUpload() {
       const data = await response.json();
 
       if (!response.ok) {
-        console.error("Analysis failed:", data);
-
         setError(data.error || "Analysis failed.");
-
+        setLoadingStage("idle");
         return;
       }
 
-      console.log("Analysis result:", data);
+      const mapped: AnalysisResultData = {
+        credibilityPercent:
+          data.result.overallConfidence === "HIGH" ? 90
+          : data.result.overallConfidence === "MEDIUM" ? 65
+          : 40,
+        overallConfidence: data.result.overallConfidence,
+        documentTitle: data.result.documentTitle,
+        oneLineSummary: data.result.oneLineSummary,
+        fullSummary: data.result.fullSummary,
+        keyNumbersAndDates: [
+          ...(data.result.keyNumbers || []),
+          ...(data.result.keyDeadlines || []),
+        ],
+        riskFlags: (data.result.redFlags || []).map((f: any) => ({
+          title: f.title,
+          description: f.explanation,
+          confidence: f.confidence,
+          quote: f.exactQuote,
+        })),
+        favourableClauses: (data.result.positivePoints || []).map((p: any) => ({
+          title: p.title,
+          description: p.explanation,
+          confidence: p.confidence,
+          quote: p.exactQuote,
+        })),
+        actionChecklist: data.result.actionItems || [],
+        cannotDetermineList: data.result.cannotDetermineList || [],
+        lawyerGuidance: data.result.lawyerGuidance,
+      };
 
-      alert("Analysis completed successfully!");
-
-      // TODO:
-      // Connect result to AnalysisResult component
-      // Example:
-      // setAnalysisResult(data)
-
+      setAnalysisResult(mapped);
+      setLoadingStage("idle");
     } catch (error) {
-      console.error("Analyze request failed:", error);
-
-      setError(
-        "Something went wrong while analyzing the document.",
-      );
+      setError("Something went wrong while analyzing the document.");
+      setLoadingStage("idle");
     }
   }
 
   return (
-    <div>
+    <div className="flex w-full flex-col items-center">
       <input
         ref={inputRef}
         type="file"
@@ -172,14 +175,8 @@ export default function DocumentUpload() {
         accept={acceptAttr}
         onChange={async (e) => {
           const file = e.currentTarget.files?.[0];
-
-          if (file) {
-            await setFile(file);
-          }
-
-          if (e.target instanceof HTMLInputElement) {
-            e.target.value = "";
-          }
+          if (file) await setFile(file);
+          if (e.target instanceof HTMLInputElement) e.target.value = "";
         }}
       />
 
@@ -189,69 +186,43 @@ export default function DocumentUpload() {
         tabIndex={0}
         onClick={openPicker}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            openPicker();
-          }
+          if (e.key === "Enter" || e.key === " ") openPicker();
         }}
-        onDragOver={(e) => {
-          e.preventDefault();
-        }}
+        onDragOver={(e) => e.preventDefault()}
         onDrop={async (e) => {
           e.preventDefault();
-
           const file = e.dataTransfer.files?.[0];
-
-          if (file) {
-            await setFile(file);
-          }
+          if (file) await setFile(file);
         }}
         aria-label="Upload area"
       >
         <p className="text-lg font-medium tracking-tight text-white sm:text-xl">
           Upload document to analyze
         </p>
-
         <p className="mt-3 text-sm text-neutral-500">
           Drag &amp; drop or click to upload
         </p>
-
-        {selectedFile ? (
-          <p
-            className="mt-4 text-sm text-neutral-300"
-            aria-live="polite"
-          >
-            Selected:{" "}
-            <span className="font-medium">
-              {selectedFile.name}
-            </span>
+        {selectedFile && (
+          <p className="mt-4 text-sm text-neutral-300" aria-live="polite">
+            Selected: <span className="font-medium">{selectedFile.name}</span>
           </p>
-        ) : null}
-
-        {error ? (
-          <p
-            className="mt-4 text-sm text-red-400"
-            role="alert"
-          >
+        )}
+        {error && (
+          <p className="mt-4 text-sm text-red-400" role="alert">
             {error}
           </p>
-        ) : null}
+        )}
       </div>
 
       <button
         type="button"
         onClick={() => {
+          setAnalysisResult(null);
           setExtractedText(
-            "This is a sample rental agreement. The tenant agrees to pay rent of ₹15,000 per month. The security deposit is ₹30,000. The notice period is 2 months.",
+            "This is a sample rental agreement. The tenant agrees to pay rent of ₹15,000 per month. The security deposit is ₹30,000. The notice period is 2 months."
           );
-
           setSelectedFile(
-            new File(
-              [""],
-              "rental_agreement_sample.pdf",
-              {
-                type: "application/pdf",
-              },
-            ),
+            new File([""], "rental_agreement_sample.pdf", { type: "application/pdf" })
           );
         }}
         className="mt-4 text-sm text-neutral-500 underline underline-offset-4 transition hover:text-[#C9A84C]"
@@ -259,7 +230,7 @@ export default function DocumentUpload() {
         Try with sample document
       </button>
 
-      {loadingStage !== "idle" ? (
+      {loadingStage !== "idle" && (
         <p
           className="mt-4 inline-flex items-center gap-2 text-sm text-neutral-400"
           aria-live="polite"
@@ -268,25 +239,20 @@ export default function DocumentUpload() {
             className="size-3 animate-spin rounded-full border-2 border-neutral-600 border-t-[#C9A84C]"
             aria-hidden
           />
-
-          {loadingStage === "reading" &&
-            "Reading your file..."}
-
-          {loadingStage === "extracting" &&
-            "Extracting text..."}
-
-          {loadingStage === "ready" &&
-            "Ready to analyse"}
+          {loadingStage === "reading" && "Reading your file..."}
+          {loadingStage === "extracting" && "Extracting text..."}
+          {loadingStage === "ready" && "Ready to analyse"}
+          {loadingStage === "analysing" && "Analysing document..."}
         </p>
-      ) : null}
+      )}
 
-      {extractedText ? (
+      {extractedText && (
         <div className="mt-4 max-h-80 w-full max-w-lg overflow-auto rounded-xl border border-white/10 bg-[#111111] p-4 text-sm text-neutral-100">
           <pre className="whitespace-pre-wrap break-words font-mono text-[0.8rem]">
             {extractedText}
           </pre>
         </div>
-      ) : null}
+      )}
 
       <button
         type="button"
@@ -296,6 +262,12 @@ export default function DocumentUpload() {
       >
         Analyse document
       </button>
+
+      {analysisResult && (
+        <div className="mt-8 w-full max-w-lg">
+          <AnalysisResult data={analysisResult} />
+        </div>
+      )}
     </div>
   );
 }
