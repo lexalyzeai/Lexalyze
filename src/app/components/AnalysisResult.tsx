@@ -116,6 +116,10 @@ function confidenceBadgeClass(confidence: Confidence): string {
   return "bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/30";
 }
 
+function formatDisplayText(text: string): string {
+  return text.replace(/\bn(\d)/g, "₹$1");
+}
+
 export default function AnalysisResult({
   data = SAMPLE_ANALYSIS_RESULT,
 }: AnalysisResultProps) {
@@ -178,7 +182,7 @@ export default function AnalysisResult({
               key={item}
               className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-neutral-200"
             >
-              {item}
+              {formatDisplayText(item)}
             </li>
           ))}
         </ul>

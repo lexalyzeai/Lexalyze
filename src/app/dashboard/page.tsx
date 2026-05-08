@@ -22,7 +22,7 @@ export default function DashboardPage() {
   const [language, setLanguage] = useState<Language>("EN");
 
   return (
-    <div className="flex h-screen min-h-0 overflow-hidden bg-[#0A0A0A]">
+    <div className="flex h-screen min-h-0 overflow-x-hidden overflow-y-auto bg-[#0A0A0A]">
       <aside className="flex w-[240px] shrink-0 flex-col border-r border-white/[0.06] bg-[#111111]">
         <div className="px-5 pt-8 pb-6">
           <p
