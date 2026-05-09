@@ -4,7 +4,7 @@ import { Playfair_Display } from "next/font/google";
 import { useMemo, useState } from "react";
 import AnalysisLoadingOverlay from "./components/AnalysisLoadingOverlay";
 import AnalysisResult, { type AnalysisResultData } from "@/app/components/AnalysisResult";
-import { SYSTEM_PROMPT } from "@/lib/prompts";
+import { SYSTEM_PROMPT } from "@/lib/prompt";
 import type { AnalysisResult as AiAnalysisResult } from "@/types/analysis";
 
 const playfair = Playfair_Display({
