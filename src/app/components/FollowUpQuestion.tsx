@@ -7,7 +7,13 @@ type FollowUpResponse = {
   fromDocument?: boolean;
 };
 
-export default function FollowUpQuestion() {
+type FollowUpQuestionProps = {
+  analysisId: string;
+};
+
+export default function FollowUpQuestion({
+  analysisId,
+}: FollowUpQuestionProps) {
   const [question, setQuestion] = useState("");
   const [loading, setLoading] = useState(false);
   const [answer, setAnswer] = useState("");
@@ -16,7 +22,9 @@ export default function FollowUpQuestion() {
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
     const trimmedQuestion = question.trim();
+
     if (!trimmedQuestion || loading) return;
 
     setLoading(true);
@@ -30,14 +38,23 @@ export default function FollowUpQuestion() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ question: trimmedQuestion }),
+        body: JSON.stringify({
+          question: trimmedQuestion,
+          analysisId,
+          language: "en",
+        }),
       });
 
+      const data = (await response.json()) as FollowUpResponse & {
+        error?: string;
+      };
+
       if (!response.ok) {
-        throw new Error("Could not fetch follow-up answer. Please try again.");
+        throw new Error(
+          data.error || "Could not fetch follow-up answer."
+        );
       }
 
-      const data = (await response.json()) as FollowUpResponse;
       if (!data.answer) {
         throw new Error("No answer was returned.");
       }
@@ -48,7 +65,7 @@ export default function FollowUpQuestion() {
       setError(
         err instanceof Error
           ? err.message
-          : "Something went wrong while searching the document.",
+          : "Something went wrong while searching the document."
       );
     } finally {
       setLoading(false);
@@ -66,6 +83,7 @@ export default function FollowUpQuestion() {
             placeholder="Ask anything about this document..."
             className="w-full rounded-lg border border-white/10 bg-[#0F0F0F] px-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition focus:border-[#C9A84C]/60 focus:ring-2 focus:ring-[#C9A84C]/20"
           />
+
           <button
             type="submit"
             disabled={loading}
@@ -89,8 +107,9 @@ export default function FollowUpQuestion() {
               fromDocument ? "text-emerald-300" : "text-amber-300"
             }`}
           >
-            {fromDocument ? "From your document" : "Not in document"}
+            {fromDocument ? "From your document" : "AI-generated answer"}
           </p>
+
           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-neutral-200">
             {answer}
           </p>

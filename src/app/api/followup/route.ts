@@ -31,10 +31,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Question and analysisId are required.' }, { status: 400 })
   }
 
-  // Load original analysis
   const { data: analysis } = await supabase
     .from('analyses')
-    .select('result')
+    .select('result, document_text')
     .eq('id', analysisId)
     .eq('user_id', user.id)
     .single()
@@ -43,38 +42,41 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Analysis not found.' }, { status: 404 })
   }
 
-  const documentContext = JSON.stringify(analysis.result)
+  const documentContext = analysis.document_text || JSON.stringify(analysis.result)
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    'https://api.groq.com/openai/v1/chat/completions',
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+      },
       body: JSON.stringify({
-        system_instruction: {
-          parts: [{ text: FOLLOWUP_PROMPT(language || 'en') }]
-        },
-        contents: [
+        model: 'llama-3.3-70b-versatile',
+        messages: [
           {
-            parts: [{ text: `Document context: ${documentContext}\n\nQuestion: ${question}` }]
+            role: 'system',
+            content: FOLLOWUP_PROMPT(language || 'en')
+          },
+          {
+            role: 'user',
+            content: `Document:\n${documentContext}\n\nQuestion: ${question}`
           }
         ],
-        generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 500,
-        }
+        temperature: 0.1,
+        max_tokens: 500,
       })
     }
   )
 
   const data = await response.json()
-  const answer = data.candidates?.[0]?.content?.parts?.[0]?.text
+  const answer = data.choices?.[0]?.message?.content
 
   if (!answer) {
-    return NextResponse.json({ error: 'No answer from Gemini.' }, { status: 500 })
+    return NextResponse.json({ error: 'No answer from Groq.' }, { status: 500 })
   }
 
-  // Save to followups table
   await supabase
     .from('followups')
     .insert({

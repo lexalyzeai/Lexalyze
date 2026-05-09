@@ -1,40 +1,76 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import AnalysisResult from '@/app/components/AnalysisResult'
+import { getAnalysisById } from '@/lib/analyses'
+import AnalysisResult, { AnalysisResultData } from '@/app/components/AnalysisResult'
+import { Playfair_Display } from 'next/font/google'
+import Link from 'next/link'
 
-export default async function AnalysisPage({ params }: { params: { id: string } }) {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll() },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
+const playfair = Playfair_Display({ subsets: ['latin'], weight: ['600', '700'] })
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
-
-  const { data: analysis } = await supabase
-    .from('analyses')
-    .select('*')
-    .eq('id', params.id)
-    .eq('user_id', user.id)
-    .single()
+export default async function AnalysisPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
+  const analysis = await getAnalysisById(id)
 
   if (!analysis) redirect('/dashboard')
 
+  const r = analysis.result
+
+  const mapped: AnalysisResultData = {
+    credibilityPercent:
+      r.overallConfidence === 'HIGH' ? 90
+      : r.overallConfidence === 'MEDIUM' ? 65
+      : 40,
+    overallConfidence: r.overallConfidence ?? 'LOW',
+    documentTitle: r.documentTitle ?? 'Document',
+    oneLineSummary: r.oneLineSummary ?? '',
+    fullSummary: r.fullSummary ?? '',
+    keyNumbersAndDates: [
+      ...(r.keyNumbers ?? []),
+      ...(r.keyDeadlines ?? []),
+    ],
+    riskFlags: (r.redFlags ?? []).map((f: any) => ({
+      title: f.title,
+      description: f.explanation,
+      confidence: f.confidence,
+      quote: f.exactQuote,
+    })),
+    favourableClauses: (r.positivePoints ?? []).map((p: any) => ({
+      title: p.title,
+      description: p.explanation,
+      confidence: p.confidence,
+      quote: p.exactQuote,
+    })),
+    actionChecklist: r.actionItems ?? [],
+    cannotDetermineList: r.cannotDetermineList ?? [],
+    lawyerGuidance: r.lawyerGuidance,
+  }
+
   return (
-    <div className="min-h-screen bg-[#0A0A0A] p-8">
-      <AnalysisResult result={analysis.result} analysisId={analysis.id} />
+    <div className="flex h-screen overflow-hidden bg-[#0A0A0A]">
+      <main className="flex-1 overflow-y-auto">
+        <div className="mx-auto w-full max-w-3xl px-4 py-10">
+          <Link
+            href="/dashboard"
+            className="mb-6 inline-flex items-center gap-2 text-sm text-neutral-400 transition hover:text-[#C9A84C]"
+          >
+            ← Back to Dashboard
+          </Link>
+          <h1 className={`${playfair.className} mb-2 text-2xl text-white`}>
+            {analysis.filename}
+          </h1>
+          <p className="mb-8 text-xs text-neutral-500">
+            {new Date(analysis.created_at).toLocaleDateString('en-IN', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })}
+          </p>
+          <AnalysisResult data={mapped} analysisId={id} />
+        </div>
+      </main>
     </div>
   )
 }

@@ -27,7 +27,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Rate limit check
   const { data: profile } = await supabase
     .from('profiles')
     .select('analyses_used')
@@ -50,7 +49,6 @@ export async function POST(req: NextRequest) {
   try {
     const result = await analyzeDocument(text, language || 'en')
 
-    // Save to analyses table
     const { data: analysis, error: saveError } = await supabase
       .from('analyses')
       .insert({
@@ -59,6 +57,7 @@ export async function POST(req: NextRequest) {
         language: language || 'en',
         result,
         title: result.documentTitle,
+        document_text: text,
       })
       .select()
       .single()
@@ -67,7 +66,6 @@ export async function POST(req: NextRequest) {
       console.error('Save error:', saveError)
     }
 
-    // Increment analyses_used
     await supabase
       .from('profiles')
       .update({ analyses_used: (profile?.analyses_used ?? 0) + 1 })
