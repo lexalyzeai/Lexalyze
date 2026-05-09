@@ -38,9 +38,3 @@ export default function Navbar() {
     </header>
   );
 }
-
-<Link
- href="/dashboard/history"
- className="flex items-center gap-3 rounded-lg px-3 py-2 text-neutral-400 transition hover:bg-white/5 hover:text-white"          >
- History
-</Link>
