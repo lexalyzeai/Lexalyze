@@ -1,6 +1,7 @@
 "use client";
 
 import { Playfair_Display } from "next/font/google";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import AnalysisLoadingOverlay from "./components/AnalysisLoadingOverlay";
 import AnalysisResult, { type AnalysisResultData } from "@/app/components/AnalysisResult";
@@ -224,12 +225,12 @@ export default function HomePage() {
           </p>
 
           <div className="hero-fade-up-delay-2 mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-            <button
-              type="button"
+            <Link
+              href="/auth/login"
               className="w-full rounded-lg bg-[#C9A84C] px-6 py-3 text-sm font-semibold text-[#0A0A0A] transition duration-200 hover:-translate-y-0.5 hover:bg-[#d4b55d] active:bg-[#b89542] sm:w-auto"
             >
               Start analyzing
-            </button>
+            </Link>
             <button
               type="button"
               className="w-full rounded-lg border border-[#C9A84C]/70 bg-transparent px-6 py-3 text-sm font-medium text-[#C9A84C] transition duration-200 hover:-translate-y-0.5 hover:border-[#d4b55d] hover:bg-[#C9A84C]/10 hover:text-[#d4b55d] sm:w-auto"
@@ -308,12 +309,12 @@ export default function HomePage() {
                 <p className="mx-auto mt-2 max-w-2xl text-sm text-[#d8c58b]">
                   Get personal document history, faster follow-ups, and secure saved analyses.
                 </p>
-                <button
-                  type="button"
+                <Link
+                  href="/auth/signup"
                   className="mt-5 rounded-lg bg-[#C9A84C] px-6 py-3 text-sm font-semibold text-[#0A0A0A] transition hover:bg-[#d4b55d]"
                 >
                   Get started
-                </button>
+                </Link>
                 <p className="mt-3 text-xs text-[#c7b272]/80">
                   No legal advice. Every finding includes citation context.
                 </p>
