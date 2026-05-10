@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import AnalysisResult, { AnalysisResultData } from "@/app/components/AnalysisResult";
+import AnalysisResult from "@/app/components/AnalysisResult";
 
 const ACCEPTED_MIME_TYPES = new Set([
   "application/pdf",
@@ -28,14 +28,20 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export default function DocumentUpload() {
+type DocumentUploadProps = {
+  language: "EN" | "HI";
+  onAnalysisComplete?: () => void;
+};
+
+export default function DocumentUpload({ language, onAnalysisComplete }: DocumentUploadProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [loadingStage, setLoadingStage] = useState<LoadingStage>("idle");
   const [extractedText, setExtractedText] = useState("");
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResultData | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [currentAnalysisId, setCurrentAnalysisId] = useState<string>("");
 
   const acceptAttr = useMemo(
     () => ".pdf,.txt,.png,.jpg,.jpeg,application/pdf,text/plain,image/png,image/jpeg",
@@ -48,6 +54,7 @@ export default function DocumentUpload() {
     setError("");
     setExtractedText("");
     setAnalysisResult(null);
+    setCurrentAnalysisId("");
     setLoadingStage("reading");
 
     try {
@@ -108,6 +115,7 @@ export default function DocumentUpload() {
     try {
       setError("");
       setAnalysisResult(null);
+      setCurrentAnalysisId("");
       setLoadingStage("analysing");
 
       const response = await fetch("/api/analyze", {
@@ -115,7 +123,7 @@ export default function DocumentUpload() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: extractedText,
-          language: "en",
+          language: language === "HI" ? "hi" : "en",
           filename: selectedFile?.name || "document.txt",
         }),
       });
@@ -128,39 +136,11 @@ export default function DocumentUpload() {
         return;
       }
 
-      const mapped: AnalysisResultData = {
-        credibilityPercent:
-          data.result.overallConfidence === "HIGH" ? 90
-          : data.result.overallConfidence === "MEDIUM" ? 65
-          : 40,
-        overallConfidence: data.result.overallConfidence,
-        documentTitle: data.result.documentTitle,
-        oneLineSummary: data.result.oneLineSummary,
-        fullSummary: data.result.fullSummary,
-        keyNumbersAndDates: [
-          ...(data.result.keyNumbers || []),
-          ...(data.result.keyDeadlines || []),
-        ],
-        riskFlags: (data.result.redFlags || []).map((f: any) => ({
-          title: f.title,
-          description: f.explanation,
-          confidence: f.confidence,
-          quote: f.exactQuote,
-        })),
-        favourableClauses: (data.result.positivePoints || []).map((p: any) => ({
-          title: p.title,
-          description: p.explanation,
-          confidence: p.confidence,
-          quote: p.exactQuote,
-        })),
-        actionChecklist: data.result.actionItems || [],
-        cannotDetermineList: data.result.cannotDetermineList || [],
-        lawyerGuidance: data.result.lawyerGuidance,
-      };
-
-      setAnalysisResult(mapped);
+      setAnalysisResult(data.result);
+      setCurrentAnalysisId(data.analysisId || "");
+      onAnalysisComplete?.();
       setLoadingStage("idle");
-    } catch (error) {
+    } catch {
       setError("Something went wrong while analyzing the document.");
       setLoadingStage("idle");
     }
@@ -218,6 +198,7 @@ export default function DocumentUpload() {
         type="button"
         onClick={() => {
           setAnalysisResult(null);
+          setCurrentAnalysisId("");
           setExtractedText(
             "This is a sample rental agreement. The tenant agrees to pay rent of ₹15,000 per month. The security deposit is ₹30,000. The notice period is 2 months."
           );
@@ -246,7 +227,7 @@ export default function DocumentUpload() {
         </p>
       )}
 
-      {extractedText && (
+      {extractedText && !analysisResult && (
         <div className="mt-4 max-h-80 w-full max-w-lg overflow-auto rounded-xl border border-white/10 bg-[#111111] p-4 text-sm text-neutral-100">
           <pre className="whitespace-pre-wrap break-words font-mono text-[0.8rem]">
             {extractedText}
@@ -264,8 +245,8 @@ export default function DocumentUpload() {
       </button>
 
       {analysisResult && (
-        <div className="mt-8 w-full max-w-lg">
-          <AnalysisResult data={analysisResult} />
+        <div className="mt-8 w-full max-w-4xl">
+          <AnalysisResult result={analysisResult} analysisId={currentAnalysisId} />
         </div>
       )}
     </div>
