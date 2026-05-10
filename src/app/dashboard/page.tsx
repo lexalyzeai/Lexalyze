@@ -144,6 +144,7 @@ export default function DashboardPage() {
               <button
                 key={analysis.id}
                 type="button"
+                title={analysis.result?.oneLineSummary?.replace(/^text=/i, '').trim() || analysis.filename}
                 onClick={() => {
                   setSelectedAnalysisId(analysis.id);
                   setView("history");
@@ -157,9 +158,12 @@ export default function DashboardPage() {
                 <ConfidenceDot confidence={analysis.result?.overallConfidence ?? "MEDIUM"} />
 
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-medium leading-snug">
-                    {analysis.filename.replace(/\.[^/.]+$/, "")}
-                  </p>
+                <p 
+  className="truncate text-xs font-medium leading-snug"
+  title={analysis.result?.oneLineSummary || analysis.filename}
+>
+  {analysis.result?.oneLineSummary || analysis.filename.replace(/\.[^/.]+$/, "")}
+</p>
 
                   <p className="mt-0.5 text-[10px] text-neutral-600">
                     {formatDate(analysis.created_at)}
