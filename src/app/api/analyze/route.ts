@@ -75,9 +75,17 @@ export async function POST(req: NextRequest) {
 
   } catch (err) {
     console.error('Analysis error:', err)
+
+    const message = err instanceof Error ? err.message : ''
+    const isRateLimit = message.includes('429') || message.includes('rate_limit')
+
     return NextResponse.json(
-      { error: 'Analysis failed. Please try again.' },
-      { status: 500 }
+      {
+        error: isRateLimit
+          ? 'Our AI is temporarily at capacity. Please try again in a few minutes.'
+          : 'Analysis failed. Please try again.'
+      },
+      { status: isRateLimit ? 503 : 500 }
     )
   }
 }

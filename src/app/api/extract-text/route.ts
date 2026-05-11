@@ -4,7 +4,7 @@ import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
-const MAX_TEXT_LENGTH = 50000
+const MAX_TEXT_LENGTH = 12000
 const ALLOWED_TYPES = ['application/pdf', 'text/plain', 'image/png', 'image/jpeg']
 const FREE_LIMIT = 10
 
