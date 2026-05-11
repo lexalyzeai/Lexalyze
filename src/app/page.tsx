@@ -231,7 +231,7 @@ export default function HomePage() {
             >
               Start analyzing
             </Link>
-            
+            <a
               href="#live-demo"
               className="w-full rounded-lg border border-[#C9A84C]/70 bg-transparent px-6 py-3 text-sm font-medium text-[#C9A84C] transition duration-200 hover:-translate-y-0.5 hover:border-[#d4b55d] hover:bg-[#C9A84C]/10 hover:text-[#d4b55d] sm:w-auto"
               onClick={(e) => {
@@ -243,7 +243,7 @@ export default function HomePage() {
               }}
             >
               Watch demo
-            </a>
+            </Link>
           </div>
 
           <p className="hero-fade-up-delay-3 mt-8 text-xs tracking-wide text-neutral-500 sm:text-sm">
