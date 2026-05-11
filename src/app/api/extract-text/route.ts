@@ -87,7 +87,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Trim to 50,000 characters
-    text = text.slice(0, MAX_TEXT_LENGTH)
+    // Strip HTML and script tags
+text = text.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+text = text.replace(/<[^>]+>/g, '')
+text = text.trim()
+// Trim to 50,000 characters
+text = text.slice(0, MAX_TEXT_LENGTH) 
 
     return NextResponse.json({ text })
 

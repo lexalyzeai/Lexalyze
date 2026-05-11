@@ -400,6 +400,7 @@ export default function DashboardPage() {
           >
             Sign out
           </button>
+
         </div>
       </aside>
 
