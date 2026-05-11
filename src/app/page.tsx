@@ -316,7 +316,6 @@ export default function HomePage() {
               <AnalysisResult
   result={{
     ...analysisResult,
-    credibilityPercent: analysisResult?.credibilityPercent ?? 0,
   }}
 />
             </div>
