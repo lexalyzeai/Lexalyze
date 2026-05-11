@@ -4,6 +4,7 @@ import { Playfair_Display } from "next/font/google";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import ErrorMessage from "@/app/components/ErrorMessage";
 
 
 const playfair = Playfair_Display({
@@ -252,9 +253,14 @@ export default function SignupPage() {
           </div>
 
           {errorMessage ? (
-            <p className="text-sm text-red-400" role="alert">
-              {errorMessage}
-            </p>
+            <div className="mt-4">
+              <ErrorMessage 
+                title="Sign up failed"
+                message={errorMessage}
+                tone="red"
+                onDismiss={() => setErrorMessage("")}
+              />
+            </div>
           ) : null}
 
           <button
