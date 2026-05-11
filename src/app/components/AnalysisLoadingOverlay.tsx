@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 type AnalysisLoadingOverlayProps = {
   isVisible: boolean;
+  steps?: readonly string[];
 };
 
 const LOADING_STEPS = [
@@ -19,6 +20,7 @@ const FADE_DURATION_MS = 220;
 
 export default function AnalysisLoadingOverlay({
   isVisible,
+  steps = LOADING_STEPS,
 }: AnalysisLoadingOverlayProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [showStep, setShowStep] = useState(true);
@@ -36,11 +38,11 @@ export default function AnalysisLoadingOverlay({
     const scheduleNext = () => {
       stepTimer = setTimeout(() => {
         setStepIndex((current) => {
-          if (current >= LOADING_STEPS.length - 1) return current;
+          if (current >= steps.length - 1) return current;
 
           setShowStep(false);
           fadeTimer = setTimeout(() => {
-            setStepIndex((inner) => Math.min(inner + 1, LOADING_STEPS.length - 1));
+            setStepIndex((inner) => Math.min(inner + 1, steps.length - 1));
             setShowStep(true);
           }, FADE_DURATION_MS);
 
@@ -57,7 +59,7 @@ export default function AnalysisLoadingOverlay({
       if (stepTimer) clearTimeout(stepTimer);
       if (fadeTimer) clearTimeout(fadeTimer);
     };
-  }, [isVisible]);
+  }, [isVisible, steps]);
 
   if (!isVisible) return null;
 
@@ -77,7 +79,7 @@ export default function AnalysisLoadingOverlay({
           }`}
           aria-live="polite"
         >
-          {LOADING_STEPS[stepIndex]}
+          {steps[stepIndex]}
         </p>
 
         <p className="mt-3 text-sm text-neutral-400">

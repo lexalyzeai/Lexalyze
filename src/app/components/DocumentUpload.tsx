@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import AnalysisResult, { AnalysisResultData } from "@/app/components/AnalysisResult";
+import AnalysisResult from "@/app/components/AnalysisResult";
+import ErrorMessage, { ErrorType, mapBackendError } from "@/app/components/ErrorMessage";
 
 const ACCEPTED_MIME_TYPES = new Set([
   "application/pdf",
@@ -28,14 +29,20 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export default function DocumentUpload() {
+type DocumentUploadProps = {
+  language: "EN" | "HI";
+  onAnalysisComplete?: () => void;
+};
+
+export default function DocumentUpload({ language, onAnalysisComplete }: DocumentUploadProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<ErrorType | "">("");
   const [loadingStage, setLoadingStage] = useState<LoadingStage>("idle");
   const [extractedText, setExtractedText] = useState("");
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResultData | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [currentAnalysisId, setCurrentAnalysisId] = useState<string>("");
 
   const acceptAttr = useMemo(
     () => ".pdf,.txt,.png,.jpg,.jpeg,application/pdf,text/plain,image/png,image/jpeg",
@@ -48,6 +55,7 @@ export default function DocumentUpload() {
     setError("");
     setExtractedText("");
     setAnalysisResult(null);
+    setCurrentAnalysisId("");
     setLoadingStage("reading");
 
     try {
@@ -63,13 +71,20 @@ export default function DocumentUpload() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to extract text. Please try again.");
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || "Failed to extract text. Please try again.";
+        const mappedError = mapBackendError(errorMessage) || "api_failure";
+        setError(mappedError);
+        setLoadingStage("idle");
+        return;
       }
 
       const data = (await response.json()) as { text?: string };
 
       if (!data.text) {
-        throw new Error("No text was returned from the document.");
+        setError("no_text_extracted");
+        setLoadingStage("idle");
+        return;
       }
 
       setExtractedText(data.text);
@@ -78,11 +93,9 @@ export default function DocumentUpload() {
       setLoadingStage("idle");
     } catch (err) {
       setExtractedText("");
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong while extracting text."
-      );
+      const errorMessage = err instanceof Error ? err.message : "Something went wrong while extracting text.";
+      const mappedError = mapBackendError(errorMessage) || "api_failure";
+      setError(mappedError);
       setLoadingStage("idle");
     }
   }
@@ -90,7 +103,7 @@ export default function DocumentUpload() {
   async function setFile(file: File) {
     if (!isAccepted(file)) {
       setSelectedFile(null);
-      setError("Unsupported file type. Please upload a PDF, TXT, PNG, or JPG.");
+      setError("unsupported_file_type");
       return;
     }
     setError("");
@@ -108,6 +121,7 @@ export default function DocumentUpload() {
     try {
       setError("");
       setAnalysisResult(null);
+      setCurrentAnalysisId("");
       setLoadingStage("analysing");
 
       const response = await fetch("/api/analyze", {
@@ -115,7 +129,7 @@ export default function DocumentUpload() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: extractedText,
-          language: "en",
+          language: language === "HI" ? "hi" : "en",
           filename: selectedFile?.name || "document.txt",
         }),
       });
@@ -123,45 +137,21 @@ export default function DocumentUpload() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Analysis failed.");
+        const errorMessage = data.error || "Analysis failed.";
+        const mappedError = mapBackendError(errorMessage) || "api_failure";
+        setError(mappedError);
         setLoadingStage("idle");
         return;
       }
 
-      const mapped: AnalysisResultData = {
-        credibilityPercent:
-          data.result.overallConfidence === "HIGH" ? 90
-          : data.result.overallConfidence === "MEDIUM" ? 65
-          : 40,
-        overallConfidence: data.result.overallConfidence,
-        documentTitle: data.result.documentTitle,
-        oneLineSummary: data.result.oneLineSummary,
-        fullSummary: data.result.fullSummary,
-        keyNumbersAndDates: [
-          ...(data.result.keyNumbers || []),
-          ...(data.result.keyDeadlines || []),
-        ],
-        riskFlags: (data.result.redFlags || []).map((f: any) => ({
-          title: f.title,
-          description: f.explanation,
-          confidence: f.confidence,
-          quote: f.exactQuote,
-        })),
-        favourableClauses: (data.result.positivePoints || []).map((p: any) => ({
-          title: p.title,
-          description: p.explanation,
-          confidence: p.confidence,
-          quote: p.exactQuote,
-        })),
-        actionChecklist: data.result.actionItems || [],
-        cannotDetermineList: data.result.cannotDetermineList || [],
-        lawyerGuidance: data.result.lawyerGuidance,
-      };
-
-      setAnalysisResult(mapped);
+      setAnalysisResult(data.result);
+      setCurrentAnalysisId(data.analysisId || "");
+      onAnalysisComplete?.();
       setLoadingStage("idle");
-    } catch (error) {
-      setError("Something went wrong while analyzing the document.");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Something went wrong while analyzing the document.";
+      const mappedError = mapBackendError(errorMessage) || "api_failure";
+      setError(mappedError);
       setLoadingStage("idle");
     }
   }
@@ -208,9 +198,12 @@ export default function DocumentUpload() {
           </p>
         )}
         {error && (
-          <p className="mt-4 text-sm text-red-400" role="alert">
-            {error}
-          </p>
+          <div className="mt-4 w-full max-w-lg">
+            <ErrorMessage 
+              errorType={error}
+              onDismiss={() => setError("")}
+            />
+          </div>
         )}
       </div>
 
@@ -218,6 +211,7 @@ export default function DocumentUpload() {
         type="button"
         onClick={() => {
           setAnalysisResult(null);
+          setCurrentAnalysisId("");
           setExtractedText(
             "This is a sample rental agreement. The tenant agrees to pay rent of ₹15,000 per month. The security deposit is ₹30,000. The notice period is 2 months."
           );
@@ -246,7 +240,7 @@ export default function DocumentUpload() {
         </p>
       )}
 
-      {extractedText && (
+      {extractedText && !analysisResult && (
         <div className="mt-4 max-h-80 w-full max-w-lg overflow-auto rounded-xl border border-white/10 bg-[#111111] p-4 text-sm text-neutral-100">
           <pre className="whitespace-pre-wrap break-words font-mono text-[0.8rem]">
             {extractedText}
@@ -264,8 +258,8 @@ export default function DocumentUpload() {
       </button>
 
       {analysisResult && (
-        <div className="mt-8 w-full max-w-lg">
-          <AnalysisResult data={analysisResult} />
+        <div className="mt-8 w-full max-w-4xl">
+          <AnalysisResult result={analysisResult} analysisId={currentAnalysisId} />
         </div>
       )}
     </div>

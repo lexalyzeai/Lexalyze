@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import ErrorMessage from "@/app/components/ErrorMessage";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -189,13 +190,14 @@ export default function LoginPage() {
           </div>
 
           {formError ? (
-            <p
-              id="login-form-error"
-              className="text-center text-sm text-red-400"
-              role="alert"
-            >
-              {formError}
-            </p>
+            <div className="mt-4">
+              <ErrorMessage 
+                title="Sign in failed"
+                message={formError}
+                tone="red"
+                onDismiss={() => setFormError(null)}
+              />
+            </div>
           ) : null}
 
           <button
