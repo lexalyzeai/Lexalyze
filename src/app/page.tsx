@@ -231,7 +231,7 @@ export default function HomePage() {
             >
               Start analyzing
             </Link>
-            
+
             <a
               href="#live-demo"
               className="w-full rounded-lg border border-[#C9A84C]/70 bg-transparent px-6 py-3 text-sm font-medium text-[#C9A84C] transition duration-200 hover:-translate-y-0.5 hover:border-[#d4b55d] hover:bg-[#C9A84C]/10 hover:text-[#d4b55d] sm:w-auto"
@@ -313,7 +313,11 @@ export default function HomePage() {
 
           {analysisResult ? (
             <div className="mt-10 animate-[fadeIn_450ms_ease-out_both]">
-              <AnalysisResult result={analysisResult} />
+              <AnalysisResult
+  result={{
+    ...analysisResult,
+  }}
+/>
             </div>
           ) : null}
 
