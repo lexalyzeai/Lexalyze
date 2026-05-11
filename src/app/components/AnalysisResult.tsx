@@ -2,6 +2,7 @@
 
 import { Playfair_Display } from "next/font/google";
 import { FormEvent, useState } from "react";
+import ErrorMessage, { ErrorType, mapBackendError } from "@/app/components/ErrorMessage";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -39,6 +40,7 @@ export type AnalysisResultData = {
   actionItems: string[];
   cannotDetermineList: string[];
   lawyerGuidance: string;
+  credibilityPercent: number;
 };
 
 export type AnalysisResultProps = {
@@ -70,7 +72,7 @@ export default function AnalysisResult({
   const [followUpQuestion, setFollowUpQuestion] = useState("");
   const [followUpLoading, setFollowUpLoading] = useState(false);
   const [followUpHistory, setFollowUpHistory] = useState<FollowUpEntry[]>([]);
-  const [followUpError, setFollowUpError] = useState("");
+  const [followUpError, setFollowUpError] = useState<ErrorType | "">("");
 
   if (!result) {
     return (
@@ -99,13 +101,17 @@ export default function AnalysisResult({
       const data = await response.json();
 
       if (!response.ok) {
-        setFollowUpError(data.error || "Failed to get answer.");
+        const errorMessage = data.error || "Failed to get answer.";
+        const mappedError = mapBackendError(errorMessage) || "api_failure";
+        setFollowUpError(mappedError);
         return;
       }
 
       setFollowUpHistory((prev) => [...prev, { question, answer: data.answer }]);
-    } catch {
-      setFollowUpError("Something went wrong. Please try again.");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      const mappedError = mapBackendError(errorMessage) || "api_failure";
+      setFollowUpError(mappedError);
     } finally {
       setFollowUpLoading(false);
     }
@@ -297,7 +303,12 @@ export default function AnalysisResult({
           )}
 
           {followUpError && (
-            <p className="mt-3 text-sm text-red-400">{followUpError}</p>
+            <div className="mt-3">
+              <ErrorMessage 
+                errorType={followUpError}
+                onDismiss={() => setFollowUpError("")}
+              />
+            </div>
           )}
         </form>
       </div>

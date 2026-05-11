@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import AnalysisResult from "@/app/components/AnalysisResult";
+import ErrorMessage, { ErrorType, mapBackendError } from "@/app/components/ErrorMessage";
 
 const ACCEPTED_MIME_TYPES = new Set([
   "application/pdf",
@@ -37,7 +38,7 @@ export default function DocumentUpload({ language, onAnalysisComplete }: Documen
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<ErrorType | "">("");
   const [loadingStage, setLoadingStage] = useState<LoadingStage>("idle");
   const [extractedText, setExtractedText] = useState("");
   const [analysisResult, setAnalysisResult] = useState<any>(null);
@@ -70,13 +71,20 @@ export default function DocumentUpload({ language, onAnalysisComplete }: Documen
       });
 
       if (!response.ok) {
-        throw new Error("Failed to extract text. Please try again.");
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || "Failed to extract text. Please try again.";
+        const mappedError = mapBackendError(errorMessage) || "api_failure";
+        setError(mappedError);
+        setLoadingStage("idle");
+        return;
       }
 
       const data = (await response.json()) as { text?: string };
 
       if (!data.text) {
-        throw new Error("No text was returned from the document.");
+        setError("no_text_extracted");
+        setLoadingStage("idle");
+        return;
       }
 
       setExtractedText(data.text);
@@ -85,11 +93,9 @@ export default function DocumentUpload({ language, onAnalysisComplete }: Documen
       setLoadingStage("idle");
     } catch (err) {
       setExtractedText("");
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong while extracting text."
-      );
+      const errorMessage = err instanceof Error ? err.message : "Something went wrong while extracting text.";
+      const mappedError = mapBackendError(errorMessage) || "api_failure";
+      setError(mappedError);
       setLoadingStage("idle");
     }
   }
@@ -97,7 +103,7 @@ export default function DocumentUpload({ language, onAnalysisComplete }: Documen
   async function setFile(file: File) {
     if (!isAccepted(file)) {
       setSelectedFile(null);
-      setError("Unsupported file type. Please upload a PDF, TXT, PNG, or JPG.");
+      setError("unsupported_file_type");
       return;
     }
     setError("");
@@ -131,7 +137,9 @@ export default function DocumentUpload({ language, onAnalysisComplete }: Documen
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Analysis failed.");
+        const errorMessage = data.error || "Analysis failed.";
+        const mappedError = mapBackendError(errorMessage) || "api_failure";
+        setError(mappedError);
         setLoadingStage("idle");
         return;
       }
@@ -140,8 +148,10 @@ export default function DocumentUpload({ language, onAnalysisComplete }: Documen
       setCurrentAnalysisId(data.analysisId || "");
       onAnalysisComplete?.();
       setLoadingStage("idle");
-    } catch {
-      setError("Something went wrong while analyzing the document.");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Something went wrong while analyzing the document.";
+      const mappedError = mapBackendError(errorMessage) || "api_failure";
+      setError(mappedError);
       setLoadingStage("idle");
     }
   }
@@ -188,9 +198,12 @@ export default function DocumentUpload({ language, onAnalysisComplete }: Documen
           </p>
         )}
         {error && (
-          <p className="mt-4 text-sm text-red-400" role="alert">
-            {error}
-          </p>
+          <div className="mt-4 w-full max-w-lg">
+            <ErrorMessage 
+              errorType={error}
+              onDismiss={() => setError("")}
+            />
+          </div>
         )}
       </div>
 

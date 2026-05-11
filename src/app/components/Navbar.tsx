@@ -45,6 +45,10 @@ export default function Navbar() {
           >
             History
           </Link>
+
+          <span className="hidden text-xs text-neutral-500 sm:inline-block">
+            Not legal advice
+          </span>
         </div>
       </nav>
     </header>
