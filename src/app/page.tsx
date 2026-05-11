@@ -130,72 +130,49 @@ export default function HomePage() {
 
   async function runSampleAnalysis() {
     if (isAnalysing) return;
-
+  
     setIsAnalysing(true);
     setAnalysisErrorType(null);
     setAnalysisResult(null);
     setStepMessage(ANALYSIS_STEPS[0]);
-
+  
     let stepIndex = 0;
     const stepTimer = setInterval(() => {
       stepIndex = Math.min(stepIndex + 1, ANALYSIS_STEPS.length - 1);
       setStepMessage(ANALYSIS_STEPS[stepIndex]);
     }, 1700);
-
+  
     try {
-      const apiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
-      if (!apiKey) {
-        setAnalysisErrorType("api-failure");
-        return;
-      }
-
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      const response = await fetch("/api/demo-analyze", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT("en") },
-            {
-              role: "user",
-              content: `Analyse this legal document and return the JSON:\n\n${sampleText}`,
-            },
-          ],
-          temperature: 0.1,
-          max_tokens: 3000,
-          response_format: { type: "json_object" },
+          text: sampleText,
+          language: "en",
+          filename: "sample-rental-agreement.txt",
         }),
       });
-
+  
       if (!response.ok) {
         if (response.status === 429) {
           setAnalysisErrorType("rate-limit");
           return;
         }
+  
         setAnalysisErrorType("api-failure");
         return;
       }
-
-      const data = (await response.json()) as {
-        choices?: { message?: { content?: string } }[];
-      };
-      const content = data.choices?.[0]?.message?.content;
-      if (!content) {
+  
+      const data = await response.json();
+  
+      if (!data?.result) {
         setAnalysisErrorType("parse-error");
         return;
       }
-
-      let parsed: AiAnalysisResult;
-      try {
-        parsed = JSON.parse(normalizeGroqJson(content)) as AiAnalysisResult;
-      } catch {
-        setAnalysisErrorType("parse-error");
-        return;
-      }
-      setAnalysisResult(parsed);
+  
+      setAnalysisResult(data.result as AiAnalysisResult);
     } catch {
       setAnalysisErrorType("api-failure");
     } finally {
