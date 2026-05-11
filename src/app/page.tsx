@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import AnalysisLoadingOverlay from "./components/AnalysisLoadingOverlay";
 import AnalysisResult, { type AnalysisResultData } from "@/app/components/AnalysisResult";
+import ErrorMessage, { type ErrorTone } from "./components/ErrorMessage";
 import { SYSTEM_PROMPT } from "@/lib/prompt";
 import type { AnalysisResult as AiAnalysisResult } from "@/types/analysis";
 
@@ -81,6 +82,33 @@ const FAQ_ITEMS = [
   },
 ] as const;
 
+type AnalysisErrorType = "api-failure" | "rate-limit" | "parse-error";
+
+type AnalysisErrorContent = {
+  title: string;
+  message: string;
+  hint?: string;
+  tone: ErrorTone;
+};
+
+const ANALYSIS_ERROR_COPY: Record<AnalysisErrorType, AnalysisErrorContent> = {
+  "api-failure": {
+    title: "Something went wrong",
+    message: "We couldn’t process your document right now. Please try again.",
+    tone: "red",
+  },
+  "rate-limit": {
+    title: "Daily limit reached",
+    message: "You’ve reached today’s free analysis limit. Please try again tomorrow.",
+    tone: "blue",
+  },
+  "parse-error": {
+    title: "Document could not be analysed",
+    message: "This file may be corrupted or formatted in a way we can’t read yet.",
+    tone: "red",
+  },
+};
+
 function normalizeGroqJson(raw: string): string {
   return raw
     .replace(/^```json\s*/i, "")
@@ -129,7 +157,7 @@ function toUiAnalysisResult(result: AiAnalysisResult): AnalysisResultData {
 
 export default function HomePage() {
   const [isAnalysing, setIsAnalysing] = useState(false);
-  const [analysisError, setAnalysisError] = useState("");
+  const [analysisErrorType, setAnalysisErrorType] = useState<AnalysisErrorType | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResultData | null>(null);
   const [stepMessage, setStepMessage] = useState<(typeof ANALYSIS_STEPS)[number]>(
     ANALYSIS_STEPS[0],
@@ -142,7 +170,7 @@ export default function HomePage() {
     if (isAnalysing) return;
 
     setIsAnalysing(true);
-    setAnalysisError("");
+    setAnalysisErrorType(null);
     setAnalysisResult(null);
     setStepMessage(ANALYSIS_STEPS[0]);
 
@@ -155,7 +183,8 @@ export default function HomePage() {
     try {
       const apiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
       if (!apiKey) {
-        throw new Error("Missing NEXT_PUBLIC_GROQ_API_KEY for live demo.");
+        setAnalysisErrorType("api-failure");
+        return;
       }
 
       const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -180,8 +209,12 @@ export default function HomePage() {
       });
 
       if (!response.ok) {
-        const errorBody = await response.json().catch(() => ({}));
-        throw new Error(`Groq request failed (${response.status}): ${JSON.stringify(errorBody)}`);
+        if (response.status === 429) {
+          setAnalysisErrorType("rate-limit");
+          return;
+        }
+        setAnalysisErrorType("api-failure");
+        return;
       }
 
       const data = (await response.json()) as {
@@ -189,15 +222,20 @@ export default function HomePage() {
       };
       const content = data.choices?.[0]?.message?.content;
       if (!content) {
-        throw new Error("No analysis content returned from Groq.");
+        setAnalysisErrorType("parse-error");
+        return;
       }
 
-      const parsed = JSON.parse(normalizeGroqJson(content)) as AiAnalysisResult;
+      let parsed: AiAnalysisResult;
+      try {
+        parsed = JSON.parse(normalizeGroqJson(content)) as AiAnalysisResult;
+      } catch {
+        setAnalysisErrorType("parse-error");
+        return;
+      }
       setAnalysisResult(toUiAnalysisResult(parsed));
-    } catch (err) {
-      setAnalysisError(
-        err instanceof Error ? err.message : "Unable to run sample analysis right now.",
-      );
+    } catch {
+      setAnalysisErrorType("api-failure");
     } finally {
       clearInterval(stepTimer);
       setIsAnalysing(false);
@@ -231,12 +269,19 @@ export default function HomePage() {
             >
               Start analyzing
             </Link>
-            <button
-              type="button"
+            <a
+              href="#live-demo"
               className="w-full rounded-lg border border-[#C9A84C]/70 bg-transparent px-6 py-3 text-sm font-medium text-[#C9A84C] transition duration-200 hover:-translate-y-0.5 hover:border-[#d4b55d] hover:bg-[#C9A84C]/10 hover:text-[#d4b55d] sm:w-auto"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById("live-demo")?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "start",
+                });
+              }}
             >
               Watch demo
-            </button>
+            </a>
           </div>
 
           <p className="hero-fade-up-delay-3 mt-8 text-xs tracking-wide text-neutral-500 sm:text-sm">
@@ -245,7 +290,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="relative overflow-hidden px-4 pb-24 sm:px-6 lg:px-8">
+      <section id="live-demo" className="relative overflow-hidden px-4 pb-24 sm:px-6 lg:px-8">
         <div className="pointer-events-none absolute inset-0">
           <div className="demo-gradient absolute left-1/2 top-20 h-[26rem] w-[26rem] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(201,168,76,0.14)_0%,rgba(201,168,76,0.03)_45%,rgba(10,10,10,0)_72%)] blur-3xl" />
         </div>
@@ -288,10 +333,15 @@ export default function HomePage() {
               >
                 {isAnalysing ? stepMessage : "Analyse sample document"}
               </button>
-              {analysisError ? (
-                <p className="text-sm text-rose-300" role="alert">
-                  {analysisError}
-                </p>
+              {analysisErrorType ? (
+                <ErrorMessage
+                  title={ANALYSIS_ERROR_COPY[analysisErrorType].title}
+                  message={ANALYSIS_ERROR_COPY[analysisErrorType].message}
+                  hint={ANALYSIS_ERROR_COPY[analysisErrorType].hint}
+                  tone={ANALYSIS_ERROR_COPY[analysisErrorType].tone}
+                  className="w-full max-w-xl"
+                  onDismiss={() => setAnalysisErrorType(null)}
+                />
               ) : null}
             </div>
 
@@ -299,28 +349,32 @@ export default function HomePage() {
           </div>
 
           {analysisResult ? (
-            <div className="mt-10 space-y-6 animate-[fadeIn_450ms_ease-out_both]">
+            <div className="mt-10 animate-[fadeIn_450ms_ease-out_both]">
               <AnalysisResult data={analysisResult} />
-
-              <div className="rounded-2xl border border-[#C9A84C]/35 bg-[#15120A] p-5 text-center sm:p-6">
-                <h3 className={`${playfair.className} text-2xl text-[#f5e2ac] sm:text-3xl`}>
-                  Sign up free to analyse your own documents.
-                </h3>
-                <p className="mx-auto mt-2 max-w-2xl text-sm text-[#d8c58b]">
-                  Get personal document history, faster follow-ups, and secure saved analyses.
-                </p>
-                <Link
-                  href="/auth/signup"
-                  className="mt-5 rounded-lg bg-[#C9A84C] px-6 py-3 text-sm font-semibold text-[#0A0A0A] transition hover:bg-[#d4b55d]"
-                >
-                  Get started
-                </Link>
-                <p className="mt-3 text-xs text-[#c7b272]/80">
-                  No legal advice. Every finding includes citation context.
-                </p>
-              </div>
             </div>
           ) : null}
+
+          <div className="mt-10 rounded-2xl border border-[#C9A84C]/35 bg-[#15120A] p-5 sm:p-6">
+            <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-4 text-center sm:gap-6">
+              <h3
+                className={`${playfair.className} text-2xl leading-tight text-[#f5e2ac] break-words sm:text-3xl`}
+              >
+                Sign up free to analyse your own documents.
+              </h3>
+              <p className="max-w-2xl text-sm leading-7 text-[#d8c58b]">
+                Get personal document history, faster follow-ups, and secure saved analyses.
+              </p>
+              <Link
+                href="/auth/signup"
+                className="inline-flex items-center justify-center rounded-lg bg-[#C9A84C] px-6 py-3 text-sm font-semibold text-[#0A0A0A] transition hover:bg-[#d4b55d]"
+              >
+                Get started
+              </Link>
+              <p className="max-w-2xl text-xs leading-6 text-[#c7b272]/80">
+                No legal advice. Every finding includes citation context.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -649,8 +703,8 @@ export default function HomePage() {
             <div className="flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
               <p className="text-neutral-500">© 2026 Lexalyze. All rights reserved.</p>
               <p className="max-w-2xl text-xs leading-6 text-neutral-500 sm:text-right">
-                Lexalyze provides AI-generated insights and is not a substitute for legal
-                advice.
+                Not legal advice. Lexalyze provides AI-generated insights and is not a
+                substitute for legal advice.
               </p>
             </div>
           </div>
