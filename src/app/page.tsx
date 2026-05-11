@@ -4,7 +4,7 @@ import { Playfair_Display } from "next/font/google";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import AnalysisLoadingOverlay from "./components/AnalysisLoadingOverlay";
-import AnalysisResult, { type AnalysisResultData } from "@/app/components/AnalysisResult";
+import AnalysisResult from "@/app/components/AnalysisResult";
 import ErrorMessage, { type ErrorTone } from "./components/ErrorMessage";
 import { SYSTEM_PROMPT } from "@/lib/prompt";
 import type { AnalysisResult as AiAnalysisResult } from "@/types/analysis";
@@ -94,17 +94,17 @@ type AnalysisErrorContent = {
 const ANALYSIS_ERROR_COPY: Record<AnalysisErrorType, AnalysisErrorContent> = {
   "api-failure": {
     title: "Something went wrong",
-    message: "We couldn’t process your document right now. Please try again.",
+    message: "We couldn't process your document right now. Please try again.",
     tone: "red",
   },
   "rate-limit": {
     title: "Daily limit reached",
-    message: "You’ve reached today’s free analysis limit. Please try again tomorrow.",
+    message: "You've reached today's free analysis limit. Please try again tomorrow.",
     tone: "blue",
   },
   "parse-error": {
     title: "Document could not be analysed",
-    message: "This file may be corrupted or formatted in a way we can’t read yet.",
+    message: "This file may be corrupted or formatted in a way we can't read yet.",
     tone: "red",
   },
 };
@@ -117,48 +117,10 @@ function normalizeGroqJson(raw: string): string {
     .trim();
 }
 
-function toUiAnalysisResult(result: AiAnalysisResult): AnalysisResultData {
-  const confidenceMap: Record<AiAnalysisResult["overallConfidence"], "HIGH" | "MEDIUM" | "LOW"> = {
-    HIGH: "HIGH",
-    MEDIUM: "MEDIUM",
-    LOW: "LOW",
-  };
-
-  const confidenceToPercent: Record<AiAnalysisResult["overallConfidence"], number> = {
-    HIGH: 88,
-    MEDIUM: 72,
-    LOW: 54,
-  };
-
-  return {
-    credibilityPercent: confidenceToPercent[result.overallConfidence],
-    overallConfidence: confidenceMap[result.overallConfidence],
-    documentTitle: result.documentTitle,
-    oneLineSummary: result.oneLineSummary,
-    fullSummary: result.fullSummary,
-    keyNumbersAndDates: [...result.keyNumbers, ...result.keyDeadlines],
-    riskFlags: result.redFlags.map((item) => ({
-      title: item.title,
-      description: item.explanation,
-      confidence: confidenceMap[item.confidence],
-      quote: item.exactQuote,
-    })),
-    favourableClauses: result.positivePoints.map((item) => ({
-      title: item.title,
-      description: item.explanation,
-      confidence: confidenceMap[item.confidence],
-      quote: item.exactQuote,
-    })),
-    actionChecklist: result.actionItems,
-    cannotDetermineList: result.cannotDetermineList,
-    lawyerGuidance: result.lawyerGuidance,
-  };
-}
-
 export default function HomePage() {
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [analysisErrorType, setAnalysisErrorType] = useState<AnalysisErrorType | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResultData | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<AiAnalysisResult | null>(null);
   const [stepMessage, setStepMessage] = useState<(typeof ANALYSIS_STEPS)[number]>(
     ANALYSIS_STEPS[0],
   );
@@ -233,7 +195,7 @@ export default function HomePage() {
         setAnalysisErrorType("parse-error");
         return;
       }
-      setAnalysisResult(toUiAnalysisResult(parsed));
+      setAnalysisResult(parsed);
     } catch {
       setAnalysisErrorType("api-failure");
     } finally {
@@ -269,6 +231,7 @@ export default function HomePage() {
             >
               Start analyzing
             </Link>
+
             <a
               href="#live-demo"
               className="w-full rounded-lg border border-[#C9A84C]/70 bg-transparent px-6 py-3 text-sm font-medium text-[#C9A84C] transition duration-200 hover:-translate-y-0.5 hover:border-[#d4b55d] hover:bg-[#C9A84C]/10 hover:text-[#d4b55d] sm:w-auto"
@@ -350,7 +313,11 @@ export default function HomePage() {
 
           {analysisResult ? (
             <div className="mt-10 animate-[fadeIn_450ms_ease-out_both]">
-              <AnalysisResult data={analysisResult} />
+              <AnalysisResult
+  result={{
+    ...analysisResult,
+  }}
+/>
             </div>
           ) : null}
 
@@ -619,26 +586,10 @@ export default function HomePage() {
                 Product
               </h3>
               <ul className="mt-4 space-y-3 text-sm text-neutral-400">
-                <li>
-                  <a href="#" className="footer-link">
-                    Features
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="footer-link">
-                    Live demo
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="footer-link">
-                    Security
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="footer-link">
-                    FAQ
-                  </a>
-                </li>
+                <li><a href="#" className="footer-link">Features</a></li>
+                <li><a href="#" className="footer-link">Live demo</a></li>
+                <li><a href="#" className="footer-link">Security</a></li>
+                <li><a href="#" className="footer-link">FAQ</a></li>
               </ul>
             </div>
 
@@ -647,26 +598,10 @@ export default function HomePage() {
                 Company
               </h3>
               <ul className="mt-4 space-y-3 text-sm text-neutral-400">
-                <li>
-                  <a href="#" className="footer-link">
-                    About
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="footer-link">
-                    Contact
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="footer-link">
-                    Privacy Policy
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="footer-link">
-                    Terms of Service
-                  </a>
-                </li>
+                <li><a href="#" className="footer-link">About</a></li>
+                <li><a href="#" className="footer-link">Contact</a></li>
+                <li><a href="#" className="footer-link">Privacy Policy</a></li>
+                <li><a href="#" className="footer-link">Terms of Service</a></li>
               </ul>
             </div>
 
@@ -675,26 +610,10 @@ export default function HomePage() {
                 Resources
               </h3>
               <ul className="mt-4 space-y-3 text-sm text-neutral-400">
-                <li>
-                  <a href="#" className="footer-link">
-                    Supported documents
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="footer-link">
-                    Trust &amp; Safety
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="footer-link">
-                    Help Center
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="footer-link">
-                    Status
-                  </a>
-                </li>
+                <li><a href="#" className="footer-link">Supported documents</a></li>
+                <li><a href="#" className="footer-link">Trust &amp; Safety</a></li>
+                <li><a href="#" className="footer-link">Help Center</a></li>
+                <li><a href="#" className="footer-link">Status</a></li>
               </ul>
             </div>
           </div>
@@ -739,48 +658,37 @@ export default function HomePage() {
         .how-step {
           animation: fadeUpSoft 620ms ease-out both;
         }
-        .how-step-1 {
-          animation-delay: 70ms;
-        }
-        .how-step-2 {
-          animation-delay: 150ms;
-        }
-        .how-step-3 {
-          animation-delay: 230ms;
-        }
+        .how-step-1 { animation-delay: 70ms; }
+        .how-step-2 { animation-delay: 150ms; }
+        .how-step-3 { animation-delay: 230ms; }
         .reads-card {
-          box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.01), 0 10px 28px rgba(0, 0, 0, 0.28);
-          transition: transform 260ms ease, border-color 260ms ease, box-shadow 260ms ease,
-            background-color 260ms ease;
+          box-shadow: 0 0 0 1px rgba(255,255,255,0.01), 0 10px 28px rgba(0,0,0,0.28);
+          transition: transform 260ms ease, border-color 260ms ease, box-shadow 260ms ease, background-color 260ms ease;
         }
         .reads-card:hover {
           transform: translateY(-4px);
-          border-color: rgba(201, 168, 76, 0.35);
+          border-color: rgba(201,168,76,0.35);
           background-color: #141414;
-          box-shadow: 0 0 0 1px rgba(201, 168, 76, 0.12),
-            0 14px 36px rgba(201, 168, 76, 0.08), 0 16px 36px rgba(0, 0, 0, 0.34);
+          box-shadow: 0 0 0 1px rgba(201,168,76,0.12), 0 14px 36px rgba(201,168,76,0.08), 0 16px 36px rgba(0,0,0,0.34);
         }
         .trust-card {
-          box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.01), 0 10px 26px rgba(0, 0, 0, 0.26);
-          transition: transform 260ms ease, border-color 260ms ease, box-shadow 260ms ease,
-            background-color 260ms ease;
+          box-shadow: 0 0 0 1px rgba(255,255,255,0.01), 0 10px 26px rgba(0,0,0,0.26);
+          transition: transform 260ms ease, border-color 260ms ease, box-shadow 260ms ease, background-color 260ms ease;
         }
         .trust-card:hover {
           transform: translateY(-4px);
-          border-color: rgba(201, 168, 76, 0.35);
+          border-color: rgba(201,168,76,0.35);
           background-color: #141414;
-          box-shadow: 0 0 0 1px rgba(201, 168, 76, 0.1),
-            0 12px 34px rgba(201, 168, 76, 0.07), 0 16px 34px rgba(0, 0, 0, 0.32);
+          box-shadow: 0 0 0 1px rgba(201,168,76,0.1), 0 12px 34px rgba(201,168,76,0.07), 0 16px 34px rgba(0,0,0,0.32);
         }
         .faq-item {
-          box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.01), 0 10px 26px rgba(0, 0, 0, 0.24);
+          box-shadow: 0 0 0 1px rgba(255,255,255,0.01), 0 10px 26px rgba(0,0,0,0.24);
           transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
         }
         .faq-item:hover {
           transform: translateY(-2px);
-          border-color: rgba(201, 168, 76, 0.32);
-          box-shadow: 0 0 0 1px rgba(201, 168, 76, 0.1),
-            0 10px 30px rgba(201, 168, 76, 0.06), 0 14px 28px rgba(0, 0, 0, 0.3);
+          border-color: rgba(201,168,76,0.32);
+          box-shadow: 0 0 0 1px rgba(201,168,76,0.1), 0 10px 30px rgba(201,168,76,0.06), 0 14px 28px rgba(0,0,0,0.3);
         }
         .footer-link {
           color: rgb(163 163 163);
@@ -791,58 +699,28 @@ export default function HomePage() {
           transform: translateX(2px);
         }
         @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translate3d(0, 10px, 0);
-          }
-          to {
-            opacity: 1;
-            transform: translate3d(0, 0, 0);
-          }
+          from { opacity: 0; transform: translate3d(0, 10px, 0); }
+          to { opacity: 1; transform: translate3d(0, 0, 0); }
         }
         @keyframes fadeUp {
-          from {
-            opacity: 0;
-            transform: translate3d(0, 14px, 0);
-          }
-          to {
-            opacity: 1;
-            transform: translate3d(0, 0, 0);
-          }
+          from { opacity: 0; transform: translate3d(0, 14px, 0); }
+          to { opacity: 1; transform: translate3d(0, 0, 0); }
         }
         @keyframes fadeUpSoft {
-          from {
-            opacity: 0;
-            transform: translate3d(0, 16px, 0);
-          }
-          to {
-            opacity: 1;
-            transform: translate3d(0, 0, 0);
-          }
+          from { opacity: 0; transform: translate3d(0, 16px, 0); }
+          to { opacity: 1; transform: translate3d(0, 0, 0); }
         }
         @keyframes drift {
-          0% {
-            transform: translate3d(-50%, -8px, 0) scale(1);
-          }
-          100% {
-            transform: translate3d(-48%, 10px, 0) scale(1.04);
-          }
+          0% { transform: translate3d(-50%, -8px, 0) scale(1); }
+          100% { transform: translate3d(-48%, 10px, 0) scale(1.04); }
         }
         @keyframes driftSlow {
-          0% {
-            transform: translate3d(0, -6px, 0) scale(1);
-          }
-          100% {
-            transform: translate3d(-8px, 8px, 0) scale(1.03);
-          }
+          0% { transform: translate3d(0, -6px, 0) scale(1); }
+          100% { transform: translate3d(-8px, 8px, 0) scale(1.03); }
         }
         @keyframes driftDemo {
-          0% {
-            transform: translate3d(-50%, -8px, 0) scale(1);
-          }
-          100% {
-            transform: translate3d(-50%, 6px, 0) scale(1.05);
-          }
+          0% { transform: translate3d(-50%, -8px, 0) scale(1); }
+          100% { transform: translate3d(-50%, 6px, 0) scale(1.05); }
         }
       `}</style>
     </main>
