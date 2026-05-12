@@ -40,7 +40,6 @@ export type AnalysisResultData = {
   actionItems: string[];
   cannotDetermineList: string[];
   lawyerGuidance: string;
-  credibilityPercent: number;
 };
 
 export type AnalysisResultProps = {
