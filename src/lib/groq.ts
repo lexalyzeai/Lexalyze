@@ -180,7 +180,7 @@ export async function followUpQuestion(
       Be as thorough as a senior advocate. Do not summarise — analyse and protect.
       
       DOCUMENT:
-      ${trimmedText}
+      ${trimmedDoc}
       
       Return the complete JSON now.`
       }
