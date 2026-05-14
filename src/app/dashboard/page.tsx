@@ -2,7 +2,7 @@
 
 import { Playfair_Display } from "next/font/google";
 import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import DocumentUpload from "../components/DocumentUpload";
 import AnalysisResult from "../components/AnalysisResult";
@@ -54,12 +54,14 @@ export default function DashboardPage() {
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [linkedBanner, setLinkedBanner] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
 
   const selectedAnalysis =
     analyses.find((a) => a.id === selectedAnalysisId) || null;
 
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -68,6 +70,15 @@ export default function DashboardPage() {
 
     fetchHistory();
   }, []);
+
+  // Linked account banner
+  useEffect(() => {
+    if (searchParams.get('linked') === 'true') {
+      setLinkedBanner(true)
+      router.replace('/dashboard')
+      setTimeout(() => setLinkedBanner(false), 5000)
+    }
+  }, [searchParams, router])
 
   // Prevent body scroll when mobile nav is open
   useEffect(() => {
@@ -82,32 +93,24 @@ export default function DashboardPage() {
     };
   }, [isMobileNavOpen]);
 
-  // Touch event handlers for swipe detection
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.targetTouches[0].clientX);
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (!touchStart) return;
-    
     const touchEnd = e.changedTouches[0].clientX;
     const swipeDistance = touchStart - touchEnd;
-    
-    // Detect right-to-left swipe (positive distance)
     if (swipeDistance > 50) {
       setIsMobileNavOpen(false);
     }
-    
     setTouchStart(null);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isMobileNavOpen || !touchStart) return;
-    
     const currentX = e.targetTouches[0].clientX;
     const swipeDistance = touchStart - currentX;
-    
-    // If swiping right-to-left, follow the finger
     if (swipeDistance > 0 && drawerRef.current) {
       drawerRef.current.style.transform = `translateX(-${swipeDistance}px)`;
     }
@@ -115,7 +118,6 @@ export default function DashboardPage() {
 
   async function fetchHistory() {
     const { data: { session } } = await supabase.auth.getSession();
-
     if (!session) return;
 
     const { data } = await supabase
@@ -136,6 +138,19 @@ export default function DashboardPage() {
   return (
     <div className="flex h-screen overflow-hidden bg-[#0A0A0A]">
 
+      {/* Linked account banner */}
+      {linkedBanner && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-md rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300 flex items-center justify-between gap-4">
+          <span>Your Google account has been linked to your existing account.</span>
+          <button
+            onClick={() => setLinkedBanner(false)}
+            className="shrink-0 text-emerald-400 hover:text-emerald-200"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Mobile Hamburger Menu */}
       {!isMobileNavOpen && (
         <button
@@ -144,16 +159,16 @@ export default function DashboardPage() {
           className="fixed top-4 left-4 z-50 flex size-10 items-center justify-center rounded-lg border border-white/10 bg-[#111111] text-neutral-400 transition hover:border-[#C9A84C]/40 hover:bg-white/[0.04] hover:text-[#C9A84C] md:hidden"
           aria-label="Open navigation"
         >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth={2}
-          stroke="currentColor"
-          className="size-5"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 12h18M3 6h18M3 18h18" />
-        </svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+            className="size-5"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12h18M3 6h18M3 18h18" />
+          </svg>
         </button>
       )}
 
@@ -161,9 +176,7 @@ export default function DashboardPage() {
       <div
         ref={drawerRef}
         className={`fixed inset-0 z-40 h-screen overflow-y-auto md:hidden ${
-          isMobileNavOpen 
-            ? 'translate-x-0' 
-            : '-translate-x-full'
+          isMobileNavOpen ? 'translate-x-0' : '-translate-x-full'
         } transition-transform duration-300 ease-in-out`}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -174,15 +187,13 @@ export default function DashboardPage() {
           className="absolute inset-0 bg-black/60"
           onClick={() => setIsMobileNavOpen(false)}
         />
-        
+
         {/* Drawer Content */}
         <aside className="absolute left-0 top-0 h-full w-[280px] max-w-[80vw] flex-col border-r border-white/[0.06] bg-[#111111]">
-          
+
           {/* Close Button */}
           <div className="flex items-center justify-between px-5 pt-8 pb-4">
-            <p
-              className={`${playfair.className} text-[1.35rem] font-bold leading-tight tracking-[0.12em] text-[#C9A84C]`}
-            >
+            <p className={`${playfair.className} text-[1.35rem] font-bold leading-tight tracking-[0.12em] text-[#C9A84C]`}>
               LEXALYZE
             </p>
             <button
@@ -191,14 +202,7 @@ export default function DashboardPage() {
               className="flex size-8 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-white/[0.04] hover:text-white"
               aria-label="Close navigation"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-                className="size-4"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="size-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -226,13 +230,10 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          {/* History list — scrollable */}
+          {/* History list */}
           <div
             className="hide-scrollbar flex-1 overflow-y-auto px-2"
-            style={{
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-            }}
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {historyLoading ? (
               <div className="flex items-center gap-2 px-2 py-3 text-xs text-neutral-500">
@@ -261,15 +262,13 @@ export default function DashboardPage() {
                   }`}
                 >
                   <ConfidenceDot confidence={analysis.result?.overallConfidence ?? "MEDIUM"} />
-
                   <div className="min-w-0 flex-1">
-                  <p 
-    className="truncate text-xs font-medium leading-snug"
-    title={analysis.result?.oneLineSummary || analysis.filename}
-  >
-    {analysis.result?.oneLineSummary || analysis.filename.replace(/\.[^/.]+$/, "")}
-  </p>
-
+                    <p
+                      className="truncate text-xs font-medium leading-snug"
+                      title={analysis.result?.oneLineSummary || analysis.filename}
+                    >
+                      {analysis.result?.oneLineSummary || analysis.filename.replace(/\.[^/.]+$/, "")}
+                    </p>
                     <p className="mt-0.5 text-[10px] text-neutral-600">
                       {formatDate(analysis.created_at)}
                     </p>
@@ -281,13 +280,9 @@ export default function DashboardPage() {
 
           {/* User + sign out */}
           <div className="border-t border-white/[0.06] px-4 py-4">
-            <p
-              className="truncate text-xs text-neutral-500"
-              title={email}
-            >
+            <p className="truncate text-xs text-neutral-500" title={email}>
               {email || "Loading..."}
             </p>
-
             <button
               type="button"
               onClick={handleSignOut}
@@ -304,9 +299,7 @@ export default function DashboardPage() {
 
         {/* Logo */}
         <div className="px-5 pt-8 pb-4">
-          <p
-            className={`${playfair.className} text-[1.35rem] font-bold leading-tight tracking-[0.12em] text-[#C9A84C]`}
-          >
+          <p className={`${playfair.className} text-[1.35rem] font-bold leading-tight tracking-[0.12em] text-[#C9A84C]`}>
             LEXALYZE
           </p>
         </div>
@@ -332,13 +325,10 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* History list — scrollable */}
+        {/* History list */}
         <div
           className="hide-scrollbar flex-1 overflow-y-auto px-2"
-          style={{
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-          }}
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {historyLoading ? (
             <div className="flex items-center gap-2 px-2 py-3 text-xs text-neutral-500">
@@ -366,15 +356,13 @@ export default function DashboardPage() {
                 }`}
               >
                 <ConfidenceDot confidence={analysis.result?.overallConfidence ?? "MEDIUM"} />
-
                 <div className="min-w-0 flex-1">
-                <p 
-  className="truncate text-xs font-medium leading-snug"
-  title={analysis.result?.oneLineSummary || analysis.filename}
->
-  {analysis.result?.oneLineSummary || analysis.filename.replace(/\.[^/.]+$/, "")}
-</p>
-
+                  <p
+                    className="truncate text-xs font-medium leading-snug"
+                    title={analysis.result?.oneLineSummary || analysis.filename}
+                  >
+                    {analysis.result?.oneLineSummary || analysis.filename.replace(/\.[^/.]+$/, "")}
+                  </p>
                   <p className="mt-0.5 text-[10px] text-neutral-600">
                     {formatDate(analysis.created_at)}
                   </p>
@@ -386,13 +374,9 @@ export default function DashboardPage() {
 
         {/* User + sign out */}
         <div className="border-t border-white/[0.06] px-4 py-4">
-          <p
-            className="truncate text-xs text-neutral-500"
-            title={email}
-          >
+          <p className="truncate text-xs text-neutral-500" title={email}>
             {email || "Loading..."}
           </p>
-
           <button
             type="button"
             onClick={handleSignOut}
@@ -400,7 +384,6 @@ export default function DashboardPage() {
           >
             Sign out
           </button>
-
         </div>
       </aside>
 
@@ -410,13 +393,11 @@ export default function DashboardPage() {
 
           {view === "new" && (
             <div className="w-full max-w-lg">
-
               <p className="mb-2 text-xs font-medium tracking-wide text-neutral-500">
                 Analysis Language
               </p>
 
               <div className="mb-6 inline-flex rounded-full border border-white/10 bg-[#111111] p-1">
-
                 <button
                   type="button"
                   onClick={() => setLanguage("EN")}
@@ -429,7 +410,6 @@ export default function DashboardPage() {
                 >
                   EN
                 </button>
-
                 <button
                   type="button"
                   onClick={() => setLanguage("HI")}
@@ -442,7 +422,6 @@ export default function DashboardPage() {
                 >
                   हिंदी
                 </button>
-
               </div>
 
               <DocumentUpload
@@ -450,16 +429,15 @@ export default function DashboardPage() {
                 language={language}
                 onAnalysisComplete={fetchHistory}
               />
-
             </div>
           )}
 
           {view === "history" && selectedAnalysis && (
             <div className="w-full max-w-4xl">
               <AnalysisResult
-  result={selectedAnalysis.result}
-  analysisId={selectedAnalysis.id}
-/>
+                result={selectedAnalysis.result}
+                analysisId={selectedAnalysis.id}
+              />
             </div>
           )}
 
