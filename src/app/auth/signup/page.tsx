@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { Playfair_Display } from "next/font/google";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useEffect, useState } from "react";
+import { Suspense, type FormEvent, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import ErrorMessage from "@/app/components/ErrorMessage";
 
@@ -58,7 +58,7 @@ function getPasswordStrength(pwd: string): { score: number; label: string; color
   return { score, label: 'Strong', color: 'bg-emerald-500' };
 }
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -74,11 +74,22 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
+  const errorRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
     if (searchParams.get("error") === "account_exists") {
       setErrorMessage("An account with this email already exists.");
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (errorMessage && errorRef.current) {
+      errorRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [errorMessage]);
 
   const strength = getPasswordStrength(password);
 
@@ -249,7 +260,7 @@ export default function SignupPage() {
                 {showPassword ? <EyeOffIcon className="size-5" /> : <EyeIcon className="size-5" />}
               </button>
             </div>
-            {/* Feature 7 — password strength meter */}
+
             {password.length > 0 && (
               <div className="mt-2 space-y-1">
                 <div className="flex gap-1">
@@ -260,17 +271,19 @@ export default function SignupPage() {
                     />
                   ))}
                 </div>
+
                 <p className={`text-xs ${strength.score <= 1 ? 'text-rose-400' : strength.score <= 3 ? 'text-amber-400' : 'text-emerald-400'}`}>
                   {strength.label} password
                 </p>
               </div>
             )}
+
             {errors.password && <p className="mt-1.5 text-sm text-red-400">{errors.password}</p>}
           </div>
 
-          {/* Feature 6 — confirm password */}
           <div>
             <label htmlFor="confirm" className="mb-1.5 block text-sm font-medium text-neutral-300">Confirm Password</label>
+
             <div className="relative">
               <input
                 id="confirm" name="confirm"
@@ -280,6 +293,7 @@ export default function SignupPage() {
                 onChange={(e) => { setConfirm(e.target.value); setErrors(p => ({ ...p, confirm: undefined })); }}
                 className={`${inputClass} pr-12`} placeholder="••••••••"
               />
+
               <button
                 type="button"
                 onClick={() => setShowConfirm(v => !v)}
@@ -289,13 +303,14 @@ export default function SignupPage() {
                 {showConfirm ? <EyeOffIcon className="size-5" /> : <EyeIcon className="size-5" />}
               </button>
             </div>
+
             {confirm.length > 0 && confirm === password && (
               <p className="mt-1.5 text-xs text-emerald-400">✓ Passwords match</p>
             )}
+
             {errors.confirm && <p className="mt-1.5 text-sm text-red-400">{errors.confirm}</p>}
           </div>
 
-          {/* Feature 5 — terms and privacy policy checkbox */}
           <div>
             <label className="flex cursor-pointer items-start gap-3">
               <input
@@ -304,6 +319,7 @@ export default function SignupPage() {
                 onChange={(e) => { setAgreedToTerms(e.target.checked); setErrors(p => ({ ...p, terms: undefined })); }}
                 className="mt-0.5 size-4 rounded border-white/20 bg-white/5 accent-[#C9A84C]"
               />
+
               <span className="text-sm text-neutral-400">
                 I agree to the{" "}
                 <Link href="/terms" className="text-[#C9A84C] hover:underline">Terms of Service</Link>
@@ -311,12 +327,20 @@ export default function SignupPage() {
                 <Link href="/privacy" className="text-[#C9A84C] hover:underline">Privacy Policy</Link>
               </span>
             </label>
+
             {errors.terms && <p className="mt-1.5 text-sm text-red-400">{errors.terms}</p>}
           </div>
 
-          {errorMessage && (
-            <ErrorMessage title="Sign up failed" message={errorMessage} tone="red" onDismiss={() => setErrorMessage("")} />
-          )}
+          <div ref={errorRef}>
+            {errorMessage && (
+              <ErrorMessage
+                title="Sign up failed"
+                message={errorMessage}
+                tone="red"
+                onDismiss={() => setErrorMessage("")}
+              />
+            )}
+          </div>
 
           <button
             type="submit"
@@ -340,5 +364,13 @@ export default function SignupPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0A0A0A]" />}>
+      <SignupForm />
+    </Suspense>
   );
 }
