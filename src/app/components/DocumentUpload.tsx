@@ -172,12 +172,6 @@ export default function DocumentUpload({ language, onAnalysisComplete }: Documen
 
       <div
         className="w-full max-w-lg rounded-2xl border border-dashed border-white/20 bg-[#1A1A1A] px-10 py-16 text-center shadow-lg shadow-black/20"
-        role="button"
-        tabIndex={0}
-        onClick={openPicker}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") openPicker();
-        }}
         onDragOver={(e) => e.preventDefault()}
         onDrop={async (e) => {
           e.preventDefault();
@@ -190,8 +184,15 @@ export default function DocumentUpload({ language, onAnalysisComplete }: Documen
           Upload document to analyze
         </p>
         <p className="mt-3 text-sm text-neutral-500">
-          Drag &amp; drop or click to upload
+          Drag &amp; drop your file here
         </p>
+        <button
+          type="button"
+          onClick={openPicker}
+          className="mt-6 rounded-lg border border-white/10 bg-[#111111] px-6 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-[#C9A84C]/40 hover:bg-white/[0.04] hover:text-[#C9A84C]"
+        >
+          Choose file
+        </button>
         {selectedFile && (
           <p className="mt-4 text-sm text-neutral-300" aria-live="polite">
             Selected: <span className="font-medium">{selectedFile.name}</span>
