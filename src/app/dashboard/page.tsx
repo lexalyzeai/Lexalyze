@@ -97,12 +97,30 @@ export default function DashboardPage() {
   const [selectedFollowUps, setSelectedFollowUps] = useState<FollowUpRow[]>([]);
   const [followUpsLoading, setFollowUpsLoading] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [selectedSettingsTab, setSelectedSettingsTab] = useState<"general" | "billing" | "usage" | "security" | "deletion">("general");
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState<"history" | "account" | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [pinnedAnalysisIds, setPinnedAnalysisIds] = useState<string[]>([]);
 
   const selectedAnalysis = analyses.find((a) => a.id === selectedAnalysisId) || null;
   const totalActionItems = analyses.reduce((sum, analysis) => sum + (analysis.result?.actionItems?.length ?? 0), 0);
   const completedActionItems = analyses.reduce((sum, analysis) => sum + getSavedChecklist(analysis).filter(Boolean).length, 0);
   const highRiskCount = analyses.filter((analysis) => (analysis.result?.riskScore ?? 0) >= 7).length;
   const selectedCompletion = selectedAnalysis ? completionFor(selectedAnalysis) : null;
+
+  const sortedAnalyses = [
+    ...analyses.filter((analysis) => pinnedAnalysisIds.includes(analysis.id)),
+    ...analyses.filter((analysis) => !pinnedAnalysisIds.includes(analysis.id)),
+  ];
+
+  const togglePin = (analysisId: string) => {
+    setPinnedAnalysisIds((prev) =>
+      prev.includes(analysisId)
+        ? prev.filter((id) => id !== analysisId)
+        : [...prev, analysisId]
+    );
+  };
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -184,6 +202,25 @@ export default function DashboardPage() {
   }
 
   const handleTouchStart = (e: React.TouchEvent) => setTouchStart(e.targetTouches[0].clientX);
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openDropdownId) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('[data-dropdown-trigger]') && !target.closest('[data-dropdown-menu]')) {
+          setOpenDropdownId(null);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openDropdownId]);
+
+  // Touch event handlers for swipe detection
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (!touchStart) return;
@@ -551,6 +588,390 @@ export default function DashboardPage() {
 
         </div>
       </main>
+
+      {/* Settings Modal */}
+      {isSettingsModalOpen && (
+        <>
+          {/* Backdrop overlay */}
+          <div
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
+            onClick={() => setIsSettingsModalOpen(false)}
+          />
+
+          {/* Modal */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="relative w-full max-w-lg rounded-2xl border border-white/[0.08] bg-[#111111] p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <h2
+                  className={`${playfair.className} text-2xl font-bold text-[#C9A84C]`}
+                >
+                  Settings
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setIsSettingsModalOpen(false)}
+                  className="flex size-8 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-white/[0.04] hover:text-white"
+                  aria-label="Close settings"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                    className="size-5"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Tabs navigation */}
+              <div className="flex gap-2 mb-6 border-b border-white/[0.06] pb-4">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSettingsTab("general")}
+                  className={`px-4 py-2 text-sm font-medium transition ${
+                    selectedSettingsTab === "general"
+                      ? "text-[#C9A84C]"
+                      : "text-neutral-400 hover:text-neutral-200"
+                  }`}
+                >
+                  General
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSettingsTab("billing")}
+                  className={`px-4 py-2 text-sm font-medium transition ${
+                    selectedSettingsTab === "billing"
+                      ? "text-[#C9A84C]"
+                      : "text-neutral-400 hover:text-neutral-200"
+                  }`}
+                >
+                  Billing
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSettingsTab("usage")}
+                  className={`px-4 py-2 text-sm font-medium transition ${
+                    selectedSettingsTab === "usage"
+                      ? "text-[#C9A84C]"
+                      : "text-neutral-400 hover:text-neutral-200"
+                  }`}
+                >
+                  Usage
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSettingsTab("security")}
+                  className={`px-4 py-2 text-sm font-medium transition ${
+                    selectedSettingsTab === "security"
+                      ? "text-[#C9A84C]"
+                      : "text-neutral-400 hover:text-neutral-200"
+                  }`}
+                >
+                  Security
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSettingsTab("deletion")}
+                  className={`px-4 py-2 text-sm font-medium transition ${
+                    selectedSettingsTab === "deletion"
+                      ? "text-[#C9A84C]"
+                      : "text-neutral-400 hover:text-neutral-200"
+                  }`}
+                >
+                  Deletion
+                </button>
+              </div>
+
+              {/* Tab content */}
+              {selectedSettingsTab === "general" ? (
+                <div className="space-y-4">
+                  {/* Email address */}
+                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
+                      Email Address
+                    </p>
+                    <p className="text-sm text-white">
+                      {email || "Loading..."}
+                    </p>
+                  </div>
+
+                  {/* Sign out */}
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-[#C9A84C]/40 hover:bg-white/[0.04] hover:text-[#C9A84C]"
+                  >
+                    Sign out
+                  </button>
+
+                  {/* Delete Account */}
+                  <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-red-400 mb-2">
+                      Delete Account
+                    </p>
+                    <p className="text-sm text-neutral-400 mb-4">
+                      This action is permanent and cannot be undone.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteConfirmation("account")}
+                      className="w-full rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
+                    >
+                      Delete my account
+                    </button>
+                  </div>
+                </div>
+              ) : selectedSettingsTab === "billing" ? (
+                <div className="space-y-4">
+                  {/* Current Plan */}
+                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
+                      Current Plan
+                    </p>
+                    <p className="text-sm font-medium text-white">
+                      Free Plan
+                    </p>
+                  </div>
+
+                  {/* Usage This Month */}
+                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
+                      Usage This Month
+                    </p>
+                    <p className="text-sm text-neutral-300 mb-3">
+                      Documents analyzed: 3 / 10
+                    </p>
+                    <div className="h-2 w-full rounded-full bg-white/[0.08] overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[#C9A84C] transition-all"
+                        style={{ width: "30%" }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Upgrade Plan */}
+                  <button
+                    type="button"
+                    className="w-full rounded-lg bg-[#C9A84C] px-4 py-2.5 text-sm font-semibold text-[#0A0A0A] transition hover:bg-[#d4b55d]"
+                  >
+                    Upgrade to Pro
+                  </button>
+
+                  {/* Billing History */}
+                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
+                      Billing History
+                    </p>
+                    <p className="text-sm text-neutral-400">
+                      No invoices yet
+                    </p>
+                  </div>
+
+                  {/* Manage Subscription */}
+                  <button
+                    type="button"
+                    className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-[#C9A84C]/40 hover:bg-white/[0.04] hover:text-[#C9A84C]"
+                  >
+                    Manage Subscription
+                  </button>
+                </div>
+              ) : selectedSettingsTab === "usage" ? (
+                <div className="space-y-4">
+                  {/* Documents analyzed */}
+                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
+                      Documents Analyzed
+                    </p>
+                    <p className="text-2xl font-bold text-[#C9A84C]">
+                      12
+                    </p>
+                  </div>
+
+                  {/* Follow-up questions asked */}
+                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
+                      Follow-up Questions Asked
+                    </p>
+                    <p className="text-2xl font-bold text-[#C9A84C]">
+                      31
+                    </p>
+                  </div>
+
+                  {/* Average analysis time */}
+                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
+                      Average Analysis Time
+                    </p>
+                    <p className="text-2xl font-bold text-[#C9A84C]">
+                      42 sec
+                    </p>
+                  </div>
+
+                  {/* Last analysis date */}
+                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
+                      Last Analysis Date
+                    </p>
+                    <p className="text-2xl font-bold text-[#C9A84C]">
+                      13 May 2026
+                    </p>
+                  </div>
+
+                  {/* Storage used */}
+                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
+                      Storage Used
+                    </p>
+                    <p className="text-2xl font-bold text-[#C9A84C]">
+                      18 MB
+                    </p>
+                  </div>
+                </div>
+              ) : selectedSettingsTab === "security" ? (
+                <div className="space-y-4">
+                  {/* Change Password */}
+                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
+                      Change Password
+                    </p>
+                    <button
+                      type="button"
+                      className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-[#C9A84C]/40 hover:bg-white/[0.04] hover:text-[#C9A84C]"
+                    >
+                      Change password
+                    </button>
+                  </div>
+
+                  {/* Reset Password */}
+                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
+                      Reset Password
+                    </p>
+                    <button
+                      type="button"
+                      className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-[#C9A84C]/40 hover:bg-white/[0.04] hover:text-[#C9A84C]"
+                    >
+                      Send password reset email
+                    </button>
+                  </div>
+
+                  {/* Active Session */}
+                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
+                      Active Session
+                    </p>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <p className="text-sm text-neutral-400">
+                          Current device:
+                        </p>
+                        <p className="text-sm text-white">
+                          Chrome on Windows
+                        </p>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <p className="text-sm text-neutral-400">
+                          Status:
+                        </p>
+                        <p className="text-sm text-[#C9A84C]">
+                          Active now
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sign Out All Devices */}
+                  <button
+                    type="button"
+                    className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-[#C9A84C]/40 hover:bg-white/[0.04] hover:text-[#C9A84C]"
+                  >
+                    Sign out all devices
+                  </button>
+
+                  {/* Security Notice */}
+                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
+                      Security Notice
+                    </p>
+                    <p className="text-sm text-neutral-400 leading-relaxed">
+                      Your documents are encrypted in transit and deleted after analysis. Lexalyze is designed with privacy and confidentiality in mind.
+                    </p>
+                  </div>
+                </div>
+              ) : selectedSettingsTab === "deletion" ? (
+                <div className="space-y-4">
+                  {/* Delete Analysis History */}
+                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
+                      Delete Analysis History
+                    </p>
+                    <p className="text-sm text-neutral-400 mb-4">
+                      Permanently remove all saved analysis results from your account.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteConfirmation("history")}
+                      className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400"
+                    >
+                      Delete all saved analyses
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Delete Confirmation Modal */}
+              {showDeleteConfirmation && (
+                <>
+                  <div
+                    className="absolute inset-0 rounded-2xl bg-black/60 backdrop-blur-sm"
+                    onClick={() => setShowDeleteConfirmation(null)}
+                  />
+                  <div className="absolute inset-4 flex items-center justify-center">
+                    <div
+                      className="w-full max-w-sm rounded-xl border border-white/[0.08] bg-[#111111] p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <h3 className="text-lg font-semibold text-white mb-2">
+                        Confirm Deletion
+                      </h3>
+                      <p className="text-sm text-neutral-400 mb-6">
+                        {showDeleteConfirmation === "account"
+                          ? "Are you sure you want to delete your account? This action cannot be undone."
+                          : "Are you sure you want to delete all analysis history? This action cannot be undone."}
+                      </p>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setShowDeleteConfirmation(null)}
+                          className="flex-1 rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-white/20 hover:bg-white/[0.04] hover:text-white"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowDeleteConfirmation(null);
+                          }}
+                          className="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
+                        >
+                          Confirm
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </>
+      )}
 
     </div>
   );

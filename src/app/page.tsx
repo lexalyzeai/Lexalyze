@@ -394,14 +394,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Reads Section */}
-      <section className="relative px-4 pb-28 sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-5xl">
-          <div className="mx-auto max-w-2xl text-center">
-            <span className="text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A84C]">
-              Comprehensive Coverage
-            </span>
-            <h2 className={`${playfair.className} mt-4 text-3xl font-bold text-white sm:text-4xl`}>
+      <section id="what-lexalyze-reads" className="relative px-4 pb-24 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-6xl">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className={`${playfair.className} text-3xl text-white sm:text-4xl`}>
               What Lexalyze reads
             </h2>
             <p className="mt-4 text-sm leading-relaxed text-neutral-400 sm:text-base">
@@ -430,18 +426,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Trust & Security */}
-      <section className="relative px-4 pb-28 sm:px-6 lg:px-8">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute right-[5%] bottom-10 h-[300px] w-[300px] rounded-full bg-[radial-gradient(circle,rgba(201,168,76,0.06)_0%,rgba(10,10,10,0)_70%)] blur-3xl" />
-        </div>
-
-        <div className="mx-auto w-full max-w-5xl">
-          <div className="mx-auto max-w-2xl text-center">
-            <span className="text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A84C]">
-              Privacy First
-            </span>
-            <h2 className={`${playfair.className} mt-4 text-3xl font-bold text-white sm:text-4xl`}>
+      <section id="trust-security" className="relative px-4 pb-24 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-6xl">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className={`${playfair.className} text-3xl text-white sm:text-4xl`}>
               Trust &amp; Security
             </h2>
             <p className="mt-4 text-sm leading-relaxed text-neutral-400 sm:text-base">
@@ -471,14 +459,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section className="relative px-4 pb-28 sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-3xl">
-          <div className="mx-auto max-w-2xl text-center">
-            <span className="text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A84C]">
-              FAQ
-            </span>
-            <h2 className={`${playfair.className} mt-4 text-3xl font-bold text-white sm:text-4xl`}>
+      <section id="faq" className="relative px-4 pb-24 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-4xl">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className={`${playfair.className} text-3xl text-white sm:text-4xl`}>
               Frequently asked questions
             </h2>
           </div>
