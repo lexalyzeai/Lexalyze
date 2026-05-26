@@ -182,7 +182,59 @@ export default function HomePage() {
   }
 
   return (
-    <main className="bg-[#0A0A0A] text-white">
+    <main className="relative bg-[#050505] text-white">
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+          
+          <g className="line-group-1" filter="url(#glow)">
+            <path className="line-1" d="M0,100 Q200,150 400,100 T800,120 T1200,80 T1600,100" fill="none" stroke="#C9A84C" strokeWidth="1.5" opacity="0.4" />
+            <path className="line-2" d="M0,200 Q250,250 500,200 T1000,220 T1500,180" fill="none" stroke="#C9A84C" strokeWidth="1" opacity="0.3" />
+            <path className="line-3" d="M0,300 Q150,350 300,300 T600,320 T900,280 T1200,310" fill="none" stroke="#C9A84C" strokeWidth="1.2" opacity="0.35" />
+          </g>
+
+          <g className="line-group-2" filter="url(#glow)">
+            <path className="line-4" d="M0,500 Q300,450 600,500 T1200,480 T1600,520" fill="none" stroke="#8B7355" strokeWidth="1" opacity="0.25" />
+            <path className="line-5" d="M0,600 Q200,650 400,600 T800,620 T1200,580 T1600,600" fill="none" stroke="#C9A84C" strokeWidth="1.5" opacity="0.3" />
+            <path className="line-6" d="M0,700 Q350,750 700,700 T1400,720" fill="none" stroke="#A89070" strokeWidth="1" opacity="0.28" />
+          </g>
+
+          <g className="line-group-3" filter="url(#glow)">
+            <path className="line-7" d="M100,0 Q150,200 100,400 T150,800 T100,1200" fill="none" stroke="#C9A84C" strokeWidth="1" opacity="0.3" />
+            <path className="line-8" d="M200,0 Q250,300 200,600 T250,1000 T200,1400" fill="none" stroke="#8B7355" strokeWidth="1.2" opacity="0.25" />
+          </g>
+
+          <g className="line-group-4" filter="url(#glow)">
+            <path className="line-9" d="M1400,0 Q1450,200 1400,400 T1450,800 T1400,1200" fill="none" stroke="#C9A84C" strokeWidth="1" opacity="0.3" />
+            <path className="line-10" d="M1500,0 Q1550,300 1500,600 T1550,1000 T1500,1400" fill="none" stroke="#A89070" strokeWidth="1.2" opacity="0.25" />
+          </g>
+
+          <g className="line-group-5" filter="url(#glow)">
+            <path className="line-11" d="M0,900 Q400,850 800,900 T1600,880" fill="none" stroke="#FFFFFF" strokeWidth="0.5" opacity="0.15" />
+            <path className="line-12" d="M0,1000 Q500,1050 1000,1000 T1600,1020" fill="none" stroke="#FFFFFF" strokeWidth="0.5" opacity="0.12" />
+          </g>
+
+          <g className="line-group-6" filter="url(#glow)">
+            <circle className="node-1" cx="200" cy="150" r="3" fill="#C9A84C" opacity="0.5" />
+            <circle className="node-2" cx="600" cy="250" r="2" fill="#C9A84C" opacity="0.4" />
+            <circle className="node-3" cx="1000" cy="180" r="3" fill="#C9A84C" opacity="0.45" />
+            <circle className="node-4" cx="1400" cy="220" r="2" fill="#C9A84C" opacity="0.4" />
+            <circle className="node-5" cx="300" cy="550" r="2" fill="#8B7355" opacity="0.35" />
+            <circle className="node-6" cx="700" cy="620" r="3" fill="#C9A84C" opacity="0.4" />
+            <circle className="node-7" cx="1100" cy="580" r="2" fill="#C9A84C" opacity="0.35" />
+            <circle className="node-8" cx="1500" cy="650" r="3" fill="#A89070" opacity="0.4" />
+          </g>
+        </svg>
+      </div>
+
       <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-20 sm:px-6 lg:px-8">
         <div className="pointer-events-none absolute inset-0">
           <div className="hero-gradient absolute -top-32 left-1/2 h-[34rem] w-[34rem] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(201,168,76,0.16)_0%,rgba(201,168,76,0.06)_35%,rgba(10,10,10,0)_70%)] blur-3xl" />
@@ -371,7 +423,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="relative px-4 pb-24 sm:px-6 lg:px-8">
+      <section id="what-lexalyze-reads" className="relative px-4 pb-24 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-6xl">
           <div className="mx-auto max-w-3xl text-center">
             <h2 className={`${playfair.className} text-3xl text-white sm:text-4xl`}>
@@ -435,7 +487,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="relative px-4 pb-24 sm:px-6 lg:px-8">
+      <section id="trust-security" className="relative px-4 pb-24 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-6xl">
           <div className="mx-auto max-w-3xl text-center">
             <h2 className={`${playfair.className} text-3xl text-white sm:text-4xl`}>
@@ -495,7 +547,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="relative px-4 pb-24 sm:px-6 lg:px-8">
+      <section id="faq" className="relative px-4 pb-24 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-4xl">
           <div className="mx-auto max-w-3xl text-center">
             <h2 className={`${playfair.className} text-3xl text-white sm:text-4xl`}>
@@ -563,10 +615,10 @@ export default function HomePage() {
                 Product
               </h3>
               <ul className="mt-4 space-y-3 text-sm text-neutral-400">
-                <li><a href="#" className="footer-link">Features</a></li>
-                <li><a href="#" className="footer-link">Live demo</a></li>
-                <li><a href="#" className="footer-link">Security</a></li>
-                <li><a href="#" className="footer-link">FAQ</a></li>
+                <li><a href="#what-lexalyze-reads" className="footer-link" onClick={(e) => { e.preventDefault(); document.getElementById("what-lexalyze-reads")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Features</a></li>
+                <li><a href="#live-demo" className="footer-link" onClick={(e) => { e.preventDefault(); document.getElementById("live-demo")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Live demo</a></li>
+                <li><a href="#trust-security" className="footer-link" onClick={(e) => { e.preventDefault(); document.getElementById("trust-security")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Security</a></li>
+                <li><a href="#faq" className="footer-link" onClick={(e) => { e.preventDefault(); document.getElementById("faq")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>FAQ</a></li>
               </ul>
             </div>
 
@@ -698,6 +750,146 @@ export default function HomePage() {
         @keyframes driftDemo {
           0% { transform: translate3d(-50%, -8px, 0) scale(1); }
           100% { transform: translate3d(-50%, 6px, 0) scale(1.05); }
+        }
+        .line-group-1 {
+          animation: lineFloat1 20s ease-in-out infinite alternate;
+        }
+        .line-group-2 {
+          animation: lineFloat2 24s ease-in-out infinite alternate;
+        }
+        .line-group-3 {
+          animation: lineFloat3 18s ease-in-out infinite alternate;
+        }
+        .line-group-4 {
+          animation: lineFloat4 22s ease-in-out infinite alternate;
+        }
+        .line-group-5 {
+          animation: lineFloat5 26s ease-in-out infinite alternate;
+        }
+        .line-group-6 {
+          animation: lineFloat6 16s ease-in-out infinite alternate;
+        }
+        .line-1 {
+          animation: linePulse1 4s ease-in-out infinite;
+        }
+        .line-2 {
+          animation: linePulse2 5s ease-in-out infinite 0.5s;
+        }
+        .line-3 {
+          animation: linePulse3 4.5s ease-in-out infinite 1s;
+        }
+        .line-4 {
+          animation: linePulse4 3.5s ease-in-out infinite 0.3s;
+        }
+        .line-5 {
+          animation: linePulse5 4.2s ease-in-out infinite 0.8s;
+        }
+        .line-6 {
+          animation: linePulse6 3.8s ease-in-out infinite 1.2s;
+        }
+        .node-1 {
+          animation: nodeFloat1 6s ease-in-out infinite alternate;
+        }
+        .node-2 {
+          animation: nodeFloat2 7s ease-in-out infinite alternate 0.5s;
+        }
+        .node-3 {
+          animation: nodeFloat3 5.5s ease-in-out infinite alternate 1s;
+        }
+        .node-4 {
+          animation: nodeFloat4 6.5s ease-in-out infinite alternate 0.3s;
+        }
+        .node-5 {
+          animation: nodeFloat5 7.5s ease-in-out infinite alternate 0.8s;
+        }
+        .node-6 {
+          animation: nodeFloat6 5.8s ease-in-out infinite alternate 1.2s;
+        }
+        .node-7 {
+          animation: nodeFloat7 6.2s ease-in-out infinite alternate 0.6s;
+        }
+        .node-8 {
+          animation: nodeFloat8 7.2s ease-in-out infinite alternate 1.4s;
+        }
+        @keyframes lineFloat1 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(15px, -20px, 0); }
+        }
+        @keyframes lineFloat2 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-18px, 25px, 0); }
+        }
+        @keyframes lineFloat3 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(20px, -15px, 0); }
+        }
+        @keyframes lineFloat4 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-22px, 18px, 0); }
+        }
+        @keyframes lineFloat5 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(12px, -25px, 0); }
+        }
+        @keyframes lineFloat6 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-16px, 22px, 0); }
+        }
+        @keyframes linePulse1 {
+          0%, 100% { opacity: 0.4; }
+          50% { opacity: 0.55; }
+        }
+        @keyframes linePulse2 {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.45; }
+        }
+        @keyframes linePulse3 {
+          0%, 100% { opacity: 0.35; }
+          50% { opacity: 0.5; }
+        }
+        @keyframes linePulse4 {
+          0%, 100% { opacity: 0.25; }
+          50% { opacity: 0.38; }
+        }
+        @keyframes linePulse5 {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.42; }
+        }
+        @keyframes linePulse6 {
+          0%, 100% { opacity: 0.28; }
+          50% { opacity: 0.4; }
+        }
+        @keyframes nodeFloat1 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(8px, -12px, 0); }
+        }
+        @keyframes nodeFloat2 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-10px, 14px, 0); }
+        }
+        @keyframes nodeFloat3 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(12px, -10px, 0); }
+        }
+        @keyframes nodeFloat4 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-14px, 16px, 0); }
+        }
+        @keyframes nodeFloat5 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(10px, -14px, 0); }
+        }
+        @keyframes nodeFloat6 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-12px, 18px, 0); }
+        }
+        @keyframes nodeFloat7 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(14px, -16px, 0); }
+        }
+        @keyframes nodeFloat8 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-16px, 20px, 0); }
         }
       `}</style>
     </main>
