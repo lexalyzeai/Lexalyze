@@ -41,7 +41,7 @@ function GoogleIcon() {
   );
 }
 
-const inputClass = "w-full rounded-lg border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white placeholder:text-neutral-600 outline-none transition focus:border-[#C9A84C]/50 focus:ring-2 focus:ring-[#C9A84C]/25";
+const inputClass = "w-full rounded-full border border-white/[0.05] bg-[#121216]/60 px-5 py-3.5 text-sm text-white placeholder:text-neutral-500 outline-none transition-all duration-300 focus:border-[#C9A84C] focus:bg-[#121216] focus:ring-2 focus:ring-[#C9A84C]/10";
 
 function LoginForm() {
   const router = useRouter();
@@ -265,11 +265,17 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#0A0A0A] px-4 py-16">
+    <div className="relative flex min-h-screen flex-col items-center justify-center bg-[#050507] px-4 py-16">
+      
+      {/* Premium Backglow */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute top-[20%] left-1/2 h-[450px] w-[450px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(201,168,76,0.1)_0%,rgba(5,5,7,0)_70%)] blur-3xl" />
+        <div className="absolute bottom-[-10%] right-[-10%] h-[300px] w-[300px] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.03)_0%,rgba(5,5,7,0)_70%)] blur-3xl" />
+      </div>
 
       {/* Feature 11 — session timeout warning */}
       {sessionWarning && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-md rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300 flex items-center justify-between gap-4">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md rounded-full border border-amber-500/30 bg-amber-500/10 px-5 py-3 text-xs font-semibold text-amber-300 shadow-2xl backdrop-blur-xl flex items-center justify-between gap-4">
           <span>Your session will expire in 2 minutes due to inactivity.</span>
           <button onClick={() => setSessionWarning(false)} className="shrink-0 text-amber-400 hover:text-amber-200">
             Dismiss
@@ -277,28 +283,35 @@ function LoginForm() {
         </div>
       )}
 
-      <p className={`${playfair.className} mb-14 text-center text-4xl font-semibold tracking-tight text-white sm:mb-16 sm:text-5xl md:text-6xl`}>
-        Lexalyze
+      <p className={`${playfair.className} mb-10 text-center text-4xl font-bold tracking-[0.18em] text-[#C9A84C] sm:mb-12 sm:text-5xl`}>
+        LEXALYZE
       </p>
 
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#121212] p-8 shadow-xl shadow-black/40">
-        <h1 className={`${playfair.className} text-center text-2xl font-semibold tracking-tight text-white sm:text-3xl`}>
-          {showForgot ? "Reset your password" : "Sign in to your account"}
+      <div className="relative w-full max-w-md rounded-3xl border border-white/[0.07] bg-[#0E0E12]/80 p-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-xl sm:p-10">
+        
+        {/* Fine gold side glow */}
+        <div className="absolute inset-0 rounded-3xl border border-[#C9A84C]/5 pointer-events-none" />
+
+        <h1 className={`${playfair.className} text-center text-2xl font-semibold tracking-wide text-white sm:text-3xl`}>
+          {showForgot ? "Reset your password" : "Welcome back"}
         </h1>
+        <p className="mt-2 text-center text-xs text-neutral-500">
+          {showForgot ? "Enter your details to request a reset link" : "Sign in to access document intelligence"}
+        </p>
 
         {/* Forgot password flow */}
         {showForgot ? (
           <div className="mt-8">
             {forgotSent ? (
               <div className="space-y-4">
-                <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-4 text-sm text-emerald-300">
-                  Reset link sent to <span className="font-semibold">{forgotEmail}</span>. Check your inbox and spam folder.
+                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-4 text-xs leading-relaxed text-emerald-300">
+                  Reset link sent to <span className="font-semibold text-white">{forgotEmail}</span>. Check your inbox and spam folder.
                 </div>
                 {/* Feature 12 — resend button */}
                 <button
                   onClick={handleResendReset}
                   disabled={resendCooldown > 0 || forgotLoading}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 py-3 text-sm font-medium text-neutral-300 transition hover:bg-white/10 disabled:opacity-50"
+                  className="w-full rounded-full border border-white/[0.08] bg-white/[0.03] py-3.5 text-xs font-bold tracking-wider text-neutral-300 transition-all duration-300 hover:bg-white/[0.06] hover:text-white disabled:opacity-50"
                 >
                   {forgotLoading ? "Sending..." : resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend reset link"}
                 </button>
@@ -306,7 +319,7 @@ function LoginForm() {
             ) : (
               <form onSubmit={handleForgotPassword} className="space-y-5" noValidate>
                 <div>
-                  <label htmlFor="forgot-email" className="mb-1.5 block text-sm font-medium text-neutral-300">
+                  <label htmlFor="forgot-email" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-neutral-400">
                     Email address
                   </label>
                   <input
@@ -325,7 +338,7 @@ function LoginForm() {
                 <button
                   type="submit"
                   disabled={forgotLoading}
-                  className="w-full rounded-lg bg-[#C9A84C] py-3 text-base font-semibold text-[#0A0A0A] transition hover:bg-[#d4b55d] disabled:opacity-70"
+                  className="w-full rounded-full bg-gradient-to-r from-[#C9A84C] to-[#aa8426] py-3.5 text-sm font-bold tracking-wider text-[#0A0A0A] shadow-lg transition-all duration-300 hover:from-[#d4b55d] hover:shadow-[0_4px_15px_rgba(201,168,76,0.2)] disabled:opacity-70"
                 >
                   {forgotLoading ? "Sending..." : "Send reset link"}
                 </button>
@@ -333,7 +346,7 @@ function LoginForm() {
             )}
             <button
               onClick={() => { setShowForgot(false); setForgotSent(false); setFormError(null); setResendCooldown(0); }}
-              className="mt-4 w-full text-center text-sm text-neutral-500 transition hover:text-neutral-300"
+              className="mt-5 w-full text-center text-xs font-medium text-neutral-500 transition hover:text-neutral-300"
             >
               ← Back to sign in
             </button>
@@ -342,39 +355,39 @@ function LoginForm() {
           <>
             {/* Feature 10 — lockout message */}
             {isLocked && (
-              <div className="mt-6 rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
+              <div className="mt-6 rounded-2xl border border-rose-500/20 bg-rose-500/5 px-4 py-3 text-xs leading-relaxed text-rose-300">
                 Too many failed attempts. Try again in {lockoutMinutesLeft} minute{lockoutMinutesLeft === 1 ? '' : 's'} ({lockoutSecondsLeft}s remaining).
               </div>
             )}
 
-<button
-  onClick={handleGoogle}
-  disabled={isGoogleLoading || isLoading || isLocked}
-  className="mt-8 flex w-full items-center justify-center gap-3 rounded-lg border border-white/10 bg-white/5 py-3 text-sm font-medium text-white transition hover:bg-white/10 disabled:opacity-60"
->
-  {isGoogleLoading ? (
-    <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-  ) : <GoogleIcon />}
-  {isGoogleLoading ? "Redirecting..." : "Continue with Google"}
-</button>
+            <button
+              onClick={handleGoogle}
+              disabled={isGoogleLoading || isLoading || isLocked}
+              className="mt-8 flex w-full items-center justify-center gap-3 rounded-full border border-white/[0.08] bg-white/[0.03] py-3.5 text-xs font-bold tracking-wider text-white transition-all duration-300 hover:bg-white/[0.07] disabled:opacity-60"
+            >
+              {isGoogleLoading ? (
+                <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              ) : <GoogleIcon />}
+              {isGoogleLoading ? "Redirecting..." : "Continue with Google"}
+            </button>
 
-<p className="mt-2 text-center text-xs text-neutral-600">
-  By continuing, you agree to our{" "}
-  <Link href="/terms" className="text-neutral-500 hover:text-[#C9A84C]">Terms</Link>
-  {" "}and{" "}
-  <Link href="/privacy" className="text-neutral-500 hover:text-[#C9A84C]">Privacy Policy</Link>
-</p>
+            <p className="mt-3 text-center text-[10px] tracking-wide text-neutral-600">
+              By continuing, you agree to our{" "}
+              <Link href="/terms" className="text-neutral-500 hover:text-[#C9A84C] underline underline-offset-2">Terms</Link>
+              {" "}and{" "}
+              <Link href="/privacy" className="text-neutral-500 hover:text-[#C9A84C] underline underline-offset-2">Privacy Policy</Link>
+            </p>
 
-            <div className="my-6 flex items-center gap-3">
-              <div className="h-px flex-1 bg-white/10" />
-              <span className="text-xs text-neutral-600">or</span>
-              <div className="h-px flex-1 bg-white/10" />
+            <div className="my-6 flex items-center gap-4">
+              <div className="h-px flex-1 bg-white/[0.06]" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-600">or</span>
+              <div className="h-px flex-1 bg-white/[0.06]" />
             </div>
 
             <form className="space-y-5" onSubmit={handleSubmit} noValidate>
               <div>
-                <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-neutral-300">
-                  Email
+                <label htmlFor="login-email" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                  Email Address
                 </label>
                 <input
                   id="login-email"
@@ -390,14 +403,14 @@ function LoginForm() {
               </div>
 
               <div>
-                <div className="mb-1.5 flex items-center justify-between">
-                  <label htmlFor="login-password" className="text-sm font-medium text-neutral-300">
+                <div className="mb-2 flex items-center justify-between">
+                  <label htmlFor="login-password" className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
                     Password
                   </label>
                   <button
                     type="button"
                     onClick={() => { setShowForgot(true); setForgotEmail(email); setFormError(null); }}
-                    className="text-xs text-neutral-500 transition hover:text-[#C9A84C]"
+                    className="text-xs font-semibold text-[#C9A84C] transition hover:text-[#d4b55d]"
                   >
                     Forgot password?
                   </button>
@@ -417,23 +430,23 @@ function LoginForm() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(v => !v)}
-                    className="absolute top-1/2 right-1.5 flex size-10 -translate-y-1/2 items-center justify-center rounded-md text-neutral-500 transition hover:text-[#C9A84C]"
+                    className="absolute top-1/2 right-2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full text-neutral-500 transition hover:text-[#C9A84C]"
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
-                    {showPassword ? <EyeOffIcon className="size-5" /> : <EyeIcon className="size-5" />}
+                    {showPassword ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
                   </button>
                 </div>
               </div>
 
               {/* Feature 8 — remember me */}
-              <label className="flex cursor-pointer items-center gap-3">
+              <label className="flex cursor-pointer items-center gap-3 select-none">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="size-4 rounded border-white/20 bg-white/5 accent-[#C9A84C]"
+                  className="size-4 rounded-full border-white/20 bg-white/5 accent-[#C9A84C]"
                 />
-                <span className="text-sm text-neutral-400">Remember me for 30 days</span>
+                <span className="text-xs font-medium text-neutral-400">Remember me for 30 days</span>
               </label>
 
               {formError && !isLocked && (
@@ -443,7 +456,7 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={isLoading || isGoogleLoading || isLocked}
-                className="w-full rounded-lg bg-[#C9A84C] py-3 text-base font-semibold text-[#0A0A0A] transition hover:bg-[#d4b55d] active:bg-[#b89542] disabled:cursor-not-allowed disabled:opacity-70"
+                className="w-full rounded-full bg-gradient-to-r from-[#C9A84C] to-[#aa8426] py-3.5 text-sm font-bold tracking-wider text-[#0A0A0A] shadow-md transition-all duration-300 hover:scale-[1.01] hover:from-[#d4b55d] hover:shadow-[0_4px_20px_rgba(201,168,76,0.2)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -454,9 +467,9 @@ function LoginForm() {
               </button>
             </form>
 
-            <p className="mt-6 text-center text-sm text-neutral-500">
+            <p className="mt-6 text-center text-xs text-neutral-500">
               Don&apos;t have an account?{" "}
-              <Link href="/auth/signup" className="font-medium text-[#C9A84C] underline-offset-4 transition hover:text-[#d4b55d] hover:underline">
+              <Link href="/auth/signup" className="font-semibold text-[#C9A84C] underline-offset-4 transition hover:text-[#d4b55d] hover:underline">
                 Sign up
               </Link>
             </p>
@@ -470,7 +483,7 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A]">
+      <div className="flex min-h-screen items-center justify-center bg-[#050507]">
         <span className="size-6 animate-spin rounded-full border-2 border-white/20 border-t-[#C9A84C]" />
       </div>
     }>

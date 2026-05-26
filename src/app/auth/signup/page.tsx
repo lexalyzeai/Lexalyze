@@ -41,7 +41,7 @@ function GoogleIcon() {
   );
 }
 
-const inputClass = "w-full rounded-lg border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white placeholder:text-neutral-600 outline-none transition focus:border-[#C9A84C]/50 focus:ring-2 focus:ring-[#C9A84C]/25";
+const inputClass = "w-full rounded-full border border-white/[0.05] bg-[#121216]/60 px-5 py-3.5 text-sm text-white placeholder:text-neutral-500 outline-none transition-all duration-300 focus:border-[#C9A84C] focus:bg-[#121216] focus:ring-2 focus:ring-[#C9A84C]/10";
 
 // Feature 7 — password strength
 function getPasswordStrength(pwd: string): { score: number; label: string; color: string } {
@@ -53,9 +53,9 @@ function getPasswordStrength(pwd: string): { score: number; label: string; color
   if (/[0-9]/.test(pwd)) score++;
   if (/[^A-Za-z0-9]/.test(pwd)) score++;
 
-  if (score <= 1) return { score, label: 'Weak', color: 'bg-rose-500' };
-  if (score <= 3) return { score, label: 'Fair', color: 'bg-amber-500' };
-  return { score, label: 'Strong', color: 'bg-emerald-500' };
+  if (score <= 1) return { score, label: 'Weak', color: 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]' };
+  if (score <= 3) return { score, label: 'Fair', color: 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]' };
+  return { score, label: 'Strong', color: 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' };
 }
 
 function SignupForm() {
@@ -183,20 +183,34 @@ function SignupForm() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#0A0A0A] px-4 py-16">
-      <p className={`${playfair.className} mb-14 text-center text-4xl font-semibold tracking-tight text-white sm:mb-16 sm:text-5xl md:text-6xl`}>
-        Lexalyze
+    <div className="relative flex min-h-screen flex-col items-center justify-center bg-[#050507] px-4 py-16">
+      
+      {/* Premium Backglow */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute top-[20%] left-1/2 h-[450px] w-[450px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(201,168,76,0.1)_0%,rgba(5,5,7,0)_70%)] blur-3xl" />
+        <div className="absolute bottom-[-10%] right-[-10%] h-[300px] w-[300px] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.03)_0%,rgba(5,5,7,0)_70%)] blur-3xl" />
+      </div>
+
+      <p className={`${playfair.className} mb-10 text-center text-4xl font-bold tracking-[0.18em] text-[#C9A84C] sm:mb-12 sm:text-5xl`}>
+        LEXALYZE
       </p>
 
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#121212] p-8 shadow-xl shadow-black/40">
-        <h1 className={`${playfair.className} text-center text-3xl font-semibold tracking-tight text-white sm:text-4xl`}>
+      <div className="relative w-full max-w-md rounded-3xl border border-white/[0.07] bg-[#0E0E12]/80 p-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-xl sm:p-10">
+        
+        {/* Fine gold side glow */}
+        <div className="absolute inset-0 rounded-3xl border border-[#C9A84C]/5 pointer-events-none" />
+
+        <h1 className={`${playfair.className} text-center text-2xl font-semibold tracking-wide text-white sm:text-3xl`}>
           Create your account
         </h1>
+        <p className="mt-2 text-center text-xs text-neutral-500">
+          Get started with premium legal document analysis
+        </p>
 
         <button
           onClick={handleGoogle}
           disabled={isGoogleLoading || isLoading}
-          className="mt-8 flex w-full items-center justify-center gap-3 rounded-lg border border-white/10 bg-white/5 py-3 text-sm font-medium text-white transition hover:bg-white/10 disabled:opacity-60"
+          className="mt-8 flex w-full items-center justify-center gap-3 rounded-full border border-white/[0.08] bg-white/[0.03] py-3.5 text-xs font-bold tracking-wider text-white transition-all duration-300 hover:bg-white/[0.07] disabled:opacity-60"
         >
           {isGoogleLoading ? (
             <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -204,44 +218,44 @@ function SignupForm() {
           {isGoogleLoading ? "Redirecting..." : "Continue with Google"}
         </button>
 
-        <p className="mt-2 text-center text-xs text-neutral-600">
+        <p className="mt-3 text-center text-[10px] tracking-wide text-neutral-600">
           By continuing, you agree to our{" "}
-          <Link href="/terms" className="text-neutral-500 hover:text-[#C9A84C]">Terms</Link>
+          <Link href="/terms" className="text-neutral-500 hover:text-[#C9A84C] underline underline-offset-2">Terms</Link>
           {" "}and{" "}
-          <Link href="/privacy" className="text-neutral-500 hover:text-[#C9A84C]">Privacy Policy</Link>
+          <Link href="/privacy" className="text-neutral-500 hover:text-[#C9A84C] underline underline-offset-2">Privacy Policy</Link>
         </p>
 
-        <div className="my-6 flex items-center gap-3">
-          <div className="h-px flex-1 bg-white/10" />
-          <span className="text-xs text-neutral-600">or</span>
-          <div className="h-px flex-1 bg-white/10" />
+        <div className="my-6 flex items-center gap-4">
+          <div className="h-px flex-1 bg-white/[0.06]" />
+          <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-600">or</span>
+          <div className="h-px flex-1 bg-white/[0.06]" />
         </div>
 
         <form className="space-y-5" onSubmit={handleSubmit} noValidate>
           <div>
-            <label htmlFor="fullName" className="mb-1.5 block text-sm font-medium text-neutral-300">Full Name</label>
+            <label htmlFor="fullName" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-neutral-400">Full Name</label>
             <input
               id="fullName" name="fullName" type="text" autoComplete="name"
               value={fullName}
               onChange={(e) => { setFullName(e.target.value); setErrors(p => ({ ...p, fullName: undefined })); }}
               className={inputClass} placeholder="Jane Doe"
             />
-            {errors.fullName && <p className="mt-1.5 text-sm text-red-400">{errors.fullName}</p>}
+            {errors.fullName && <p className="mt-1.5 text-xs text-red-400 font-medium">{errors.fullName}</p>}
           </div>
 
           <div>
-            <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-neutral-300">Email</label>
+            <label htmlFor="email" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-neutral-400">Email Address</label>
             <input
               id="email" name="email" type="email" autoComplete="email"
               value={email}
               onChange={(e) => { setEmail(e.target.value); setErrors(p => ({ ...p, email: undefined })); }}
               className={inputClass} placeholder="you@example.com"
             />
-            {errors.email && <p className="mt-1.5 text-sm text-red-400">{errors.email}</p>}
+            {errors.email && <p className="mt-1.5 text-xs text-red-400 font-medium">{errors.email}</p>}
           </div>
 
           <div>
-            <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-neutral-300">Password</label>
+            <label htmlFor="password" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-neutral-400">Password</label>
             <div className="relative">
               <input
                 id="password" name="password"
@@ -254,35 +268,35 @@ function SignupForm() {
               <button
                 type="button"
                 onClick={() => setShowPassword(v => !v)}
-                className="absolute top-1/2 right-1.5 flex size-10 -translate-y-1/2 items-center justify-center rounded-md text-neutral-500 transition hover:text-[#C9A84C]"
+                className="absolute top-1/2 right-2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full text-neutral-500 transition hover:text-[#C9A84C]"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? <EyeOffIcon className="size-5" /> : <EyeIcon className="size-5" />}
+                {showPassword ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
               </button>
             </div>
 
             {password.length > 0 && (
               <div className="mt-2 space-y-1">
-                <div className="flex gap-1">
+                <div className="flex gap-1.5">
                   {[1, 2, 3, 4, 5].map(i => (
                     <div
                       key={i}
-                      className={`h-1 flex-1 rounded-full transition-all ${i <= strength.score ? strength.color : 'bg-white/10'}`}
+                      className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= strength.score ? strength.color : 'bg-white/10'}`}
                     />
                   ))}
                 </div>
 
-                <p className={`text-xs ${strength.score <= 1 ? 'text-rose-400' : strength.score <= 3 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                  {strength.label} password
+                <p className={`text-[10px] font-bold tracking-wide ${strength.score <= 1 ? 'text-rose-400' : strength.score <= 3 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                  {strength.label.toUpperCase()} PASSWORD
                 </p>
               </div>
             )}
 
-            {errors.password && <p className="mt-1.5 text-sm text-red-400">{errors.password}</p>}
+            {errors.password && <p className="mt-1.5 text-xs text-red-400 font-medium">{errors.password}</p>}
           </div>
 
           <div>
-            <label htmlFor="confirm" className="mb-1.5 block text-sm font-medium text-neutral-300">Confirm Password</label>
+            <label htmlFor="confirm" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-neutral-400">Confirm Password</label>
 
             <div className="relative">
               <input
@@ -297,38 +311,38 @@ function SignupForm() {
               <button
                 type="button"
                 onClick={() => setShowConfirm(v => !v)}
-                className="absolute top-1/2 right-1.5 flex size-10 -translate-y-1/2 items-center justify-center rounded-md text-neutral-500 transition hover:text-[#C9A84C]"
+                className="absolute top-1/2 right-2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full text-neutral-500 transition hover:text-[#C9A84C]"
                 aria-label={showConfirm ? "Hide password" : "Show password"}
               >
-                {showConfirm ? <EyeOffIcon className="size-5" /> : <EyeIcon className="size-5" />}
+                {showConfirm ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
               </button>
             </div>
 
             {confirm.length > 0 && confirm === password && (
-              <p className="mt-1.5 text-xs text-emerald-400">✓ Passwords match</p>
+              <p className="mt-1.5 text-xs font-medium text-emerald-400">✓ Passwords match</p>
             )}
 
-            {errors.confirm && <p className="mt-1.5 text-sm text-red-400">{errors.confirm}</p>}
+            {errors.confirm && <p className="mt-1.5 text-xs text-red-400 font-medium">{errors.confirm}</p>}
           </div>
 
           <div>
-            <label className="flex cursor-pointer items-start gap-3">
+            <label className="flex cursor-pointer items-start gap-3 select-none">
               <input
                 type="checkbox"
                 checked={agreedToTerms}
                 onChange={(e) => { setAgreedToTerms(e.target.checked); setErrors(p => ({ ...p, terms: undefined })); }}
-                className="mt-0.5 size-4 rounded border-white/20 bg-white/5 accent-[#C9A84C]"
+                className="mt-0.5 size-4 rounded-full border-white/20 bg-white/5 accent-[#C9A84C]"
               />
 
-              <span className="text-sm text-neutral-400">
+              <span className="text-xs text-neutral-400 leading-snug">
                 I agree to the{" "}
-                <Link href="/terms" className="text-[#C9A84C] hover:underline">Terms of Service</Link>
+                <Link href="/terms" className="font-semibold text-[#C9A84C] hover:underline">Terms of Service</Link>
                 {" "}and{" "}
-                <Link href="/privacy" className="text-[#C9A84C] hover:underline">Privacy Policy</Link>
+                <Link href="/privacy" className="font-semibold text-[#C9A84C] hover:underline">Privacy Policy</Link>
               </span>
             </label>
 
-            {errors.terms && <p className="mt-1.5 text-sm text-red-400">{errors.terms}</p>}
+            {errors.terms && <p className="mt-1.5 text-xs text-red-400 font-medium">{errors.terms}</p>}
           </div>
 
           <div ref={errorRef}>
@@ -345,20 +359,20 @@ function SignupForm() {
           <button
             type="submit"
             disabled={isLoading || isGoogleLoading}
-            className="mt-2 w-full rounded-lg bg-[#C9A84C] py-3 text-base font-semibold text-[#0A0A0A] transition hover:bg-[#d4b55d] active:bg-[#b89542] disabled:cursor-not-allowed disabled:opacity-70"
+            className="w-full rounded-full bg-gradient-to-r from-[#C9A84C] to-[#aa8426] py-3.5 text-sm font-bold tracking-wider text-[#0A0A0A] shadow-md transition-all duration-300 hover:scale-[1.01] hover:from-[#d4b55d] hover:shadow-[0_4px_20px_rgba(201,168,76,0.2)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isLoading ? (
               <span className="flex items-center justify-center gap-2">
                 <span className="size-4 animate-spin rounded-full border-2 border-[#0A0A0A]/30 border-t-[#0A0A0A]" />
                 Creating account...
               </span>
-            ) : "Get started"}
+            ) : "Create Account"}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-neutral-500">
+        <p className="mt-6 text-center text-xs text-neutral-500">
           Already have an account?{" "}
-          <Link href="/auth/login" className="font-medium text-[#C9A84C] underline-offset-4 transition hover:text-[#d4b55d] hover:underline">
+          <Link href="/auth/login" className="font-semibold text-[#C9A84C] underline-offset-4 transition hover:text-[#d4b55d] hover:underline">
             Sign in
           </Link>
         </p>
@@ -369,7 +383,11 @@ function SignupForm() {
 
 export default function SignupPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#0A0A0A]" />}>
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-[#050507]">
+        <span className="size-6 animate-spin rounded-full border-2 border-white/20 border-t-[#C9A84C]" />
+      </div>
+    }>
       <SignupForm />
     </Suspense>
   );

@@ -9,6 +9,8 @@ const ACCEPTED_MIME_TYPES = new Set([
   "text/plain",
   "image/png",
   "image/jpeg",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/msword",
 ]);
 
 function isAccepted(file: File): boolean {
@@ -19,7 +21,9 @@ function isAccepted(file: File): boolean {
     name.endsWith(".txt") ||
     name.endsWith(".png") ||
     name.endsWith(".jpg") ||
-    name.endsWith(".jpeg")
+    name.endsWith(".jpeg") ||
+    name.endsWith(".docx") ||
+    name.endsWith(".doc")
   );
 }
 
@@ -43,9 +47,10 @@ export default function DocumentUpload({ language, onAnalysisComplete }: Documen
   const [extractedText, setExtractedText] = useState("");
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [currentAnalysisId, setCurrentAnalysisId] = useState<string>("");
+  const [currentLanguage, setCurrentLanguage] = useState<"EN" | "HI">(language);
 
   const acceptAttr = useMemo(
-    () => ".pdf,.txt,.png,.jpg,.jpeg,application/pdf,text/plain,image/png,image/jpeg",
+    () => ".pdf,.txt,.png,.jpg,.jpeg,.docx,.doc,application/pdf,text/plain,image/png,image/jpeg,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     []
   );
 
@@ -123,6 +128,7 @@ export default function DocumentUpload({ language, onAnalysisComplete }: Documen
       setAnalysisResult(null);
       setCurrentAnalysisId("");
       setLoadingStage("analysing");
+      setCurrentLanguage(language);
 
       const response = await fetch("/api/analyze", {
         method: "POST",
@@ -171,7 +177,7 @@ export default function DocumentUpload({ language, onAnalysisComplete }: Documen
       />
 
       <div
-        className="w-full max-w-lg rounded-2xl border border-dashed border-white/20 bg-[#1A1A1A] px-10 py-16 text-center shadow-lg shadow-black/20"
+        className="group relative w-full max-w-lg rounded-3xl border border-dashed border-white/[0.08] bg-[#121216]/40 px-8 py-14 text-center shadow-[0_12px_36px_rgba(0,0,0,0.3)] backdrop-blur-md transition-all duration-500 hover:border-[#C9A84C]/45 hover:bg-[#121216]/70 hover:shadow-[0_15px_40px_rgba(201,168,76,0.04)] cursor-pointer outline-none"
         role="button"
         tabIndex={0}
         onClick={openPicker}
@@ -186,20 +192,34 @@ export default function DocumentUpload({ language, onAnalysisComplete }: Documen
         }}
         aria-label="Upload area"
       >
-        <p className="text-lg font-medium tracking-tight text-white sm:text-xl">
+        
+        {/* Gold padlock file vector icon */}
+        <div className="mx-auto flex size-12 items-center justify-center rounded-2xl border border-[#C9A84C]/25 bg-[#C9A84C]/5 text-[#C9A84C] shadow-inner transition-transform duration-500 group-hover:scale-110">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a2.25 2.25 0 01-2.25-2.25V6.75a2.25 2.25 0 012.25-2.25h10.5a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25H6.75z" />
+          </svg>
+        </div>
+
+        <p className="mt-5 text-base font-bold tracking-wide text-white transition duration-300 group-hover:text-[#C9A84C]">
           Upload document to analyze
         </p>
-        <p className="mt-3 text-sm text-neutral-500">
-          Drag &amp; drop or click to upload
+        <p className="mt-2 text-xs font-semibold tracking-wide text-neutral-500 uppercase">
+          Drag &amp; drop or click to browse
         </p>
+        <p className="mt-1.5 text-[10px] font-bold tracking-widest text-neutral-600 uppercase">
+          PDF, DOCX, TXT, PNG, JPG
+        </p>
+        
         {selectedFile && (
-          <p className="mt-4 text-sm text-neutral-300" aria-live="polite">
-            Selected: <span className="font-medium">{selectedFile.name}</span>
-          </p>
+          <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.02] px-4 py-1.5 text-xs text-neutral-300" aria-live="polite">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            Selected: <span className="font-semibold text-white">{selectedFile.name}</span>
+          </div>
         )}
+        
         {error && (
-          <div className="mt-4 w-full max-w-lg">
-            <ErrorMessage 
+          <div className="mt-5 w-full max-w-lg">
+            <ErrorMessage
               errorType={error}
               onDismiss={() => setError("")}
             />
@@ -219,30 +239,24 @@ export default function DocumentUpload({ language, onAnalysisComplete }: Documen
             new File([""], "rental_agreement_sample.pdf", { type: "application/pdf" })
           );
         }}
-        className="mt-4 text-sm text-neutral-500 underline underline-offset-4 transition hover:text-[#C9A84C]"
+        className="mt-5 text-xs font-bold uppercase tracking-wider text-neutral-500 underline underline-offset-4 transition hover:text-[#C9A84C]"
       >
         Try with sample document
       </button>
 
       {loadingStage !== "idle" && (
-        <p
-          className="mt-4 inline-flex items-center gap-2 text-sm text-neutral-400"
-          aria-live="polite"
-        >
-          <span
-            className="size-3 animate-spin rounded-full border-2 border-neutral-600 border-t-[#C9A84C]"
-            aria-hidden
-          />
-          {loadingStage === "reading" && "Reading your file..."}
-          {loadingStage === "extracting" && "Extracting text..."}
-          {loadingStage === "ready" && "Ready to analyse"}
-          {loadingStage === "analysing" && "Analysing document..."}
-        </p>
+        <div className="mt-6 inline-flex items-center gap-2.5 rounded-full border border-white/[0.08] bg-white/[0.02] px-5 py-2.5 text-xs font-bold text-neutral-400" aria-live="polite">
+          <span className="size-3.5 animate-spin rounded-full border-2 border-neutral-600 border-t-[#C9A84C]" aria-hidden />
+          {loadingStage === "reading" && "Reading contract files..."}
+          {loadingStage === "extracting" && "Extracting clause nodes..."}
+          {loadingStage === "ready" && "Ready to run analysis"}
+          {loadingStage === "analysing" && "Structuring insights..."}
+        </div>
       )}
 
       {extractedText && !analysisResult && (
-        <div className="mt-4 max-h-80 w-full max-w-lg overflow-auto rounded-xl border border-white/10 bg-[#111111] p-4 text-sm text-neutral-100">
-          <pre className="whitespace-pre-wrap break-words font-mono text-[0.8rem]">
+        <div className="mt-6 max-h-60 w-full max-w-lg overflow-auto rounded-2xl border border-white/[0.06] bg-[#0A0A0C] p-5 shadow-inner">
+          <pre className="whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-neutral-400">
             {extractedText}
           </pre>
         </div>
@@ -252,13 +266,13 @@ export default function DocumentUpload({ language, onAnalysisComplete }: Documen
         type="button"
         disabled={!canAnalyze}
         onClick={handleAnalyze}
-        className="mt-4 w-full max-w-lg rounded-lg bg-[#C9A84C] py-3 text-center text-base font-semibold text-[#0A0A0A] transition hover:bg-[#d4b55d] active:bg-[#b89542] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-[#C9A84C]"
+        className="mt-6 w-full max-w-lg rounded-full bg-gradient-to-r from-[#C9A84C] to-[#aa8426] py-4 text-center text-xs font-bold tracking-widest uppercase text-[#0A0A0A] shadow-[0_4px_20px_rgba(201,168,76,0.15)] transition-all duration-300 hover:scale-[1.01] hover:from-[#d4b55d] hover:shadow-[0_6px_25px_rgba(201,168,76,0.25)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 disabled:hover:from-[#C9A84C]"
       >
         Analyse document
       </button>
 
       {analysisResult && (
-        <div className="mt-8 w-full max-w-4xl">
+        <div className="mt-10 w-full max-w-4xl animate-[fadeIn_600ms_cubic-bezier(0.16,1,0.3,1)_both]">
           <AnalysisResult result={analysisResult} analysisId={currentAnalysisId} />
         </div>
       )}

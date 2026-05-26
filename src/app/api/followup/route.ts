@@ -54,7 +54,7 @@ EXISTING ANALYSIS SUMMARY:
 - Risk Score: ${result.riskScore ?? 'N/A'}/10
 - Party Favour: ${result.partyFavour || 'Unknown'}
 - Red Flags: ${result.redFlags?.map((r) => r.title).join(', ') || 'None detected'}
-- Missing Clauses: ${result.missingClauses?.map((m) => m.clause).join(', ') || 'None detected'}
+- Missing Clauses: ${result.missingClauses?.map((m: any) => m.clause).join(', ') || 'None detected'}
 - Full Summary: ${result.fullSummary || 'No summary available'}
 
 USER QUESTION: ${question}`
@@ -71,14 +71,8 @@ USER QUESTION: ${question}`
         body: JSON.stringify({
           model: 'llama-3.3-70b-versatile',
           messages: [
-            {
-              role: 'system',
-              content: FOLLOWUP_PROMPT(language || 'en')
-            },
-            {
-              role: 'user',
-              content: userContent
-            }
+            { role: 'system', content: FOLLOWUP_PROMPT(language || 'en') },
+            { role: 'user', content: userContent }
           ],
           temperature: 0.1,
           top_p: 0.85,
@@ -90,10 +84,7 @@ USER QUESTION: ${question}`
     if (!response.ok) {
       const errorBody = await response.json().catch(() => ({}))
       console.error('Groq followup error:', errorBody)
-      return NextResponse.json(
-        { error: 'Failed to get answer. Please try again.' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Failed to get answer. Please try again.' }, { status: 500 })
     }
 
     const data = await response.json()
@@ -105,19 +96,12 @@ USER QUESTION: ${question}`
 
     await supabase
       .from('followups')
-      .insert({
-        analysis_id: analysisId,
-        question,
-        answer,
-      })
+      .insert({ analysis_id: analysisId, question, answer })
 
     return NextResponse.json({ answer })
 
   } catch (err) {
     console.error('Followup error:', err)
-    return NextResponse.json(
-      { error: 'Something went wrong. Please try again.' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })
   }
 }

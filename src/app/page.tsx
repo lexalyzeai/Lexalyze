@@ -3,6 +3,7 @@
 import { Playfair_Display } from "next/font/google";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import Navbar from "./components/Navbar";
 import AnalysisLoadingOverlay from "./components/AnalysisLoadingOverlay";
 import AnalysisResult from "@/app/components/AnalysisResult";
 import ErrorMessage, { type ErrorTone } from "./components/ErrorMessage";
@@ -182,36 +183,45 @@ export default function HomePage() {
   }
 
   return (
-    <main className="bg-[#0A0A0A] text-white">
-      <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-20 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[#050505] text-[#F3F4F6] selection:bg-[#C9A84C]/30 selection:text-white">
+      <Navbar />
+
+      {/* Hero Section */}
+      <section className="relative flex min-h-[90vh] items-center justify-center overflow-hidden px-4 py-20 sm:px-6 lg:px-8">
         <div className="pointer-events-none absolute inset-0">
-          <div className="hero-gradient absolute -top-32 left-1/2 h-[34rem] w-[34rem] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(201,168,76,0.16)_0%,rgba(201,168,76,0.06)_35%,rgba(10,10,10,0)_70%)] blur-3xl" />
-          <div className="hero-gradient-slow absolute -bottom-40 right-[-12rem] h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0)_70%)] blur-3xl" />
+          <div className="absolute top-[-10%] left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(201,168,76,0.18)_0%,rgba(201,168,76,0.04)_50%,rgba(5,5,5,0)_100%)] blur-3xl" />
+          <div className="absolute bottom-[10%] right-[-10%] h-[400px] w-[400px] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0)_70%)] blur-3xl" />
+          <div className="absolute top-[20%] left-[-10%] h-[400px] w-[400px] rounded-full bg-[radial-gradient(circle,rgba(201,168,76,0.05)_0%,rgba(201,168,76,0)_70%)] blur-3xl" />
         </div>
 
         <div className="relative mx-auto w-full max-w-4xl text-center">
+          <p className="hero-fade-up text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A84C] sm:text-sm">
+            AI-Powered Document Intelligence
+          </p>
+
           <h1
-            className={`${playfair.className} hero-fade-up text-balance text-4xl font-bold leading-tight text-neutral-50 sm:text-5xl lg:text-[56px]`}
+            className={`${playfair.className} hero-fade-up-delay mt-6 text-balance text-4xl font-bold leading-[1.15] text-white sm:text-5xl lg:text-[64px]`}
           >
-            Your legal documents, finally explained.
+            Your legal documents, <br className="hidden sm:inline" />
+            <span className="text-gold-gradient">finally explained.</span>
           </h1>
 
-          <p className="hero-fade-up-delay mx-auto mt-6 max-w-3xl text-pretty text-base leading-7 text-neutral-400 sm:text-lg sm:leading-8">
+          <p className="hero-fade-up-delay-2 mx-auto mt-8 max-w-2xl text-pretty text-base leading-relaxed text-neutral-400 sm:text-lg">
             Upload any legal document. Every clause explained, every risk flagged,
             every deadline surfaced. In plain language. In 60 seconds.
           </p>
 
-          <div className="hero-fade-up-delay-2 mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+          <div className="hero-fade-up-delay-3 mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-5">
             <Link
               href="/auth/login"
-              className="w-full rounded-lg bg-[#C9A84C] px-6 py-3 text-sm font-semibold text-[#0A0A0A] transition duration-200 hover:-translate-y-0.5 hover:bg-[#d4b55d] active:bg-[#b89542] sm:w-auto"
+              className="w-full rounded-full bg-gradient-to-r from-[#C9A84C] to-[#aa8426] px-8 py-4 text-sm font-bold tracking-wider text-[#0A0A0A] shadow-[0_4px_25px_rgba(201,168,76,0.2)] transition-all duration-300 hover:scale-[1.03] hover:from-[#d4b55d] hover:to-[#b89542] hover:shadow-[0_8px_30px_rgba(201,168,76,0.35)] active:scale-[0.98] sm:w-auto"
             >
-              Start analyzing
+              Start analyzing free
             </Link>
 
             <a
               href="#live-demo"
-              className="w-full rounded-lg border border-[#C9A84C]/70 bg-transparent px-6 py-3 text-sm font-medium text-[#C9A84C] transition duration-200 hover:-translate-y-0.5 hover:border-[#d4b55d] hover:bg-[#C9A84C]/10 hover:text-[#d4b55d] sm:w-auto"
+              className="w-full rounded-full border border-white/10 bg-white/[0.03] px-8 py-4 text-sm font-semibold tracking-wider text-white shadow-xl backdrop-blur-sm transition-all duration-300 hover:border-[#C9A84C]/50 hover:bg-[#C9A84C]/10 hover:text-[#d4b55d] hover:shadow-[0_0_20px_rgba(201,168,76,0.05)] active:scale-[0.98] sm:w-auto"
               onClick={(e) => {
                 e.preventDefault();
                 document.getElementById("live-demo")?.scrollIntoView({
@@ -224,52 +234,60 @@ export default function HomePage() {
             </a>
           </div>
 
-          <p className="hero-fade-up-delay-3 mt-8 text-xs tracking-wide text-neutral-500 sm:text-sm">
-            Every finding cited to source · Not legal advice · Deleted after analysis
+          <p className="hero-fade-up-delay-3 mt-10 flex items-center justify-center gap-2 text-xs font-medium tracking-wider text-neutral-500">
+            <span>Every finding cited to source</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-neutral-600" />
+            <span>Not legal advice</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-neutral-600" />
+            <span>Deleted after analysis</span>
           </p>
         </div>
       </section>
 
-      <section id="live-demo" className="relative overflow-hidden px-4 pb-24 sm:px-6 lg:px-8">
+      {/* Demo Section */}
+      <section id="live-demo" className="relative overflow-hidden px-4 pb-28 pt-10 sm:px-6 lg:px-8">
         <div className="pointer-events-none absolute inset-0">
-          <div className="demo-gradient absolute left-1/2 top-20 h-[26rem] w-[26rem] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(201,168,76,0.14)_0%,rgba(201,168,76,0.03)_45%,rgba(10,10,10,0)_72%)] blur-3xl" />
+          <div className="absolute left-1/2 top-20 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(201,168,76,0.12)_0%,rgba(10,10,10,0)_70%)] blur-3xl" />
         </div>
 
-        <div className="relative mx-auto w-full max-w-6xl rounded-3xl border border-white/10 bg-[#101010] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.42)] sm:p-8">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className={`${playfair.className} text-3xl text-white sm:text-4xl`}>
-              See a real analysis. No sign-up required.
+        <div className="relative mx-auto w-full max-w-5xl rounded-3xl border border-white/[0.08] bg-[#0E0E11]/80 p-5 shadow-[0_25px_60px_rgba(0,0,0,0.8)] backdrop-blur-md sm:p-10">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="rounded-full border border-[#C9A84C]/35 bg-[#C9A84C]/5 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[#C9A84C]">
+              Interactive Sandbox
+            </span>
+            <h2 className={`${playfair.className} mt-6 text-3xl font-bold text-white sm:text-4xl`}>
+              See a real analysis.
             </h2>
-            <p className="mt-4 text-sm leading-7 text-neutral-400 sm:text-base">
+            <p className="mt-4 text-sm leading-relaxed text-neutral-400 sm:text-base">
               Instantly try Lexalyze with a realistic sample rental agreement.
               See structured clause insights, risks, and deadlines exactly as users
               experience in production.
             </p>
           </div>
 
-          <div className="relative mt-8">
-            <div className="rounded-2xl border border-white/10 bg-[#141414] p-3 sm:p-4">
-              <div className="mb-3 flex items-center justify-between px-1">
-                <p className="text-xs font-medium tracking-wide text-neutral-400">
+          <div className="relative mt-12">
+            <div className="rounded-2xl border border-white/[0.06] bg-[#121216] p-4 shadow-inner">
+              <div className="mb-4 flex items-center justify-between border-b border-white/[0.06] pb-3 px-1">
+                <p className="text-xs font-semibold tracking-widest text-neutral-400 uppercase">
                   SAMPLE DOCUMENT PREVIEW
                 </p>
-                <span className="rounded-full border border-white/10 px-2.5 py-1 text-[10px] text-neutral-500">
+                <span className="rounded-full border border-white/10 bg-white/[0.02] px-3 py-1 text-[10px] font-semibold text-neutral-500">
                   Read-only
                 </span>
               </div>
               <textarea
                 readOnly
                 value={sampleText}
-                className="h-[24rem] w-full resize-none rounded-xl border border-white/10 bg-[#0D0D0D] p-4 font-mono text-xs leading-6 text-neutral-300 outline-none sm:h-[28rem] sm:text-sm"
+                className="h-[24rem] w-full resize-none rounded-xl border border-white/[0.04] bg-[#0A0A0C] p-5 font-mono text-xs leading-relaxed text-neutral-300 outline-none transition focus:border-[#C9A84C]/30 sm:h-[28rem] sm:text-sm"
               />
             </div>
 
-            <div className="mt-6 flex flex-col items-center gap-3">
+            <div className="mt-8 flex flex-col items-center gap-4">
               <button
                 type="button"
                 onClick={runSampleAnalysis}
                 disabled={isAnalysing}
-                className="w-full rounded-xl bg-[#C9A84C] px-6 py-3 text-sm font-semibold text-[#0A0A0A] transition duration-200 hover:-translate-y-0.5 hover:bg-[#d4b55d] active:bg-[#b89542] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+                className="w-full rounded-full bg-gradient-to-r from-[#C9A84C] to-[#aa8426] px-8 py-4 text-sm font-bold tracking-wider text-[#0A0A0A] shadow-[0_4px_20px_rgba(201,168,76,0.15)] transition-all duration-300 hover:scale-[1.02] hover:from-[#d4b55d] hover:to-[#b89542] hover:shadow-[0_6px_25px_rgba(201,168,76,0.25)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
               >
                 {isAnalysing ? stepMessage : "Analyse sample document"}
               </button>
@@ -279,7 +297,7 @@ export default function HomePage() {
                   message={ANALYSIS_ERROR_COPY[analysisErrorType].message}
                   hint={ANALYSIS_ERROR_COPY[analysisErrorType].hint}
                   tone={ANALYSIS_ERROR_COPY[analysisErrorType].tone}
-                  className="w-full max-w-xl"
+                  className="w-full max-w-xl animate-premium-fade"
                   onDismiss={() => setAnalysisErrorType(null)}
                 />
               ) : null}
@@ -289,32 +307,33 @@ export default function HomePage() {
           </div>
 
           {analysisResult ? (
-            <div className="mt-10 animate-[fadeIn_450ms_ease-out_both]">
+            <div className="mt-12 animate-[fadeIn_600ms_cubic-bezier(0.16,1,0.3,1)_both] border-t border-white/[0.08] pt-12">
               <AnalysisResult
-  result={{
-    ...analysisResult,
-  }}
-/>
+                result={{
+                  ...analysisResult,
+                }}
+              />
             </div>
           ) : null}
 
-          <div className="mt-10 rounded-2xl border border-[#C9A84C]/35 bg-[#15120A] p-5 sm:p-6">
-            <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-4 text-center sm:gap-6">
+          {/* Golden Portal */}
+          <div className="mt-12 rounded-3xl border border-[#C9A84C]/30 bg-[linear-gradient(135deg,rgba(25,18,10,0.8)_0%,rgba(16,13,8,0.9)_100%)] p-6 shadow-[0_15px_40px_rgba(201,168,76,0.05)] sm:p-10">
+            <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-5 text-center sm:gap-6">
               <h3
-                className={`${playfair.className} text-2xl leading-tight text-[#f5e2ac] break-words sm:text-3xl`}
+                className={`${playfair.className} text-2xl font-bold leading-snug text-[#f5e2ac] break-words sm:text-3xl`}
               >
                 Sign up free to analyse your own documents.
               </h3>
-              <p className="max-w-2xl text-sm leading-7 text-[#d8c58b]">
+              <p className="max-w-2xl text-sm leading-relaxed text-[#d8c58b]">
                 Get personal document history, faster follow-ups, and secure saved analyses.
               </p>
               <Link
                 href="/auth/signup"
-                className="inline-flex items-center justify-center rounded-lg bg-[#C9A84C] px-6 py-3 text-sm font-semibold text-[#0A0A0A] transition hover:bg-[#d4b55d]"
+                className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#C9A84C] to-[#aa8426] px-8 py-4 text-sm font-bold tracking-wider text-[#0A0A0A] shadow-lg transition-all duration-300 hover:scale-[1.02] hover:from-[#d4b55d] hover:shadow-[0_4px_20px_rgba(201,168,76,0.2)] active:scale-[0.98]"
               >
-                Get started
+                Get started free
               </Link>
-              <p className="max-w-2xl text-xs leading-6 text-[#c7b272]/80">
+              <p className="max-w-2xl text-xs leading-relaxed text-[#c7b272]/70">
                 No legal advice. Every finding includes citation context.
               </p>
             </div>
@@ -322,47 +341,51 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="relative px-4 pb-24 sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-6xl">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className={`${playfair.className} text-3xl text-white sm:text-4xl`}>
+      {/* Process Section */}
+      <section className="relative px-4 pb-28 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-5xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A84C]">
+              Direct Workflow
+            </span>
+            <h2 className={`${playfair.className} mt-4 text-3xl font-bold text-white sm:text-4xl`}>
               How it works
             </h2>
           </div>
 
-          <div className="mt-10 grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-3">
-            <article className="how-step how-step-1 rounded-2xl border border-white/10 bg-[#121212] p-6 transition duration-300 hover:-translate-y-1 hover:border-[#C9A84C]/35 hover:bg-[#141414]">
-              <p className={`${playfair.className} text-4xl leading-none text-[#C9A84C] sm:text-5xl`}>
+          <div className="mt-12 grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <article className="group rounded-2xl border border-white/[0.05] bg-[#0E0E12] p-8 shadow-lg transition-all duration-500 hover:border-[#C9A84C]/30 hover:bg-[#121217] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
+              <p className={`${playfair.className} text-4xl font-bold leading-none text-[#C9A84C] opacity-80 transition group-hover:scale-110 duration-500`}>
                 01
               </p>
-              <h3 className="mt-5 text-xl font-semibold text-white">Upload securely</h3>
-              <p className="mt-3 text-sm leading-7 text-neutral-400 sm:text-base">
+              <h3 className="mt-6 text-xl font-bold text-white">Upload securely</h3>
+              <p className="mt-3 text-sm leading-relaxed text-neutral-400">
                 Upload legal documents privately through a secure workflow so your
                 analysis starts fast without compromising confidentiality.
               </p>
             </article>
 
-            <article className="how-step how-step-2 rounded-2xl border border-white/10 bg-[#121212] p-6 transition duration-300 hover:-translate-y-1 hover:border-[#C9A84C]/35 hover:bg-[#141414]">
-              <p className={`${playfair.className} text-4xl leading-none text-[#C9A84C] sm:text-5xl`}>
+            <article className="group rounded-2xl border border-white/[0.05] bg-[#0E0E12] p-8 shadow-lg transition-all duration-500 hover:border-[#C9A84C]/30 hover:bg-[#121217] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
+              <p className={`${playfair.className} text-4xl font-bold leading-none text-[#C9A84C] opacity-80 transition group-hover:scale-110 duration-500`}>
                 02
               </p>
-              <h3 className="mt-5 text-xl font-semibold text-white">
+              <h3 className="mt-6 text-xl font-bold text-white">
                 AI reads every clause
               </h3>
-              <p className="mt-3 text-sm leading-7 text-neutral-400 sm:text-base">
+              <p className="mt-3 text-sm leading-relaxed text-neutral-400">
                 Lexalyze scans the full document, identifies clauses, deadlines,
                 risks, and obligations, then structures everything in a clear format.
               </p>
             </article>
 
-            <article className="how-step how-step-3 rounded-2xl border border-white/10 bg-[#121212] p-6 transition duration-300 hover:-translate-y-1 hover:border-[#C9A84C]/35 hover:bg-[#141414]">
-              <p className={`${playfair.className} text-4xl leading-none text-[#C9A84C] sm:text-5xl`}>
+            <article className="group rounded-2xl border border-white/[0.05] bg-[#0E0E12] p-8 shadow-lg transition-all duration-500 hover:border-[#C9A84C]/30 hover:bg-[#121217] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
+              <p className={`${playfair.className} text-4xl font-bold leading-none text-[#C9A84C] opacity-80 transition group-hover:scale-110 duration-500`}>
                 03
               </p>
-              <h3 className="mt-5 text-xl font-semibold text-white">
+              <h3 className="mt-6 text-xl font-bold text-white">
                 Understand and act
               </h3>
-              <p className="mt-3 text-sm leading-7 text-neutral-400 sm:text-base">
+              <p className="mt-3 text-sm leading-relaxed text-neutral-400">
                 Receive plain-language explanations, key risk flags, and practical
                 action guidance so you can decide with confidence.
               </p>
@@ -371,158 +394,115 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="relative px-4 pb-24 sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-6xl">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className={`${playfair.className} text-3xl text-white sm:text-4xl`}>
+      {/* Reads Section */}
+      <section className="relative px-4 pb-28 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-5xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A84C]">
+              Comprehensive Coverage
+            </span>
+            <h2 className={`${playfair.className} mt-4 text-3xl font-bold text-white sm:text-4xl`}>
               What Lexalyze reads
             </h2>
-            <p className="mt-4 text-sm leading-7 text-neutral-400 sm:text-base">
+            <p className="mt-4 text-sm leading-relaxed text-neutral-400 sm:text-base">
               Lexalyze analyses common legal documents and surfaces hidden risks,
               obligations, and deadlines before they become expensive surprises.
             </p>
           </div>
 
-          <div className="mt-10 grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-2">
-            <article className="reads-card rounded-2xl border border-white/10 bg-[#121212] p-6">
-              <h3 className="text-lg font-semibold text-white">Rental agreements</h3>
-              <p className="mt-3 text-sm leading-7 text-neutral-400 sm:text-base">
-                Detects hidden fees, lock-in clauses, deposit risks, notice periods, and
-                maintenance obligations.
-              </p>
-            </article>
-
-            <article className="reads-card rounded-2xl border border-white/10 bg-[#121212] p-6">
-              <h3 className="text-lg font-semibold text-white">Employment contracts</h3>
-              <p className="mt-3 text-sm leading-7 text-neutral-400 sm:text-base">
-                Flags restrictive clauses, probation terms, termination conditions, and
-                non-compete risks.
-              </p>
-            </article>
-
-            <article className="reads-card rounded-2xl border border-white/10 bg-[#121212] p-6">
-              <h3 className="text-lg font-semibold text-white">Loan agreements</h3>
-              <p className="mt-3 text-sm leading-7 text-neutral-400 sm:text-base">
-                Highlights repayment obligations, penalties, interest terms, and default
-                clauses.
-              </p>
-            </article>
-
-            <article className="reads-card rounded-2xl border border-white/10 bg-[#121212] p-6">
-              <h3 className="text-lg font-semibold text-white">Insurance policies</h3>
-              <p className="mt-3 text-sm leading-7 text-neutral-400 sm:text-base">
-                Surfaces exclusions, claim limitations, waiting periods, and hidden
-                conditions.
-              </p>
-            </article>
-
-            <article className="reads-card rounded-2xl border border-white/10 bg-[#121212] p-6">
-              <h3 className="text-lg font-semibold text-white">Legal notices</h3>
-              <p className="mt-3 text-sm leading-7 text-neutral-400 sm:text-base">
-                Identifies deadlines, response obligations, escalation risks, and legal
-                exposure.
-              </p>
-            </article>
-
-            <article className="reads-card rounded-2xl border border-white/10 bg-[#121212] p-6">
-              <h3 className="text-lg font-semibold text-white">Vendor agreements</h3>
-              <p className="mt-3 text-sm leading-7 text-neutral-400 sm:text-base">
-                Flags liability clauses, payment obligations, auto-renewals, and
-                termination risks.
-              </p>
-            </article>
+          <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { title: "Rental agreements", desc: "Detects hidden fees, lock-in clauses, deposit risks, notice periods, and maintenance obligations." },
+              { title: "Employment contracts", desc: "Flags restrictive clauses, probation terms, termination conditions, and non-compete risks." },
+              { title: "Loan agreements", desc: "Highlights repayment obligations, penalties, interest terms, and default clauses." },
+              { title: "Insurance policies", desc: "Surfaces exclusions, claim limitations, waiting periods, and hidden conditions." },
+              { title: "Legal notices", desc: "Identifies deadlines, response obligations, escalation risks, and legal exposure." },
+              { title: "Vendor agreements", desc: "Flags liability clauses, payment obligations, auto-renewals, and termination risks." }
+            ].map((card, i) => (
+              <article key={i} className="group rounded-2xl border border-white/[0.04] bg-[#0E0E11] p-6 shadow-md transition-all duration-500 hover:border-[#C9A84C]/25 hover:bg-[#121216] hover:shadow-[0_12px_28px_rgba(0,0,0,0.35)] hover:-translate-y-1">
+                <h3 className="text-lg font-bold text-white transition duration-300 group-hover:text-[#C9A84C]">{card.title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-neutral-400">
+                  {card.desc}
+                </p>
+              </article>
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="relative px-4 pb-24 sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-6xl">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className={`${playfair.className} text-3xl text-white sm:text-4xl`}>
+      {/* Trust & Security */}
+      <section className="relative px-4 pb-28 sm:px-6 lg:px-8">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute right-[5%] bottom-10 h-[300px] w-[300px] rounded-full bg-[radial-gradient(circle,rgba(201,168,76,0.06)_0%,rgba(10,10,10,0)_70%)] blur-3xl" />
+        </div>
+
+        <div className="mx-auto w-full max-w-5xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A84C]">
+              Privacy First
+            </span>
+            <h2 className={`${playfair.className} mt-4 text-3xl font-bold text-white sm:text-4xl`}>
               Trust &amp; Security
             </h2>
-            <p className="mt-4 text-sm leading-7 text-neutral-400 sm:text-base">
+            <p className="mt-4 text-sm leading-relaxed text-neutral-400 sm:text-base">
               Lexalyze is built to prioritize transparency, privacy, and responsible
               AI analysis at every step of your document workflow.
             </p>
           </div>
 
-          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-4">
-            <article className="trust-card rounded-2xl border border-white/10 bg-[#121212] p-5">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#C9A84C]/35 bg-[#C9A84C]/10 text-lg text-[#C9A84C]">
-                🔒
-              </span>
-              <h3 className="mt-4 text-lg font-semibold text-white">Encrypted in transit</h3>
-              <p className="mt-2 text-sm leading-7 text-neutral-400">
-                Uploaded documents are securely transmitted using encrypted connections
-                to protect your data while it moves through the analysis flow.
-              </p>
-            </article>
-
-            <article className="trust-card rounded-2xl border border-white/10 bg-[#121212] p-5">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#C9A84C]/35 bg-[#C9A84C]/10 text-lg text-[#C9A84C]">
-                🗑️
-              </span>
-              <h3 className="mt-4 text-lg font-semibold text-white">Deleted after analysis</h3>
-              <p className="mt-2 text-sm leading-7 text-neutral-400">
-                Documents are removed after processing and are not permanently stored,
-                helping minimize long-term data retention risk.
-              </p>
-            </article>
-
-            <article className="trust-card rounded-2xl border border-white/10 bg-[#121212] p-5">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#C9A84C]/35 bg-[#C9A84C]/10 text-lg text-[#C9A84C]">
-                📌
-              </span>
-              <h3 className="mt-4 text-lg font-semibold text-white">Every finding cited</h3>
-              <p className="mt-2 text-sm leading-7 text-neutral-400">
-                Every risk, clause, and conclusion includes an exact citation from
-                your document so you can verify what the AI is referencing.
-              </p>
-            </article>
-
-            <article className="trust-card rounded-2xl border border-white/10 bg-[#121212] p-5">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#C9A84C]/35 bg-[#C9A84C]/10 text-lg text-[#C9A84C]">
-                ⚖️
-              </span>
-              <h3 className="mt-4 text-lg font-semibold text-white">Honest about limits</h3>
-              <p className="mt-2 text-sm leading-7 text-neutral-400">
-                Lexalyze clearly states when information cannot be confidently
-                determined, so you can make decisions with realistic expectations.
-              </p>
-            </article>
+          <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { icon: "🔒", title: "Encrypted in transit", desc: "Uploaded documents are securely transmitted using encrypted connections to protect your data." },
+              { icon: "🗑️", title: "Deleted after analysis", desc: "Documents are removed after processing and are not permanently stored to minimize retention risks." },
+              { icon: "📌", title: "Every finding cited", desc: "Every risk, clause, and conclusion includes an exact citation so you can verify what the AI references." },
+              { icon: "⚖️", title: "Honest about limits", desc: "Lexalyze clearly states when information cannot be confidently determined, setting realistic expectations." }
+            ].map((trust, i) => (
+              <article key={i} className="rounded-2xl border border-white/[0.04] bg-[#0D0D10] p-6 shadow-md transition-all duration-500 hover:border-[#C9A84C]/25 hover:bg-[#111114] hover:shadow-[0_12px_26px_rgba(0,0,0,0.3)] hover:-translate-y-1">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#C9A84C]/35 bg-[#C9A84C]/10 text-xl shadow-inner">
+                  {trust.icon}
+                </span>
+                <h3 className="mt-5 text-base font-bold text-white">{trust.title}</h3>
+                <p className="mt-2 text-xs leading-relaxed text-neutral-400">
+                  {trust.desc}
+                </p>
+              </article>
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="relative px-4 pb-24 sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-4xl">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className={`${playfair.className} text-3xl text-white sm:text-4xl`}>
+      {/* FAQ Section */}
+      <section className="relative px-4 pb-28 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-3xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A84C]">
+              FAQ
+            </span>
+            <h2 className={`${playfair.className} mt-4 text-3xl font-bold text-white sm:text-4xl`}>
               Frequently asked questions
             </h2>
           </div>
 
-          <div className="mt-10 space-y-3 sm:space-y-4">
+          <div className="mt-12 space-y-4">
             {FAQ_ITEMS.map((item, index) => {
               const isOpen = openFaqIndex === index;
               return (
                 <article
                   key={item.question}
-                  className="faq-item rounded-2xl border border-white/10 bg-[#121212]"
+                  className="group rounded-2xl border border-white/[0.05] bg-[#0E0E12] shadow-sm transition-all duration-300 hover:border-[#C9A84C]/25"
                 >
                   <button
                     type="button"
                     onClick={() => setOpenFaqIndex((current) => (current === index ? -1 : index))}
-                    className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left sm:px-6 sm:py-5"
+                    className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left"
                     aria-expanded={isOpen}
                   >
-                    <span className="text-base font-semibold text-white sm:text-lg">
+                    <span className="text-base font-bold text-white transition duration-300 group-hover:text-neutral-200">
                       {item.question}
                     </span>
                     <span
-                      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#C9A84C]/35 text-[#C9A84C] transition-transform duration-300 ${
-                        isOpen ? "rotate-180" : "rotate-0"
+                      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 text-neutral-400 transition-all duration-300 ${
+                        isOpen ? "rotate-180 border-[#C9A84C]/30 text-[#C9A84C] bg-[#C9A84C]/5" : "rotate-0"
                       }`}
                       aria-hidden
                     >
@@ -531,8 +511,8 @@ export default function HomePage() {
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
-                        strokeWidth="2"
-                        className="h-4 w-4"
+                        strokeWidth="2.5"
+                        className="h-3.5 w-3.5"
                       >
                         <path d="M6 9l6 6 6-6" />
                       </svg>
@@ -540,11 +520,11 @@ export default function HomePage() {
                   </button>
 
                   <div
-                    className={`overflow-hidden px-5 transition-all duration-300 ease-out sm:px-6 ${
+                    className={`overflow-hidden px-6 transition-all duration-500 ease-out ${
                       isOpen ? "max-h-40 pb-5 opacity-100" : "max-h-0 pb-0 opacity-0"
                     }`}
                   >
-                    <p className="text-sm leading-7 text-neutral-400 sm:text-base">
+                    <p className="text-sm leading-relaxed text-neutral-400">
                       {item.answer}
                     </p>
                   </div>
@@ -555,50 +535,51 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="border-t border-white/10 px-4 py-14 sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-6xl">
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-10">
+      {/* Footer */}
+      <footer className="border-t border-white/[0.06] bg-[#08080A] px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-5xl">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-[#C9A84C]">
+              <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#C9A84C]">
                 Product
               </h3>
               <ul className="mt-4 space-y-3 text-sm text-neutral-400">
-                <li><a href="#" className="footer-link">Features</a></li>
-                <li><a href="#" className="footer-link">Live demo</a></li>
-                <li><a href="#" className="footer-link">Security</a></li>
-                <li><a href="#" className="footer-link">FAQ</a></li>
+                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">Features</a></li>
+                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">Live demo</a></li>
+                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">Security</a></li>
+                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">FAQ</a></li>
               </ul>
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-[#C9A84C]">
+              <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#C9A84C]">
                 Company
               </h3>
               <ul className="mt-4 space-y-3 text-sm text-neutral-400">
-                <li><a href="#" className="footer-link">About</a></li>
-                <li><a href="#" className="footer-link">Contact</a></li>
-                <li><a href="#" className="footer-link">Privacy Policy</a></li>
-                <li><a href="#" className="footer-link">Terms of Service</a></li>
+                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">About</a></li>
+                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">Contact</a></li>
+                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">Terms of Service</a></li>
               </ul>
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-[#C9A84C]">
+              <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#C9A84C]">
                 Resources
               </h3>
               <ul className="mt-4 space-y-3 text-sm text-neutral-400">
-                <li><a href="#" className="footer-link">Supported documents</a></li>
-                <li><a href="#" className="footer-link">Trust &amp; Safety</a></li>
-                <li><a href="#" className="footer-link">Help Center</a></li>
-                <li><a href="#" className="footer-link">Status</a></li>
+                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">Supported documents</a></li>
+                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">Trust &amp; Safety</a></li>
+                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">Help Center</a></li>
+                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">Status</a></li>
               </ul>
             </div>
           </div>
 
-          <div className="mt-10 border-t border-white/10 pt-6">
-            <div className="flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-neutral-500">© 2026 Lexalyze. All rights reserved.</p>
-              <p className="max-w-2xl text-xs leading-6 text-neutral-500 sm:text-right">
+          <div className="mt-12 border-t border-white/[0.05] pt-8">
+            <div className="flex flex-col gap-4 text-xs sm:flex-row sm:items-center sm:justify-between text-neutral-500">
+              <p>© 2026 Lexalyze. All rights reserved.</p>
+              <p className="max-w-md leading-relaxed sm:text-right">
                 Not legal advice. Lexalyze provides AI-generated insights and is not a
                 substitute for legal advice.
               </p>
@@ -609,95 +590,27 @@ export default function HomePage() {
 
       <style jsx>{`
         .hero-fade-up {
-          animation: fadeUp 650ms ease-out both;
+          animation: fadeUp 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
         }
         .hero-fade-up-delay {
-          animation: fadeUp 760ms ease-out both;
-          animation-delay: 110ms;
+          animation: fadeUp 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+          animation-delay: 100ms;
         }
         .hero-fade-up-delay-2 {
-          animation: fadeUp 820ms ease-out both;
-          animation-delay: 180ms;
+          animation: fadeUp 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+          animation-delay: 200ms;
         }
         .hero-fade-up-delay-3 {
-          animation: fadeUp 900ms ease-out both;
-          animation-delay: 250ms;
-        }
-        .hero-gradient {
-          animation: drift 14s ease-in-out infinite alternate;
-        }
-        .hero-gradient-slow {
-          animation: driftSlow 18s ease-in-out infinite alternate;
-        }
-        .demo-gradient {
-          animation: driftDemo 16s ease-in-out infinite alternate;
-        }
-        .how-step {
-          animation: fadeUpSoft 620ms ease-out both;
-        }
-        .how-step-1 { animation-delay: 70ms; }
-        .how-step-2 { animation-delay: 150ms; }
-        .how-step-3 { animation-delay: 230ms; }
-        .reads-card {
-          box-shadow: 0 0 0 1px rgba(255,255,255,0.01), 0 10px 28px rgba(0,0,0,0.28);
-          transition: transform 260ms ease, border-color 260ms ease, box-shadow 260ms ease, background-color 260ms ease;
-        }
-        .reads-card:hover {
-          transform: translateY(-4px);
-          border-color: rgba(201,168,76,0.35);
-          background-color: #141414;
-          box-shadow: 0 0 0 1px rgba(201,168,76,0.12), 0 14px 36px rgba(201,168,76,0.08), 0 16px 36px rgba(0,0,0,0.34);
-        }
-        .trust-card {
-          box-shadow: 0 0 0 1px rgba(255,255,255,0.01), 0 10px 26px rgba(0,0,0,0.26);
-          transition: transform 260ms ease, border-color 260ms ease, box-shadow 260ms ease, background-color 260ms ease;
-        }
-        .trust-card:hover {
-          transform: translateY(-4px);
-          border-color: rgba(201,168,76,0.35);
-          background-color: #141414;
-          box-shadow: 0 0 0 1px rgba(201,168,76,0.1), 0 12px 34px rgba(201,168,76,0.07), 0 16px 34px rgba(0,0,0,0.32);
-        }
-        .faq-item {
-          box-shadow: 0 0 0 1px rgba(255,255,255,0.01), 0 10px 26px rgba(0,0,0,0.24);
-          transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
-        }
-        .faq-item:hover {
-          transform: translateY(-2px);
-          border-color: rgba(201,168,76,0.32);
-          box-shadow: 0 0 0 1px rgba(201,168,76,0.1), 0 10px 30px rgba(201,168,76,0.06), 0 14px 28px rgba(0,0,0,0.3);
-        }
-        .footer-link {
-          color: rgb(163 163 163);
-          transition: color 220ms ease, transform 220ms ease;
-        }
-        .footer-link:hover {
-          color: #c9a84c;
-          transform: translateX(2px);
+          animation: fadeUp 1000ms cubic-bezier(0.16, 1, 0.3, 1) both;
+          animation-delay: 300ms;
         }
         @keyframes fadeIn {
-          from { opacity: 0; transform: translate3d(0, 10px, 0); }
+          from { opacity: 0; transform: translate3d(0, 15px, 0); }
           to { opacity: 1; transform: translate3d(0, 0, 0); }
         }
         @keyframes fadeUp {
-          from { opacity: 0; transform: translate3d(0, 14px, 0); }
+          from { opacity: 0; transform: translate3d(0, 20px, 0); }
           to { opacity: 1; transform: translate3d(0, 0, 0); }
-        }
-        @keyframes fadeUpSoft {
-          from { opacity: 0; transform: translate3d(0, 16px, 0); }
-          to { opacity: 1; transform: translate3d(0, 0, 0); }
-        }
-        @keyframes drift {
-          0% { transform: translate3d(-50%, -8px, 0) scale(1); }
-          100% { transform: translate3d(-48%, 10px, 0) scale(1.04); }
-        }
-        @keyframes driftSlow {
-          0% { transform: translate3d(0, -6px, 0) scale(1); }
-          100% { transform: translate3d(-8px, 8px, 0) scale(1.03); }
-        }
-        @keyframes driftDemo {
-          0% { transform: translate3d(-50%, -8px, 0) scale(1); }
-          100% { transform: translate3d(-50%, 6px, 0) scale(1.05); }
         }
       `}</style>
     </main>
