@@ -42,12 +42,6 @@ export default async function AnalysisPage({
 
   if (!analysis) redirect('/dashboard')
 
-  const { data: followUps } = await supabase
-    .from('followups')
-    .select('question, answer')
-    .eq('analysis_id', id)
-    .order('created_at', { ascending: true })
-
   return (
     <div className="flex h-screen overflow-hidden bg-[#0A0A0A]">
       <main className="flex-1 overflow-y-auto">
@@ -68,12 +62,7 @@ export default async function AnalysisPage({
               year: 'numeric',
             })}
           </p>
-          <AnalysisResult
-            result={analysis.result}
-            analysisId={id}
-            savedChecklist={analysis.checkbox || []}
-            savedFollowUps={followUps || []}
-          />
+          <AnalysisResult result={analysis.result} analysisId={id} />
         </div>
       </main>
     </div>
