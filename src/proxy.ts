@@ -10,12 +10,10 @@ export async function proxy(req: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return req.cookies.getAll()
-        },
+        getAll() { return req.cookies.getAll() },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
-            res.cookies.set(name, value, options as any)
+            res.cookies.set(name, value, options as never)
           })
         },
       },
@@ -23,14 +21,23 @@ export async function proxy(req: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
+  const { pathname } = req.nextUrl
 
-  if (!user && req.nextUrl.pathname.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL('/auth/login', req.url))
+  // Auto-redirect if already logged in — feature 1
+  if (user && (pathname === '/auth/login' || pathname === '/auth/signup')) {
+    return NextResponse.redirect(new URL('/dashboard', req.url))
+  }
+
+  // Return URL — feature 2
+  if (!user && pathname.startsWith('/dashboard')) {
+    const redirectUrl = new URL('/auth/login', req.url)
+    redirectUrl.searchParams.set('returnTo', pathname)
+    return NextResponse.redirect(redirectUrl)
   }
 
   return res
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*']
+  matcher: ['/dashboard/:path*', '/auth/login', '/auth/signup']
 }
