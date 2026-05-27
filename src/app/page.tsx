@@ -3,7 +3,6 @@
 import { Playfair_Display } from "next/font/google";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import Navbar from "./components/Navbar";
 import AnalysisLoadingOverlay from "./components/AnalysisLoadingOverlay";
 import AnalysisResult from "@/app/components/AnalysisResult";
 import ErrorMessage, { type ErrorTone } from "./components/ErrorMessage";
@@ -183,45 +182,88 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#050505] text-[#F3F4F6] selection:bg-[#C9A84C]/30 selection:text-white">
-      <Navbar />
+    <main className="relative bg-[#050505] text-white">
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+          
+          <g className="line-group-1" filter="url(#glow)">
+            <path className="line-1" d="M0,100 Q200,150 400,100 T800,120 T1200,80 T1600,100" fill="none" stroke="#C9A84C" strokeWidth="1.5" opacity="0.4" />
+            <path className="line-2" d="M0,200 Q250,250 500,200 T1000,220 T1500,180" fill="none" stroke="#C9A84C" strokeWidth="1" opacity="0.3" />
+            <path className="line-3" d="M0,300 Q150,350 300,300 T600,320 T900,280 T1200,310" fill="none" stroke="#C9A84C" strokeWidth="1.2" opacity="0.35" />
+          </g>
 
-      {/* Hero Section */}
-      <section className="relative flex min-h-[90vh] items-center justify-center overflow-hidden px-4 py-20 sm:px-6 lg:px-8">
+          <g className="line-group-2" filter="url(#glow)">
+            <path className="line-4" d="M0,500 Q300,450 600,500 T1200,480 T1600,520" fill="none" stroke="#8B7355" strokeWidth="1" opacity="0.25" />
+            <path className="line-5" d="M0,600 Q200,650 400,600 T800,620 T1200,580 T1600,600" fill="none" stroke="#C9A84C" strokeWidth="1.5" opacity="0.3" />
+            <path className="line-6" d="M0,700 Q350,750 700,700 T1400,720" fill="none" stroke="#A89070" strokeWidth="1" opacity="0.28" />
+          </g>
+
+          <g className="line-group-3" filter="url(#glow)">
+            <path className="line-7" d="M100,0 Q150,200 100,400 T150,800 T100,1200" fill="none" stroke="#C9A84C" strokeWidth="1" opacity="0.3" />
+            <path className="line-8" d="M200,0 Q250,300 200,600 T250,1000 T200,1400" fill="none" stroke="#8B7355" strokeWidth="1.2" opacity="0.25" />
+          </g>
+
+          <g className="line-group-4" filter="url(#glow)">
+            <path className="line-9" d="M1400,0 Q1450,200 1400,400 T1450,800 T1400,1200" fill="none" stroke="#C9A84C" strokeWidth="1" opacity="0.3" />
+            <path className="line-10" d="M1500,0 Q1550,300 1500,600 T1550,1000 T1500,1400" fill="none" stroke="#A89070" strokeWidth="1.2" opacity="0.25" />
+          </g>
+
+          <g className="line-group-5" filter="url(#glow)">
+            <path className="line-11" d="M0,900 Q400,850 800,900 T1600,880" fill="none" stroke="#FFFFFF" strokeWidth="0.5" opacity="0.15" />
+            <path className="line-12" d="M0,1000 Q500,1050 1000,1000 T1600,1020" fill="none" stroke="#FFFFFF" strokeWidth="0.5" opacity="0.12" />
+          </g>
+
+          <g className="line-group-6" filter="url(#glow)">
+            <circle className="node-1" cx="200" cy="150" r="3" fill="#C9A84C" opacity="0.5" />
+            <circle className="node-2" cx="600" cy="250" r="2" fill="#C9A84C" opacity="0.4" />
+            <circle className="node-3" cx="1000" cy="180" r="3" fill="#C9A84C" opacity="0.45" />
+            <circle className="node-4" cx="1400" cy="220" r="2" fill="#C9A84C" opacity="0.4" />
+            <circle className="node-5" cx="300" cy="550" r="2" fill="#8B7355" opacity="0.35" />
+            <circle className="node-6" cx="700" cy="620" r="3" fill="#C9A84C" opacity="0.4" />
+            <circle className="node-7" cx="1100" cy="580" r="2" fill="#C9A84C" opacity="0.35" />
+            <circle className="node-8" cx="1500" cy="650" r="3" fill="#A89070" opacity="0.4" />
+          </g>
+        </svg>
+      </div>
+
+      <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-20 sm:px-6 lg:px-8">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute top-[-10%] left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(201,168,76,0.18)_0%,rgba(201,168,76,0.04)_50%,rgba(5,5,5,0)_100%)] blur-3xl" />
-          <div className="absolute bottom-[10%] right-[-10%] h-[400px] w-[400px] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0)_70%)] blur-3xl" />
-          <div className="absolute top-[20%] left-[-10%] h-[400px] w-[400px] rounded-full bg-[radial-gradient(circle,rgba(201,168,76,0.05)_0%,rgba(201,168,76,0)_70%)] blur-3xl" />
+          <div className="hero-gradient absolute -top-32 left-1/2 h-[34rem] w-[34rem] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(201,168,76,0.16)_0%,rgba(201,168,76,0.06)_35%,rgba(10,10,10,0)_70%)] blur-3xl" />
+          <div className="hero-gradient-slow absolute -bottom-40 right-[-12rem] h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0)_70%)] blur-3xl" />
         </div>
 
         <div className="relative mx-auto w-full max-w-4xl text-center">
-          <p className="hero-fade-up text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A84C] sm:text-sm">
-            AI-Powered Document Intelligence
-          </p>
-
           <h1
-            className={`${playfair.className} hero-fade-up-delay mt-6 text-balance text-4xl font-bold leading-[1.15] text-white sm:text-5xl lg:text-[64px]`}
+            className={`${playfair.className} hero-fade-up text-balance text-4xl font-bold leading-tight text-neutral-50 sm:text-5xl lg:text-[56px]`}
           >
-            Your legal documents, <br className="hidden sm:inline" />
-            <span className="text-gold-gradient">finally explained.</span>
+            Your legal documents, finally explained.
           </h1>
 
-          <p className="hero-fade-up-delay-2 mx-auto mt-8 max-w-2xl text-pretty text-base leading-relaxed text-neutral-400 sm:text-lg">
+          <p className="hero-fade-up-delay mx-auto mt-6 max-w-3xl text-pretty text-base leading-7 text-neutral-400 sm:text-lg sm:leading-8">
             Upload any legal document. Every clause explained, every risk flagged,
             every deadline surfaced. In plain language. In 60 seconds.
           </p>
 
-          <div className="hero-fade-up-delay-3 mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-5">
+          <div className="hero-fade-up-delay-2 mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
             <Link
               href="/auth/login"
-              className="w-full rounded-full bg-gradient-to-r from-[#C9A84C] to-[#aa8426] px-8 py-4 text-sm font-bold tracking-wider text-[#0A0A0A] shadow-[0_4px_25px_rgba(201,168,76,0.2)] transition-all duration-300 hover:scale-[1.03] hover:from-[#d4b55d] hover:to-[#b89542] hover:shadow-[0_8px_30px_rgba(201,168,76,0.35)] active:scale-[0.98] sm:w-auto"
+              className="w-full rounded-lg bg-[#C9A84C] px-6 py-3 text-sm font-semibold text-[#0A0A0A] transition duration-200 hover:-translate-y-0.5 hover:bg-[#d4b55d] active:bg-[#b89542] sm:w-auto"
             >
-              Start analyzing free
+              Start analyzing
             </Link>
 
             <a
               href="#live-demo"
-              className="w-full rounded-full border border-white/10 bg-white/[0.03] px-8 py-4 text-sm font-semibold tracking-wider text-white shadow-xl backdrop-blur-sm transition-all duration-300 hover:border-[#C9A84C]/50 hover:bg-[#C9A84C]/10 hover:text-[#d4b55d] hover:shadow-[0_0_20px_rgba(201,168,76,0.05)] active:scale-[0.98] sm:w-auto"
+              className="w-full rounded-lg border border-[#C9A84C]/70 bg-transparent px-6 py-3 text-sm font-medium text-[#C9A84C] transition duration-200 hover:-translate-y-0.5 hover:border-[#d4b55d] hover:bg-[#C9A84C]/10 hover:text-[#d4b55d] sm:w-auto"
               onClick={(e) => {
                 e.preventDefault();
                 document.getElementById("live-demo")?.scrollIntoView({
@@ -234,60 +276,52 @@ export default function HomePage() {
             </a>
           </div>
 
-          <p className="hero-fade-up-delay-3 mt-10 flex items-center justify-center gap-2 text-xs font-medium tracking-wider text-neutral-500">
-            <span>Every finding cited to source</span>
-            <span className="h-1.5 w-1.5 rounded-full bg-neutral-600" />
-            <span>Not legal advice</span>
-            <span className="h-1.5 w-1.5 rounded-full bg-neutral-600" />
-            <span>Deleted after analysis</span>
+          <p className="hero-fade-up-delay-3 mt-8 text-xs tracking-wide text-neutral-500 sm:text-sm">
+            Every finding cited to source · Not legal advice · Deleted after analysis
           </p>
         </div>
       </section>
 
-      {/* Demo Section */}
-      <section id="live-demo" className="relative overflow-hidden px-4 pb-28 pt-10 sm:px-6 lg:px-8">
+      <section id="live-demo" className="relative overflow-hidden px-4 pb-24 sm:px-6 lg:px-8">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/2 top-20 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(201,168,76,0.12)_0%,rgba(10,10,10,0)_70%)] blur-3xl" />
+          <div className="demo-gradient absolute left-1/2 top-20 h-[26rem] w-[26rem] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(201,168,76,0.14)_0%,rgba(201,168,76,0.03)_45%,rgba(10,10,10,0)_72%)] blur-3xl" />
         </div>
 
-        <div className="relative mx-auto w-full max-w-5xl rounded-3xl border border-white/[0.08] bg-[#0E0E11]/80 p-5 shadow-[0_25px_60px_rgba(0,0,0,0.8)] backdrop-blur-md sm:p-10">
-          <div className="mx-auto max-w-2xl text-center">
-            <span className="rounded-full border border-[#C9A84C]/35 bg-[#C9A84C]/5 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[#C9A84C]">
-              Interactive Sandbox
-            </span>
-            <h2 className={`${playfair.className} mt-6 text-3xl font-bold text-white sm:text-4xl`}>
-              See a real analysis.
+        <div className="relative mx-auto w-full max-w-6xl rounded-3xl border border-white/10 bg-[#101010] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.42)] sm:p-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className={`${playfair.className} text-3xl text-white sm:text-4xl`}>
+              See a real analysis. No sign-up required.
             </h2>
-            <p className="mt-4 text-sm leading-relaxed text-neutral-400 sm:text-base">
+            <p className="mt-4 text-sm leading-7 text-neutral-400 sm:text-base">
               Instantly try Lexalyze with a realistic sample rental agreement.
               See structured clause insights, risks, and deadlines exactly as users
               experience in production.
             </p>
           </div>
 
-          <div className="relative mt-12">
-            <div className="rounded-2xl border border-white/[0.06] bg-[#121216] p-4 shadow-inner">
-              <div className="mb-4 flex items-center justify-between border-b border-white/[0.06] pb-3 px-1">
-                <p className="text-xs font-semibold tracking-widest text-neutral-400 uppercase">
+          <div className="relative mt-8">
+            <div className="rounded-2xl border border-white/10 bg-[#141414] p-3 sm:p-4">
+              <div className="mb-3 flex items-center justify-between px-1">
+                <p className="text-xs font-medium tracking-wide text-neutral-400">
                   SAMPLE DOCUMENT PREVIEW
                 </p>
-                <span className="rounded-full border border-white/10 bg-white/[0.02] px-3 py-1 text-[10px] font-semibold text-neutral-500">
+                <span className="rounded-full border border-white/10 px-2.5 py-1 text-[10px] text-neutral-500">
                   Read-only
                 </span>
               </div>
               <textarea
                 readOnly
                 value={sampleText}
-                className="h-[24rem] w-full resize-none rounded-xl border border-white/[0.04] bg-[#0A0A0C] p-5 font-mono text-xs leading-relaxed text-neutral-300 outline-none transition focus:border-[#C9A84C]/30 sm:h-[28rem] sm:text-sm"
+                className="h-[24rem] w-full resize-none rounded-xl border border-white/10 bg-[#0D0D0D] p-4 font-mono text-xs leading-6 text-neutral-300 outline-none sm:h-[28rem] sm:text-sm"
               />
             </div>
 
-            <div className="mt-8 flex flex-col items-center gap-4">
+            <div className="mt-6 flex flex-col items-center gap-3">
               <button
                 type="button"
                 onClick={runSampleAnalysis}
                 disabled={isAnalysing}
-                className="w-full rounded-full bg-gradient-to-r from-[#C9A84C] to-[#aa8426] px-8 py-4 text-sm font-bold tracking-wider text-[#0A0A0A] shadow-[0_4px_20px_rgba(201,168,76,0.15)] transition-all duration-300 hover:scale-[1.02] hover:from-[#d4b55d] hover:to-[#b89542] hover:shadow-[0_6px_25px_rgba(201,168,76,0.25)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                className="w-full rounded-xl bg-[#C9A84C] px-6 py-3 text-sm font-semibold text-[#0A0A0A] transition duration-200 hover:-translate-y-0.5 hover:bg-[#d4b55d] active:bg-[#b89542] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
               >
                 {isAnalysing ? stepMessage : "Analyse sample document"}
               </button>
@@ -297,7 +331,7 @@ export default function HomePage() {
                   message={ANALYSIS_ERROR_COPY[analysisErrorType].message}
                   hint={ANALYSIS_ERROR_COPY[analysisErrorType].hint}
                   tone={ANALYSIS_ERROR_COPY[analysisErrorType].tone}
-                  className="w-full max-w-xl animate-premium-fade"
+                  className="w-full max-w-xl"
                   onDismiss={() => setAnalysisErrorType(null)}
                 />
               ) : null}
@@ -307,33 +341,32 @@ export default function HomePage() {
           </div>
 
           {analysisResult ? (
-            <div className="mt-12 animate-[fadeIn_600ms_cubic-bezier(0.16,1,0.3,1)_both] border-t border-white/[0.08] pt-12">
+            <div className="mt-10 animate-[fadeIn_450ms_ease-out_both]">
               <AnalysisResult
-                result={{
-                  ...analysisResult,
-                }}
-              />
+  result={{
+    ...analysisResult,
+  }}
+/>
             </div>
           ) : null}
 
-          {/* Golden Portal */}
-          <div className="mt-12 rounded-3xl border border-[#C9A84C]/30 bg-[linear-gradient(135deg,rgba(25,18,10,0.8)_0%,rgba(16,13,8,0.9)_100%)] p-6 shadow-[0_15px_40px_rgba(201,168,76,0.05)] sm:p-10">
-            <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-5 text-center sm:gap-6">
+          <div className="mt-10 rounded-2xl border border-[#C9A84C]/35 bg-[#15120A] p-5 sm:p-6">
+            <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-4 text-center sm:gap-6">
               <h3
-                className={`${playfair.className} text-2xl font-bold leading-snug text-[#f5e2ac] break-words sm:text-3xl`}
+                className={`${playfair.className} text-2xl leading-tight text-[#f5e2ac] break-words sm:text-3xl`}
               >
                 Sign up free to analyse your own documents.
               </h3>
-              <p className="max-w-2xl text-sm leading-relaxed text-[#d8c58b]">
+              <p className="max-w-2xl text-sm leading-7 text-[#d8c58b]">
                 Get personal document history, faster follow-ups, and secure saved analyses.
               </p>
               <Link
                 href="/auth/signup"
-                className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#C9A84C] to-[#aa8426] px-8 py-4 text-sm font-bold tracking-wider text-[#0A0A0A] shadow-lg transition-all duration-300 hover:scale-[1.02] hover:from-[#d4b55d] hover:shadow-[0_4px_20px_rgba(201,168,76,0.2)] active:scale-[0.98]"
+                className="inline-flex items-center justify-center rounded-lg bg-[#C9A84C] px-6 py-3 text-sm font-semibold text-[#0A0A0A] transition hover:bg-[#d4b55d]"
               >
-                Get started free
+                Get started
               </Link>
-              <p className="max-w-2xl text-xs leading-relaxed text-[#c7b272]/70">
+              <p className="max-w-2xl text-xs leading-6 text-[#c7b272]/80">
                 No legal advice. Every finding includes citation context.
               </p>
             </div>
@@ -341,51 +374,47 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Process Section */}
-      <section className="relative px-4 pb-28 sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-5xl">
-          <div className="mx-auto max-w-2xl text-center">
-            <span className="text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A84C]">
-              Direct Workflow
-            </span>
-            <h2 className={`${playfair.className} mt-4 text-3xl font-bold text-white sm:text-4xl`}>
+      <section className="relative px-4 pb-24 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-6xl">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className={`${playfair.className} text-3xl text-white sm:text-4xl`}>
               How it works
             </h2>
           </div>
 
-          <div className="mt-12 grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <article className="group rounded-2xl border border-white/[0.05] bg-[#0E0E12] p-8 shadow-lg transition-all duration-500 hover:border-[#C9A84C]/30 hover:bg-[#121217] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
-              <p className={`${playfair.className} text-4xl font-bold leading-none text-[#C9A84C] opacity-80 transition group-hover:scale-110 duration-500`}>
+          <div className="mt-10 grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-3">
+            <article className="how-step how-step-1 rounded-2xl border border-white/10 bg-[#121212] p-6 transition duration-300 hover:-translate-y-1 hover:border-[#C9A84C]/35 hover:bg-[#141414]">
+              <p className={`${playfair.className} text-4xl leading-none text-[#C9A84C] sm:text-5xl`}>
                 01
               </p>
-              <h3 className="mt-6 text-xl font-bold text-white">Upload securely</h3>
-              <p className="mt-3 text-sm leading-relaxed text-neutral-400">
+              <h3 className="mt-5 text-xl font-semibold text-white">Upload securely</h3>
+              <p className="mt-3 text-sm leading-7 text-neutral-400 sm:text-base">
                 Upload legal documents privately through a secure workflow so your
                 analysis starts fast without compromising confidentiality.
               </p>
             </article>
 
-            <article className="group rounded-2xl border border-white/[0.05] bg-[#0E0E12] p-8 shadow-lg transition-all duration-500 hover:border-[#C9A84C]/30 hover:bg-[#121217] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
-              <p className={`${playfair.className} text-4xl font-bold leading-none text-[#C9A84C] opacity-80 transition group-hover:scale-110 duration-500`}>
+            <article className="how-step how-step-2 rounded-2xl border border-white/10 bg-[#121212] p-6 transition duration-300 hover:-translate-y-1 hover:border-[#C9A84C]/35 hover:bg-[#141414]">
+              <p className={`${playfair.className} text-4xl leading-none text-[#C9A84C] sm:text-5xl`}>
                 02
               </p>
-              <h3 className="mt-6 text-xl font-bold text-white">
+              <h3 className="mt-5 text-xl font-semibold text-white">
                 AI reads every clause
               </h3>
-              <p className="mt-3 text-sm leading-relaxed text-neutral-400">
+              <p className="mt-3 text-sm leading-7 text-neutral-400 sm:text-base">
                 Lexalyze scans the full document, identifies clauses, deadlines,
                 risks, and obligations, then structures everything in a clear format.
               </p>
             </article>
 
-            <article className="group rounded-2xl border border-white/[0.05] bg-[#0E0E12] p-8 shadow-lg transition-all duration-500 hover:border-[#C9A84C]/30 hover:bg-[#121217] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)]">
-              <p className={`${playfair.className} text-4xl font-bold leading-none text-[#C9A84C] opacity-80 transition group-hover:scale-110 duration-500`}>
+            <article className="how-step how-step-3 rounded-2xl border border-white/10 bg-[#121212] p-6 transition duration-300 hover:-translate-y-1 hover:border-[#C9A84C]/35 hover:bg-[#141414]">
+              <p className={`${playfair.className} text-4xl leading-none text-[#C9A84C] sm:text-5xl`}>
                 03
               </p>
-              <h3 className="mt-6 text-xl font-bold text-white">
+              <h3 className="mt-5 text-xl font-semibold text-white">
                 Understand and act
               </h3>
-              <p className="mt-3 text-sm leading-relaxed text-neutral-400">
+              <p className="mt-3 text-sm leading-7 text-neutral-400 sm:text-base">
                 Receive plain-language explanations, key risk flags, and practical
                 action guidance so you can decide with confidence.
               </p>
@@ -400,28 +429,60 @@ export default function HomePage() {
             <h2 className={`${playfair.className} text-3xl text-white sm:text-4xl`}>
               What Lexalyze reads
             </h2>
-            <p className="mt-4 text-sm leading-relaxed text-neutral-400 sm:text-base">
+            <p className="mt-4 text-sm leading-7 text-neutral-400 sm:text-base">
               Lexalyze analyses common legal documents and surfaces hidden risks,
               obligations, and deadlines before they become expensive surprises.
             </p>
           </div>
 
-          <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              { title: "Rental agreements", desc: "Detects hidden fees, lock-in clauses, deposit risks, notice periods, and maintenance obligations." },
-              { title: "Employment contracts", desc: "Flags restrictive clauses, probation terms, termination conditions, and non-compete risks." },
-              { title: "Loan agreements", desc: "Highlights repayment obligations, penalties, interest terms, and default clauses." },
-              { title: "Insurance policies", desc: "Surfaces exclusions, claim limitations, waiting periods, and hidden conditions." },
-              { title: "Legal notices", desc: "Identifies deadlines, response obligations, escalation risks, and legal exposure." },
-              { title: "Vendor agreements", desc: "Flags liability clauses, payment obligations, auto-renewals, and termination risks." }
-            ].map((card, i) => (
-              <article key={i} className="group rounded-2xl border border-white/[0.04] bg-[#0E0E11] p-6 shadow-md transition-all duration-500 hover:border-[#C9A84C]/25 hover:bg-[#121216] hover:shadow-[0_12px_28px_rgba(0,0,0,0.35)] hover:-translate-y-1">
-                <h3 className="text-lg font-bold text-white transition duration-300 group-hover:text-[#C9A84C]">{card.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-neutral-400">
-                  {card.desc}
-                </p>
-              </article>
-            ))}
+          <div className="mt-10 grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-2">
+            <article className="reads-card rounded-2xl border border-white/10 bg-[#121212] p-6">
+              <h3 className="text-lg font-semibold text-white">Rental agreements</h3>
+              <p className="mt-3 text-sm leading-7 text-neutral-400 sm:text-base">
+                Detects hidden fees, lock-in clauses, deposit risks, notice periods, and
+                maintenance obligations.
+              </p>
+            </article>
+
+            <article className="reads-card rounded-2xl border border-white/10 bg-[#121212] p-6">
+              <h3 className="text-lg font-semibold text-white">Employment contracts</h3>
+              <p className="mt-3 text-sm leading-7 text-neutral-400 sm:text-base">
+                Flags restrictive clauses, probation terms, termination conditions, and
+                non-compete risks.
+              </p>
+            </article>
+
+            <article className="reads-card rounded-2xl border border-white/10 bg-[#121212] p-6">
+              <h3 className="text-lg font-semibold text-white">Loan agreements</h3>
+              <p className="mt-3 text-sm leading-7 text-neutral-400 sm:text-base">
+                Highlights repayment obligations, penalties, interest terms, and default
+                clauses.
+              </p>
+            </article>
+
+            <article className="reads-card rounded-2xl border border-white/10 bg-[#121212] p-6">
+              <h3 className="text-lg font-semibold text-white">Insurance policies</h3>
+              <p className="mt-3 text-sm leading-7 text-neutral-400 sm:text-base">
+                Surfaces exclusions, claim limitations, waiting periods, and hidden
+                conditions.
+              </p>
+            </article>
+
+            <article className="reads-card rounded-2xl border border-white/10 bg-[#121212] p-6">
+              <h3 className="text-lg font-semibold text-white">Legal notices</h3>
+              <p className="mt-3 text-sm leading-7 text-neutral-400 sm:text-base">
+                Identifies deadlines, response obligations, escalation risks, and legal
+                exposure.
+              </p>
+            </article>
+
+            <article className="reads-card rounded-2xl border border-white/10 bg-[#121212] p-6">
+              <h3 className="text-lg font-semibold text-white">Vendor agreements</h3>
+              <p className="mt-3 text-sm leading-7 text-neutral-400 sm:text-base">
+                Flags liability clauses, payment obligations, auto-renewals, and
+                termination risks.
+              </p>
+            </article>
           </div>
         </div>
       </section>
@@ -432,29 +493,56 @@ export default function HomePage() {
             <h2 className={`${playfair.className} text-3xl text-white sm:text-4xl`}>
               Trust &amp; Security
             </h2>
-            <p className="mt-4 text-sm leading-relaxed text-neutral-400 sm:text-base">
+            <p className="mt-4 text-sm leading-7 text-neutral-400 sm:text-base">
               Lexalyze is built to prioritize transparency, privacy, and responsible
               AI analysis at every step of your document workflow.
             </p>
           </div>
 
-          <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { icon: "🔒", title: "Encrypted in transit", desc: "Uploaded documents are securely transmitted using encrypted connections to protect your data." },
-              { icon: "🗑️", title: "Deleted after analysis", desc: "Documents are removed after processing and are not permanently stored to minimize retention risks." },
-              { icon: "📌", title: "Every finding cited", desc: "Every risk, clause, and conclusion includes an exact citation so you can verify what the AI references." },
-              { icon: "⚖️", title: "Honest about limits", desc: "Lexalyze clearly states when information cannot be confidently determined, setting realistic expectations." }
-            ].map((trust, i) => (
-              <article key={i} className="rounded-2xl border border-white/[0.04] bg-[#0D0D10] p-6 shadow-md transition-all duration-500 hover:border-[#C9A84C]/25 hover:bg-[#111114] hover:shadow-[0_12px_26px_rgba(0,0,0,0.3)] hover:-translate-y-1">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#C9A84C]/35 bg-[#C9A84C]/10 text-xl shadow-inner">
-                  {trust.icon}
-                </span>
-                <h3 className="mt-5 text-base font-bold text-white">{trust.title}</h3>
-                <p className="mt-2 text-xs leading-relaxed text-neutral-400">
-                  {trust.desc}
-                </p>
-              </article>
-            ))}
+          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-4">
+            <article className="trust-card rounded-2xl border border-white/10 bg-[#121212] p-5">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#C9A84C]/35 bg-[#C9A84C]/10 text-lg text-[#C9A84C]">
+                🔒
+              </span>
+              <h3 className="mt-4 text-lg font-semibold text-white">Encrypted in transit</h3>
+              <p className="mt-2 text-sm leading-7 text-neutral-400">
+                Uploaded documents are securely transmitted using encrypted connections
+                to protect your data while it moves through the analysis flow.
+              </p>
+            </article>
+
+            <article className="trust-card rounded-2xl border border-white/10 bg-[#121212] p-5">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#C9A84C]/35 bg-[#C9A84C]/10 text-lg text-[#C9A84C]">
+                🗑️
+              </span>
+              <h3 className="mt-4 text-lg font-semibold text-white">Deleted after analysis</h3>
+              <p className="mt-2 text-sm leading-7 text-neutral-400">
+                Documents are removed after processing and are not permanently stored,
+                helping minimize long-term data retention risk.
+              </p>
+            </article>
+
+            <article className="trust-card rounded-2xl border border-white/10 bg-[#121212] p-5">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#C9A84C]/35 bg-[#C9A84C]/10 text-lg text-[#C9A84C]">
+                📌
+              </span>
+              <h3 className="mt-4 text-lg font-semibold text-white">Every finding cited</h3>
+              <p className="mt-2 text-sm leading-7 text-neutral-400">
+                Every risk, clause, and conclusion includes an exact citation from
+                your document so you can verify what the AI is referencing.
+              </p>
+            </article>
+
+            <article className="trust-card rounded-2xl border border-white/10 bg-[#121212] p-5">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#C9A84C]/35 bg-[#C9A84C]/10 text-lg text-[#C9A84C]">
+                ⚖️
+              </span>
+              <h3 className="mt-4 text-lg font-semibold text-white">Honest about limits</h3>
+              <p className="mt-2 text-sm leading-7 text-neutral-400">
+                Lexalyze clearly states when information cannot be confidently
+                determined, so you can make decisions with realistic expectations.
+              </p>
+            </article>
           </div>
         </div>
       </section>
@@ -467,26 +555,26 @@ export default function HomePage() {
             </h2>
           </div>
 
-          <div className="mt-12 space-y-4">
+          <div className="mt-10 space-y-3 sm:space-y-4">
             {FAQ_ITEMS.map((item, index) => {
               const isOpen = openFaqIndex === index;
               return (
                 <article
                   key={item.question}
-                  className="group rounded-2xl border border-white/[0.05] bg-[#0E0E12] shadow-sm transition-all duration-300 hover:border-[#C9A84C]/25"
+                  className="faq-item rounded-2xl border border-white/10 bg-[#121212]"
                 >
                   <button
                     type="button"
                     onClick={() => setOpenFaqIndex((current) => (current === index ? -1 : index))}
-                    className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left"
+                    className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left sm:px-6 sm:py-5"
                     aria-expanded={isOpen}
                   >
-                    <span className="text-base font-bold text-white transition duration-300 group-hover:text-neutral-200">
+                    <span className="text-base font-semibold text-white sm:text-lg">
                       {item.question}
                     </span>
                     <span
-                      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 text-neutral-400 transition-all duration-300 ${
-                        isOpen ? "rotate-180 border-[#C9A84C]/30 text-[#C9A84C] bg-[#C9A84C]/5" : "rotate-0"
+                      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#C9A84C]/35 text-[#C9A84C] transition-transform duration-300 ${
+                        isOpen ? "rotate-180" : "rotate-0"
                       }`}
                       aria-hidden
                     >
@@ -495,8 +583,8 @@ export default function HomePage() {
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
-                        strokeWidth="2.5"
-                        className="h-3.5 w-3.5"
+                        strokeWidth="2"
+                        className="h-4 w-4"
                       >
                         <path d="M6 9l6 6 6-6" />
                       </svg>
@@ -504,11 +592,11 @@ export default function HomePage() {
                   </button>
 
                   <div
-                    className={`overflow-hidden px-6 transition-all duration-500 ease-out ${
+                    className={`overflow-hidden px-5 transition-all duration-300 ease-out sm:px-6 ${
                       isOpen ? "max-h-40 pb-5 opacity-100" : "max-h-0 pb-0 opacity-0"
                     }`}
                   >
-                    <p className="text-sm leading-relaxed text-neutral-400">
+                    <p className="text-sm leading-7 text-neutral-400 sm:text-base">
                       {item.answer}
                     </p>
                   </div>
@@ -519,51 +607,50 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-white/[0.06] bg-[#08080A] px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-5xl">
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+      <footer className="border-t border-white/10 px-4 py-14 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-6xl">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-10">
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#C9A84C]">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-[#C9A84C]">
                 Product
               </h3>
               <ul className="mt-4 space-y-3 text-sm text-neutral-400">
-                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">Features</a></li>
-                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">Live demo</a></li>
-                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">Security</a></li>
-                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">FAQ</a></li>
+                <li><a href="#what-lexalyze-reads" className="footer-link" onClick={(e) => { e.preventDefault(); document.getElementById("what-lexalyze-reads")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Features</a></li>
+                <li><a href="#live-demo" className="footer-link" onClick={(e) => { e.preventDefault(); document.getElementById("live-demo")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Live demo</a></li>
+                <li><a href="#trust-security" className="footer-link" onClick={(e) => { e.preventDefault(); document.getElementById("trust-security")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Security</a></li>
+                <li><a href="#faq" className="footer-link" onClick={(e) => { e.preventDefault(); document.getElementById("faq")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>FAQ</a></li>
               </ul>
             </div>
 
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#C9A84C]">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-[#C9A84C]">
                 Company
               </h3>
               <ul className="mt-4 space-y-3 text-sm text-neutral-400">
-                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">About</a></li>
-                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">Contact</a></li>
-                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">Terms of Service</a></li>
+                <li><a href="#" className="footer-link">About</a></li>
+                <li><a href="#" className="footer-link">Contact</a></li>
+                <li><a href="#" className="footer-link">Privacy Policy</a></li>
+                <li><a href="#" className="footer-link">Terms of Service</a></li>
               </ul>
             </div>
 
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#C9A84C]">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-[#C9A84C]">
                 Resources
               </h3>
               <ul className="mt-4 space-y-3 text-sm text-neutral-400">
-                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">Supported documents</a></li>
-                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">Trust &amp; Safety</a></li>
-                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">Help Center</a></li>
-                <li><a href="#" className="hover:text-[#C9A84C] transition duration-300">Status</a></li>
+                <li><a href="#" className="footer-link">Supported documents</a></li>
+                <li><a href="#" className="footer-link">Trust &amp; Safety</a></li>
+                <li><a href="#" className="footer-link">Help Center</a></li>
+                <li><a href="#" className="footer-link">Status</a></li>
               </ul>
             </div>
           </div>
 
-          <div className="mt-12 border-t border-white/[0.05] pt-8">
-            <div className="flex flex-col gap-4 text-xs sm:flex-row sm:items-center sm:justify-between text-neutral-500">
-              <p>© 2026 Lexalyze. All rights reserved.</p>
-              <p className="max-w-md leading-relaxed sm:text-right">
+          <div className="mt-10 border-t border-white/10 pt-6">
+            <div className="flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-neutral-500">© 2026 Lexalyze. All rights reserved.</p>
+              <p className="max-w-2xl text-xs leading-6 text-neutral-500 sm:text-right">
                 Not legal advice. Lexalyze provides AI-generated insights and is not a
                 substitute for legal advice.
               </p>
@@ -574,27 +661,235 @@ export default function HomePage() {
 
       <style jsx>{`
         .hero-fade-up {
-          animation: fadeUp 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+          animation: fadeUp 650ms ease-out both;
         }
         .hero-fade-up-delay {
-          animation: fadeUp 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
-          animation-delay: 100ms;
+          animation: fadeUp 760ms ease-out both;
+          animation-delay: 110ms;
         }
         .hero-fade-up-delay-2 {
-          animation: fadeUp 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
-          animation-delay: 200ms;
+          animation: fadeUp 820ms ease-out both;
+          animation-delay: 180ms;
         }
         .hero-fade-up-delay-3 {
-          animation: fadeUp 1000ms cubic-bezier(0.16, 1, 0.3, 1) both;
-          animation-delay: 300ms;
+          animation: fadeUp 900ms ease-out both;
+          animation-delay: 250ms;
+        }
+        .hero-gradient {
+          animation: drift 14s ease-in-out infinite alternate;
+        }
+        .hero-gradient-slow {
+          animation: driftSlow 18s ease-in-out infinite alternate;
+        }
+        .demo-gradient {
+          animation: driftDemo 16s ease-in-out infinite alternate;
+        }
+        .how-step {
+          animation: fadeUpSoft 620ms ease-out both;
+        }
+        .how-step-1 { animation-delay: 70ms; }
+        .how-step-2 { animation-delay: 150ms; }
+        .how-step-3 { animation-delay: 230ms; }
+        .reads-card {
+          box-shadow: 0 0 0 1px rgba(255,255,255,0.01), 0 10px 28px rgba(0,0,0,0.28);
+          transition: transform 260ms ease, border-color 260ms ease, box-shadow 260ms ease, background-color 260ms ease;
+        }
+        .reads-card:hover {
+          transform: translateY(-4px);
+          border-color: rgba(201,168,76,0.35);
+          background-color: #141414;
+          box-shadow: 0 0 0 1px rgba(201,168,76,0.12), 0 14px 36px rgba(201,168,76,0.08), 0 16px 36px rgba(0,0,0,0.34);
+        }
+        .trust-card {
+          box-shadow: 0 0 0 1px rgba(255,255,255,0.01), 0 10px 26px rgba(0,0,0,0.26);
+          transition: transform 260ms ease, border-color 260ms ease, box-shadow 260ms ease, background-color 260ms ease;
+        }
+        .trust-card:hover {
+          transform: translateY(-4px);
+          border-color: rgba(201,168,76,0.35);
+          background-color: #141414;
+          box-shadow: 0 0 0 1px rgba(201,168,76,0.1), 0 12px 34px rgba(201,168,76,0.07), 0 16px 34px rgba(0,0,0,0.32);
+        }
+        .faq-item {
+          box-shadow: 0 0 0 1px rgba(255,255,255,0.01), 0 10px 26px rgba(0,0,0,0.24);
+          transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+        }
+        .faq-item:hover {
+          transform: translateY(-2px);
+          border-color: rgba(201,168,76,0.32);
+          box-shadow: 0 0 0 1px rgba(201,168,76,0.1), 0 10px 30px rgba(201,168,76,0.06), 0 14px 28px rgba(0,0,0,0.3);
+        }
+        .footer-link {
+          color: rgb(163 163 163);
+          transition: color 220ms ease, transform 220ms ease;
+        }
+        .footer-link:hover {
+          color: #c9a84c;
+          transform: translateX(2px);
         }
         @keyframes fadeIn {
-          from { opacity: 0; transform: translate3d(0, 15px, 0); }
+          from { opacity: 0; transform: translate3d(0, 10px, 0); }
           to { opacity: 1; transform: translate3d(0, 0, 0); }
         }
         @keyframes fadeUp {
-          from { opacity: 0; transform: translate3d(0, 20px, 0); }
+          from { opacity: 0; transform: translate3d(0, 14px, 0); }
           to { opacity: 1; transform: translate3d(0, 0, 0); }
+        }
+        @keyframes fadeUpSoft {
+          from { opacity: 0; transform: translate3d(0, 16px, 0); }
+          to { opacity: 1; transform: translate3d(0, 0, 0); }
+        }
+        @keyframes drift {
+          0% { transform: translate3d(-50%, -8px, 0) scale(1); }
+          100% { transform: translate3d(-48%, 10px, 0) scale(1.04); }
+        }
+        @keyframes driftSlow {
+          0% { transform: translate3d(0, -6px, 0) scale(1); }
+          100% { transform: translate3d(-8px, 8px, 0) scale(1.03); }
+        }
+        @keyframes driftDemo {
+          0% { transform: translate3d(-50%, -8px, 0) scale(1); }
+          100% { transform: translate3d(-50%, 6px, 0) scale(1.05); }
+        }
+        .line-group-1 {
+          animation: lineFloat1 20s ease-in-out infinite alternate;
+        }
+        .line-group-2 {
+          animation: lineFloat2 24s ease-in-out infinite alternate;
+        }
+        .line-group-3 {
+          animation: lineFloat3 18s ease-in-out infinite alternate;
+        }
+        .line-group-4 {
+          animation: lineFloat4 22s ease-in-out infinite alternate;
+        }
+        .line-group-5 {
+          animation: lineFloat5 26s ease-in-out infinite alternate;
+        }
+        .line-group-6 {
+          animation: lineFloat6 16s ease-in-out infinite alternate;
+        }
+        .line-1 {
+          animation: linePulse1 4s ease-in-out infinite;
+        }
+        .line-2 {
+          animation: linePulse2 5s ease-in-out infinite 0.5s;
+        }
+        .line-3 {
+          animation: linePulse3 4.5s ease-in-out infinite 1s;
+        }
+        .line-4 {
+          animation: linePulse4 3.5s ease-in-out infinite 0.3s;
+        }
+        .line-5 {
+          animation: linePulse5 4.2s ease-in-out infinite 0.8s;
+        }
+        .line-6 {
+          animation: linePulse6 3.8s ease-in-out infinite 1.2s;
+        }
+        .node-1 {
+          animation: nodeFloat1 6s ease-in-out infinite alternate;
+        }
+        .node-2 {
+          animation: nodeFloat2 7s ease-in-out infinite alternate 0.5s;
+        }
+        .node-3 {
+          animation: nodeFloat3 5.5s ease-in-out infinite alternate 1s;
+        }
+        .node-4 {
+          animation: nodeFloat4 6.5s ease-in-out infinite alternate 0.3s;
+        }
+        .node-5 {
+          animation: nodeFloat5 7.5s ease-in-out infinite alternate 0.8s;
+        }
+        .node-6 {
+          animation: nodeFloat6 5.8s ease-in-out infinite alternate 1.2s;
+        }
+        .node-7 {
+          animation: nodeFloat7 6.2s ease-in-out infinite alternate 0.6s;
+        }
+        .node-8 {
+          animation: nodeFloat8 7.2s ease-in-out infinite alternate 1.4s;
+        }
+        @keyframes lineFloat1 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(15px, -20px, 0); }
+        }
+        @keyframes lineFloat2 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-18px, 25px, 0); }
+        }
+        @keyframes lineFloat3 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(20px, -15px, 0); }
+        }
+        @keyframes lineFloat4 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-22px, 18px, 0); }
+        }
+        @keyframes lineFloat5 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(12px, -25px, 0); }
+        }
+        @keyframes lineFloat6 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-16px, 22px, 0); }
+        }
+        @keyframes linePulse1 {
+          0%, 100% { opacity: 0.4; }
+          50% { opacity: 0.55; }
+        }
+        @keyframes linePulse2 {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.45; }
+        }
+        @keyframes linePulse3 {
+          0%, 100% { opacity: 0.35; }
+          50% { opacity: 0.5; }
+        }
+        @keyframes linePulse4 {
+          0%, 100% { opacity: 0.25; }
+          50% { opacity: 0.38; }
+        }
+        @keyframes linePulse5 {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.42; }
+        }
+        @keyframes linePulse6 {
+          0%, 100% { opacity: 0.28; }
+          50% { opacity: 0.4; }
+        }
+        @keyframes nodeFloat1 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(8px, -12px, 0); }
+        }
+        @keyframes nodeFloat2 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-10px, 14px, 0); }
+        }
+        @keyframes nodeFloat3 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(12px, -10px, 0); }
+        }
+        @keyframes nodeFloat4 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-14px, 16px, 0); }
+        }
+        @keyframes nodeFloat5 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(10px, -14px, 0); }
+        }
+        @keyframes nodeFloat6 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-12px, 18px, 0); }
+        }
+        @keyframes nodeFloat7 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(14px, -16px, 0); }
+        }
+        @keyframes nodeFloat8 {
+          0% { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-16px, 20px, 0); }
         }
       `}</style>
     </main>

@@ -3,19 +3,13 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024
-const MAX_TEXT_LENGTH = 12000
-const ALLOWED_TYPES = [
-  'application/pdf',
-  'text/plain',
-  'image/png',
-  'image/jpeg',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/msword',
-]
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const MAX_TEXT_LENGTH = 50000
+const ALLOWED_TYPES = ['application/pdf', 'text/plain', 'image/png', 'image/jpeg']
 const FREE_LIMIT = 10
 
 export async function POST(req: NextRequest) {
+  // Auth check
   const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,6 +31,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Rate limit check
   const { data: profile } = await supabase
     .from('profiles')
     .select('analyses_used')
@@ -50,6 +45,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  // Get file from form data
   const formData = await req.formData()
   const file = formData.get('file') as File | null
 
@@ -57,18 +53,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No file uploaded.' }, { status: 400 })
   }
 
+  // File size check
   if (file.size > MAX_FILE_SIZE) {
     return NextResponse.json({ error: 'File too large. Maximum size is 10MB.' }, { status: 400 })
   }
 
-  const isDocx = file.name.toLowerCase().endsWith('.docx') || file.name.toLowerCase().endsWith('.doc')
-  const effectiveType = isDocx
-    ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    : file.type
-
-  if (!ALLOWED_TYPES.includes(effectiveType)) {
+  // File type check
+  if (!ALLOWED_TYPES.includes(file.type)) {
     return NextResponse.json(
-      { error: 'Unsupported file type. Please upload a PDF, DOCX, TXT, PNG, or JPG.' },
+      { error: 'Unsupported file type. Please upload a PDF, TXT, PNG, or JPG.' },
       { status: 400 }
     )
   }
@@ -77,20 +70,13 @@ export async function POST(req: NextRequest) {
     let text = ''
     const buffer = Buffer.from(await file.arrayBuffer())
 
-    if (effectiveType === 'application/pdf') {
+    if (file.type === 'application/pdf') {
       const { text: pdfText } = await extractText(new Uint8Array(buffer))
       text = pdfText.join('\n')
-    } else if (effectiveType === 'text/plain') {
+    } else if (file.type === 'text/plain') {
       text = buffer.toString('utf-8')
-    } else if (effectiveType === 'image/png' || effectiveType === 'image/jpeg') {
+    } else if (file.type === 'image/png' || file.type === 'image/jpeg') {
       text = buffer.toString('base64')
-    } else if (
-      effectiveType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-      effectiveType === 'application/msword'
-    ) {
-      const mammoth = await import('mammoth')
-      const result = await mammoth.extractRawText({ buffer })
-      text = result.value
     }
 
     if (!text || text.trim().length === 0) {
@@ -100,18 +86,39 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    text = text.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    text = text.replace(/<[^>]+>/g, '')
-    text = text.trim()
-    text = text.slice(0, MAX_TEXT_LENGTH)
+    // Trim to 50,000 characters
+    // Strip HTML and script tags
+text = text.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+text = text.replace(/<[^>]+>/g, '')
+text = text.trim()
+// Trim to 50,000 characters
+text = text.slice(0, MAX_TEXT_LENGTH) 
 
     return NextResponse.json({ text })
 
   } catch (err) {
-    const error = err instanceof Error ? err.message : String(err)
-    console.error('[/api/extract-text] Extraction error', { userId: user.id, fileName: file.name, error })
+    const error =
+      err instanceof Error
+        ? { message: err.message, stack: err.stack }
+        : { message: String(err) }
+
+    console.error('[/api/extract-text] Extraction error', {
+      userId: user.id,
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+      error,
+    })
+
+    // Temporary: surface real error message to help debugging.
+    const clientMessage =
+      error.message || 'Could not read this file. It may be corrupted.'
+
     return NextResponse.json(
-      { error: 'Could not read this file. It may be corrupted.' },
+      {
+        error: 'Could not read this file. It may be corrupted.',
+        debugError: clientMessage,
+      },
       { status: 400 }
     )
   }

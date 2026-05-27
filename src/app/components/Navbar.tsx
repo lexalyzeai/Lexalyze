@@ -10,43 +10,43 @@ const playfair = Playfair_Display({
 
 export default function Navbar() {
   return (
-    <header className="sticky top-4 z-50 mx-auto w-[92%] max-w-6xl rounded-full border border-white/[0.06] bg-black/50 shadow-[0_12px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl transition-all duration-300">
-      <nav className="flex w-full items-center justify-between px-6 py-3">
+    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-[#0A0A0A]/95 backdrop-blur-sm">
+      <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2">
           <span
-            className="inline-block h-2.5 w-2.5 animate-pulse-gold rounded-full bg-[#C9A84C] shadow-[0_0_10px_rgba(201,168,76,0.8)]"
+            className="inline-block h-2 w-2 rounded-full bg-[#C9A84C]"
             aria-hidden
           />
           <span
-            className={`${playfair.className} text-lg font-bold tracking-[0.15em] text-[#C9A84C] sm:text-xl md:tracking-[0.2em]`}
+            className={`${playfair.className} text-lg font-bold tracking-[0.1em] text-[#C9A84C] sm:text-xl`}
           >
             LEXALYZE
           </span>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/auth/login"
-            className="rounded-full border border-[#C9A84C]/50 bg-transparent px-4 py-2 text-xs font-semibold tracking-wide text-[#C9A84C] shadow-[0_0_15px_rgba(201,168,76,0.03)] transition-all duration-300 hover:border-[#d4b55d] hover:bg-[#C9A84C]/10 hover:text-[#d4b55d] hover:shadow-[0_0_20px_rgba(201,168,76,0.08)] sm:px-5 sm:text-sm"
+            className="rounded-lg border border-[#C9A84C]/70 bg-transparent px-3 py-2 text-sm font-medium text-[#C9A84C] transition hover:border-[#d4b55d] hover:bg-[#C9A84C]/10 hover:text-[#d4b55d] sm:px-4"
           >
             Sign in
           </Link>
 
           <Link
             href="/auth/signup"
-            className="rounded-full bg-gradient-to-r from-[#C9A84C] to-[#aa8426] px-4 py-2 text-xs font-bold tracking-wide text-[#0A0A0A] shadow-[0_4px_20px_rgba(201,168,76,0.15)] transition-all duration-300 hover:scale-[1.02] hover:from-[#d4b55d] hover:to-[#b89542] hover:shadow-[0_6px_25px_rgba(201,168,76,0.25)] active:scale-[0.98] sm:px-5 sm:text-sm"
+            className="rounded-lg bg-[#C9A84C] px-3 py-2 text-sm font-semibold text-[#0A0A0A] transition hover:bg-[#d4b55d] active:bg-[#b89542] sm:px-4"
           >
             Get started
           </Link>
 
           <Link
             href="/dashboard/history"
-            className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium tracking-wide text-neutral-400 transition-all duration-300 hover:bg-white/[0.05] hover:text-white sm:text-sm"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-neutral-400 transition hover:bg-white/5 hover:text-white"
           >
             History
           </Link>
 
-          <span className="hidden text-[10px] font-semibold uppercase tracking-[0.15em] text-neutral-500 md:inline-block">
+          <span className="hidden text-xs text-neutral-500 sm:inline-block">
             Not legal advice
           </span>
         </div>

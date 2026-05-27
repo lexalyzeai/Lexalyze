@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import AuthRecovery from "@/app/components/AuthRecovery";
 
 export const metadata: Metadata = {
   title: "Lexalyze",
@@ -14,10 +13,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">
-        <AuthRecovery />
-        {children}
-      </body>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }
