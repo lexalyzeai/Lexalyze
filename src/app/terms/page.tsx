@@ -90,7 +90,7 @@ export default function TermsPage() {
             <h2 className={`${playfair.className} text-xl font-semibold text-[#C9A84C]`}>8. Contact</h2>
             <p className="mt-4 text-sm leading-7 text-neutral-400">
               Questions about these Terms of Service? Contact us at{" "}
-              <a href="mailto:legal@lexalyze.in" className="text-[#C9A84C] hover:underline">legal@lexalyze.in</a>.
+              <a href="mailto:lexalyze.ai@gmail.com" className="text-[#C9A84C] hover:underline">lexalyze.ai@gmail.com</a>.
             </p>
           </section>
         </div>

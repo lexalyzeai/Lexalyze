@@ -24,10 +24,10 @@ export default function ContactPage() {
               For general questions about the product, how it works, or anything else:
             </p>
             <a
-              href="mailto:hello@lexalyze.in"
+              href="mailto:lexalyze.ai@gmail.com"
               className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#C9A84C]/40 px-5 py-2.5 text-sm font-medium text-[#C9A84C] transition hover:bg-[#C9A84C]/10"
             >
-              hello@lexalyze.in
+              lexalyze.ai@gmail.com
             </a>
           </div>
 
@@ -42,10 +42,10 @@ export default function ContactPage() {
               <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#C9A84C]/60" />What you expected to happen vs what actually happened</li>
             </ul>
             <a
-              href="mailto:support@lexalyze.in"
+              href="mailto:lexalyze.ai@gmail.com"
               className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#C9A84C]/40 px-5 py-2.5 text-sm font-medium text-[#C9A84C] transition hover:bg-[#C9A84C]/10"
             >
-              support@lexalyze.in
+              lexalyze.ai@gmail.com
             </a>
           </div>
 

@@ -67,7 +67,7 @@ export default function PrivacyPage() {
             <h2 className={`${playfair.className} text-xl font-semibold text-[#C9A84C]`}>6. Contact</h2>
             <p className="mt-4 text-sm leading-7 text-neutral-400">
               If you have any questions or concerns about this Privacy Policy, please contact us at{" "}
-              <a href="mailto:privacy@lexalyze.in" className="text-[#C9A84C] hover:underline">privacy@lexalyze.in</a>.
+              <a href="mailto:lexalyze.ai@gmail.com" className="text-[#C9A84C] hover:underline">lexalyze.ai@gmail.com</a>.
             </p>
           </section>
         </div>

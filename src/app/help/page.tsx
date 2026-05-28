@@ -110,7 +110,7 @@ export default function HelpPage() {
         <div className="mt-12 rounded-2xl border border-[#C9A84C]/20 bg-[#C9A84C]/[0.04] p-6">
           <p className="text-sm leading-7 text-neutral-400">
             Still need help? Email us at{" "}
-            <a href="mailto:support@lexalyze.in" className="text-[#C9A84C] hover:underline">support@lexalyze.in</a>{" "}
+            <a href="mailto:lexalyze.ai@gmail.com" className="text-[#C9A84C] hover:underline">lexalyze.ai@gmail.com</a>{" "}
             and we will get back to you within 2–3 business days.
           </p>
         </div>

@@ -54,7 +54,7 @@ export default function StatusPage() {
         <div className="mt-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
           <p className="text-xs leading-6 text-neutral-500">
             Note: Lexalyze relies on third-party services (Groq API, Supabase) for AI processing and data storage. Disruptions to those upstream services may temporarily affect Lexalyze functionality. If you experience an issue, please contact{" "}
-            <a href="mailto:support@lexalyze.in" className="text-[#C9A84C] hover:underline">support@lexalyze.in</a>.
+            <a href="mailto:lexalyze.ai@gmail.com" className="text-[#C9A84C] hover:underline">lexalyze.ai@gmail.com</a>.
           </p>
         </div>
 
