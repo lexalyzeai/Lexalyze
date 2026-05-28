@@ -21,7 +21,8 @@ export default function Navbar() {
   const pathname = usePathname();
 
   useEffect(() => {
-    setMobileOpen(false);
+    const timer = setTimeout(() => setMobileOpen(false), 0);
+    return () => clearTimeout(timer);
   }, [pathname]);
 
   return (

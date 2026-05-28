@@ -60,6 +60,7 @@ function LoginForm() {
   const [forgotEmail, setForgotEmail] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
   const [sessionWarning, setSessionWarning] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
 
   // Persist lockout across refreshes
   const [attempts, setAttempts] = useState(() => {
@@ -81,8 +82,8 @@ function LoginForm() {
   })
 
   // Compute derived lockout state
-  const isLocked = lockedUntil ? Date.now() < lockedUntil : false
-  const lockoutSecondsLeft = lockedUntil ? Math.max(0, Math.ceil((lockedUntil - Date.now()) / 1000)) : 0
+  const isLocked = lockedUntil ? now < lockedUntil : false
+  const lockoutSecondsLeft = lockedUntil ? Math.max(0, Math.ceil((lockedUntil - now) / 1000)) : 0
   const lockoutMinutesLeft = Math.ceil(lockoutSecondsLeft / 60)
 
   // Feature 4 — account exists with different provider
@@ -92,20 +93,23 @@ function LoginForm() {
     const hashParams = new URLSearchParams(window.location.hash.replace('#', ''))
     const hashErrorCode = hashParams.get('error_code')
   
-    if (errorCode === 'otp_expired' || hashErrorCode === 'otp_expired') {
-      setFormError('Your password reset link has expired. Please request a new one.')
-      setShowForgot(true) // automatically open forgot password form
-      return
-    }
-    if (error === 'account_exists') {
-      setFormError('An account with this email already exists. Try signing in with your password or the method you originally used.')
-    }
-    if (error === 'auth_failed') {
-      setFormError('Authentication failed. Please try again.')
-    }
-    if (error === 'session_expired') {
-      setFormError('Your session expired due to inactivity. Please sign in again.')
-    }
+    const timer = setTimeout(() => {
+      if (errorCode === 'otp_expired' || hashErrorCode === 'otp_expired') {
+        setFormError('Your password reset link has expired. Please request a new one.')
+        setShowForgot(true)
+        return
+      }
+      if (error === 'account_exists') {
+        setFormError('An account with this email already exists. Try signing in with your password or the method you originally used.')
+      }
+      if (error === 'auth_failed') {
+        setFormError('Authentication failed. Please try again.')
+      }
+      if (error === 'session_expired') {
+        setFormError('Your session expired due to inactivity. Please sign in again.')
+      }
+    }, 0)
+    return () => clearTimeout(timer)
   }, [searchParams])
 
   // Feature 11 — session timeout warning
@@ -140,6 +144,7 @@ function LoginForm() {
   useEffect(() => {
     if (!lockedUntil) return
     const interval = setInterval(() => {
+      setNow(Date.now())
       if (Date.now() >= lockedUntil) {
         setLockedUntil(null)
         setAttempts(0)

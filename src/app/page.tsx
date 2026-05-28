@@ -7,7 +7,6 @@ import Navbar from "./components/Navbar";
 import AnalysisLoadingOverlay from "./components/AnalysisLoadingOverlay";
 import AnalysisResult from "@/app/components/AnalysisResult";
 import ErrorMessage, { type ErrorTone } from "./components/ErrorMessage";
-import { SYSTEM_PROMPT } from "@/lib/prompt";
 import type { AnalysisResult as AiAnalysisResult } from "@/types/analysis";
 
 const playfair = Playfair_Display({
@@ -99,8 +98,8 @@ const ANALYSIS_ERROR_COPY: Record<AnalysisErrorType, AnalysisErrorContent> = {
     tone: "red",
   },
   "rate-limit": {
-    title: "Daily limit reached",
-    message: "You've reached today's free analysis limit. Please try again tomorrow.",
+    title: "Monthly limit reached",
+    message: "You've reached the Starter monthly analysis limit. Upgrade or wait for the next monthly reset.",
     tone: "blue",
   },
   "parse-error": {
@@ -109,14 +108,6 @@ const ANALYSIS_ERROR_COPY: Record<AnalysisErrorType, AnalysisErrorContent> = {
     tone: "red",
   },
 };
-
-function normalizeGroqJson(raw: string): string {
-  return raw
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/```$/i, "")
-    .trim();
-}
 
 export default function HomePage() {
   const [isAnalysing, setIsAnalysing] = useState(false);
@@ -279,7 +270,7 @@ export default function HomePage() {
           </div>
 
           <p className="hero-fade-up-delay-3 mt-8 text-xs tracking-wide text-neutral-500 sm:text-sm">
-            Every finding cited to source · Not legal advice · Deleted after analysis
+            Every finding cited to source · Not legal advice · Saved only to your account
           </p>
         </div>
       </section>
@@ -517,10 +508,9 @@ export default function HomePage() {
               <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#C9A84C]/35 bg-[#C9A84C]/10 text-lg text-[#C9A84C]">
                 🗑️
               </span>
-              <h3 className="mt-4 text-lg font-semibold text-white">Deleted after analysis</h3>
+              <h3 className="mt-4 text-lg font-semibold text-white">Controlled saved history</h3>
               <p className="mt-2 text-sm leading-7 text-neutral-400">
-                Documents are removed after processing and are not permanently stored,
-                helping minimize long-term data retention risk.
+                Analyses are saved to your account for review, and you can delete individual items or your full history from Settings.
               </p>
             </article>
 

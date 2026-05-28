@@ -14,7 +14,7 @@ export default function AboutPage() {
           What is Lexalyze?
         </h1>
         <p className="mt-6 text-base leading-8 text-neutral-400">
-          Lexalyze is an AI-powered legal document analysis tool built to help everyday people in India understand the contracts and legal documents they sign. It was created as an independent project — not a registered company — by developers who believe that understanding your legal rights should not require paying thousands of rupees to a lawyer for every document review.
+          Lexalyze is an AI-powered legal document analysis tool built to help everyday people in India understand the contracts and legal documents they sign. It was created by developers who believe that understanding your legal rights should not require paying thousands of rupees to a lawyer for every document review.
         </p>
 
         <div className="mt-14 space-y-10 border-t border-white/[0.06] pt-12">
@@ -29,7 +29,6 @@ export default function AboutPage() {
             <h2 className={`${playfair.className} text-2xl font-semibold text-[#C9A84C]`}>What it is not</h2>
             <ul className="mt-4 space-y-3 text-sm leading-7 text-neutral-400">
               <li className="flex items-start gap-3"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#C9A84C]" />Lexalyze is <strong className="text-neutral-200">not a law firm</strong> and does not provide legal advice.</li>
-              <li className="flex items-start gap-3"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#C9A84C]" />Lexalyze is <strong className="text-neutral-200">not a registered company</strong>. It is an independent open project.</li>
               <li className="flex items-start gap-3"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#C9A84C]" />The AI can make mistakes. Always consult a qualified lawyer before signing important documents.</li>
               <li className="flex items-start gap-3"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#C9A84C]" />Lexalyze is currently focused on Indian legal context. Documents governed by other jurisdictions may receive less accurate analysis.</li>
             </ul>
@@ -38,7 +37,7 @@ export default function AboutPage() {
           <section>
             <h2 className={`${playfair.className} text-2xl font-semibold text-[#C9A84C]`}>Built with</h2>
             <p className="mt-4 text-sm leading-8 text-neutral-400">
-              Lexalyze is built on Next.js, Supabase for authentication and storage, and Groq's LLaMA 3.3 70B model for AI analysis. Document text is extracted from PDFs using standard parsing libraries and from Word documents using Mammoth.js.
+              Lexalyze is built on Next.js, Supabase for authentication and storage, and Groq&apos;s LLaMA 3.3 70B model for AI analysis. Document text is extracted from PDFs using standard parsing libraries and from Word documents using Mammoth.js.
             </p>
           </section>
         </div>

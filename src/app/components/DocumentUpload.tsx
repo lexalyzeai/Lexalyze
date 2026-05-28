@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import AnalysisResult from "@/app/components/AnalysisResult";
+import AnalysisResult, { type AnalysisResultData } from "@/app/components/AnalysisResult";
 import ErrorMessage, { ErrorType, mapBackendError } from "@/app/components/ErrorMessage";
+import type { PlanId } from "@/lib/plans";
 
 const ACCEPTED_MIME_TYPES = new Set([
   "application/pdf",
@@ -35,19 +36,19 @@ function sleep(ms: number) {
 
 type DocumentUploadProps = {
   language: "EN" | "HI";
+  plan?: PlanId;
   onAnalysisComplete?: () => void;
 };
 
-export default function DocumentUpload({ language, onAnalysisComplete }: DocumentUploadProps) {
+export default function DocumentUpload({ language, plan = "free", onAnalysisComplete }: DocumentUploadProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<ErrorType | "">("");
   const [loadingStage, setLoadingStage] = useState<LoadingStage>("idle");
   const [extractedText, setExtractedText] = useState("");
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResultData | null>(null);
   const [currentAnalysisId, setCurrentAnalysisId] = useState<string>("");
-  const [currentLanguage, setCurrentLanguage] = useState<"EN" | "HI">(language);
 
   const acceptAttr = useMemo(
     () => ".pdf,.txt,.png,.jpg,.jpeg,.docx,.doc,application/pdf,text/plain,image/png,image/jpeg,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -128,8 +129,6 @@ export default function DocumentUpload({ language, onAnalysisComplete }: Documen
       setAnalysisResult(null);
       setCurrentAnalysisId("");
       setLoadingStage("analysing");
-      setCurrentLanguage(language);
-
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -273,7 +272,7 @@ export default function DocumentUpload({ language, onAnalysisComplete }: Documen
 
       {analysisResult && (
         <div className="mt-10 w-full max-w-4xl animate-[fadeIn_600ms_cubic-bezier(0.16,1,0.3,1)_both]">
-          <AnalysisResult result={analysisResult} analysisId={currentAnalysisId} />
+          <AnalysisResult result={analysisResult} analysisId={currentAnalysisId} plan={plan} />
         </div>
       )}
     </div>

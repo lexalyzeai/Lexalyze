@@ -64,9 +64,12 @@ export default function PricingPage() {
   const [detected, setDetected] = useState(false);
 
   useEffect(() => {
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (tz === "Asia/Kolkata" || tz === "Asia/Calcutta") setCurrency("INR");
-    setDetected(true);
+    const timer = setTimeout(() => {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (tz === "Asia/Kolkata" || tz === "Asia/Calcutta") setCurrency("INR");
+      setDetected(true);
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const soloPrice  = SOLO[currency === "INR" ? "inr" : "usd"][billing];

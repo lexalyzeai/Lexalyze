@@ -78,7 +78,8 @@ function SignupForm() {
 
   useEffect(() => {
     if (searchParams.get("error") === "account_exists") {
-      setErrorMessage("An account with this email already exists.");
+      const timer = setTimeout(() => setErrorMessage("An account with this email already exists."), 0);
+      return () => clearTimeout(timer);
     }
   }, [searchParams]);
 
@@ -158,7 +159,7 @@ function SignupForm() {
   async function handleGoogle() {
     setIsGoogleLoading(true);
   
-    const { data, error } =
+    const { error } =
       await supabase.auth.signInWithOAuth({
         provider: "google",
   

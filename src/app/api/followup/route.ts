@@ -3,8 +3,8 @@ import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { FOLLOWUP_PROMPT } from '@/lib/prompt'
 import { AnalysisResult } from '@/types/analysis'
-
-const FREE_FOLLOWUP_LIMIT = 3
+import { createSupabaseAdmin } from '@/lib/supabase-admin'
+import { normalizePlan, PLAN_LIMITS } from '@/lib/plans'
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
@@ -34,30 +34,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Question and analysisId are required.' }, { status: 400 })
   }
 
-  // Check user plan
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('plan')
-    .eq('id', user.id)
-    .single()
-
-  const plan = profile?.plan || 'free'
-
-  // Enforce follow-up limits for free plan (3 per document)
-  if (plan === 'free') {
-    const { count: followupCount } = await supabase
-      .from('followups')
-      .select('*', { count: 'exact', head: true })
-      .eq('analysis_id', analysisId)
-
-    if ((followupCount ?? 0) >= FREE_FOLLOWUP_LIMIT) {
-      return NextResponse.json(
-        { error: `Follow-up limit reached for this document (${FREE_FOLLOWUP_LIMIT} per document on Starter plan). Upgrade to Solo for unlimited follow-ups.` },
-        { status: 429 }
-      )
-    }
-  }
-
   const { data: analysis } = await supabase
     .from('analyses')
     .select('result, document_text')
@@ -67,6 +43,30 @@ export async function POST(req: NextRequest) {
 
   if (!analysis) {
     return NextResponse.json({ error: 'Analysis not found.' }, { status: 404 })
+  }
+
+  const admin = createSupabaseAdmin()
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('plan')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  const plan = normalizePlan(profile?.plan)
+  const followUpLimit = PLAN_LIMITS[plan].followUpsPerDocument
+
+  if (followUpLimit !== null) {
+    const { count: followupCount } = await admin
+      .from('followups')
+      .select('*', { count: 'exact', head: true })
+      .eq('analysis_id', analysisId)
+
+    if ((followupCount ?? 0) >= followUpLimit) {
+      return NextResponse.json(
+        { error: `Follow-up limit reached for this document (${followUpLimit} per document on Starter plan). Upgrade to Solo for unlimited follow-ups.` },
+        { status: 429 }
+      )
+    }
   }
 
   const result = analysis.result as AnalysisResult
@@ -80,7 +80,7 @@ EXISTING ANALYSIS SUMMARY:
 - Risk Score: ${result.riskScore ?? 'N/A'}/10
 - Party Favour: ${result.partyFavour || 'Unknown'}
 - Red Flags: ${result.redFlags?.map((r) => r.title).join(', ') || 'None detected'}
-- Missing Clauses: ${result.missingClauses?.map((m: any) => m.clause).join(', ') || 'None detected'}
+- Missing Clauses: ${result.missingClauses?.map((m) => m.clause).join(', ') || 'None detected'}
 - Full Summary: ${result.fullSummary || 'No summary available'}
 
 USER QUESTION: ${question}`

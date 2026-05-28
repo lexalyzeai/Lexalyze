@@ -5,8 +5,9 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { currentUsageMonth, normalizePlan, PLAN_LIMITS, type PlanId } from "@/lib/plans";
 import DocumentUpload from "../components/DocumentUpload";
-import AnalysisResult from "../components/AnalysisResult";
+import AnalysisResult, { type AnalysisResultData } from "../components/AnalysisResult";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -19,7 +20,7 @@ type AnalysisRow = {
   id: string;
   filename: string;
   created_at: string;
-  result: any;
+  result: (AnalysisResultData & { checkbox?: boolean[]; checklistState?: boolean[] }) | null;
   checkbox?: boolean[] | null;
   checklist_state?: boolean[] | null;
 };
@@ -27,6 +28,12 @@ type AnalysisRow = {
 type FollowUpRow = {
   question: string;
   answer: string;
+};
+
+type ProfileUsage = {
+  plan?: string | null;
+  usage_month?: string | null;
+  monthly_analyses_used?: number | null;
 };
 
 function ConfidenceDot({ confidence }: { confidence: string }) {
@@ -106,7 +113,10 @@ export default function DashboardPage() {
   const [isPasswordResetLoading, setIsPasswordResetLoading] = useState(false);
   const [passwordResetSent, setPasswordResetSent] = useState(false);
   const [isSigningOutAll, setIsSigningOutAll] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const [isDeletingHistory, setIsDeletingHistory] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [profileUsage, setProfileUsage] = useState<ProfileUsage | null>(null);
   const [settingsMsg, setSettingsMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const selectedAnalysis = analyses.find((a) => a.id === selectedAnalysisId) || null;
@@ -114,6 +124,11 @@ export default function DashboardPage() {
   const completedActionItems = analyses.reduce((sum, analysis) => sum + getSavedChecklist(analysis).filter(Boolean).length, 0);
   const highRiskCount = analyses.filter((analysis) => (analysis.result?.riskScore ?? 0) >= 7).length;
   const selectedCompletion = selectedAnalysis ? completionFor(selectedAnalysis) : null;
+  const plan = normalizePlan(profileUsage?.plan);
+  const monthlyLimit = PLAN_LIMITS[plan].monthlyDocuments;
+  const docsThisMonth = profileUsage?.usage_month === currentUsageMonth() ? profileUsage?.monthly_analyses_used ?? 0 : 0;
+  const remainingDocs = monthlyLimit === null ? null : Math.max(0, monthlyLimit - docsThisMonth);
+  const planLabel: Record<PlanId, string> = { free: "Starter", solo: "Solo", team: "Team" };
 
   const sortedAnalyses = [
     ...analyses.filter((analysis) => pinnedAnalysisIds.includes(analysis.id)),
@@ -136,13 +151,17 @@ export default function DashboardPage() {
       setEmail(session?.user?.email || "");
     });
     fetchHistory();
+    fetchProfileUsage();
   }, []);
 
   useEffect(() => {
     if (searchParams.get('linked') === 'true') {
-      setLinkedBanner(true);
-      router.replace('/dashboard');
-      setTimeout(() => setLinkedBanner(false), 5000);
+      const timer = setTimeout(() => {
+        setLinkedBanner(true);
+        router.replace('/dashboard');
+        setTimeout(() => setLinkedBanner(false), 5000);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [searchParams, router]);
 
@@ -185,8 +204,10 @@ export default function DashboardPage() {
 
   async function handleChecklistChange(analysisId: string, newState: boolean[]) {
     const currentAnalysis = analyses.find((analysis) => analysis.id === analysisId);
+    if (!currentAnalysis?.result) return;
+
     const nextResult = {
-      ...(currentAnalysis?.result ?? {}),
+      ...currentAnalysis.result,
       checkbox: newState,
       checklistState: newState,
     };
@@ -244,7 +265,10 @@ export default function DashboardPage() {
 
   async function fetchHistory() {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    if (!session) {
+      setHistoryLoading(false);
+      return;
+    }
     const { data, error } = await supabase
       .from("analyses")
       .select("*")
@@ -257,9 +281,39 @@ export default function DashboardPage() {
     setHistoryLoading(false);
   }
 
+  async function fetchProfileUsage() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("plan, usage_month, monthly_analyses_used")
+      .eq("id", session.user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Profile usage load failed:", error.message || error);
+      return;
+    }
+
+    setProfileUsage(data || { plan: "free", usage_month: currentUsageMonth(), monthly_analyses_used: 0 });
+  }
+
+  function clearLocalSessionState() {
+    if (typeof window === "undefined") return;
+    Object.keys(window.localStorage)
+      .filter((key) => key.startsWith("sb-") || key.startsWith("lexalyze-checklist:"))
+      .forEach((key) => window.localStorage.removeItem(key));
+    window.sessionStorage.clear();
+  }
+
   async function handleSignOut() {
-    await supabase.auth.signOut();
-    router.push("/auth/login");
+    if (isSigningOut) return;
+    setIsSigningOut(true);
+    await supabase.auth.signOut({ scope: "local" });
+    clearLocalSessionState();
+    router.replace("/auth/login");
+    router.refresh();
   }
 
   async function handlePasswordReset() {
@@ -282,32 +336,67 @@ export default function DashboardPage() {
   async function handleSignOutAll() {
     setIsSigningOutAll(true);
     await supabase.auth.signOut({ scope: "global" });
-    router.push("/auth/login");
+    clearLocalSessionState();
+    router.replace("/auth/login");
+    router.refresh();
   }
 
   async function handleDeleteHistory() {
     setIsDeletingHistory(true);
-    const ids = analyses.map((a) => a.id);
-    if (ids.length > 0) {
-      await supabase.from("followups").delete().in("analysis_id", ids);
-      await supabase.from("analyses").delete().in("id", ids);
+    setSettingsMsg(null);
+
+    const response = await fetch("/api/history", { method: "DELETE" });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      setSettingsMsg({ type: "error", text: data.error || "Could not delete history. Please try again." });
+      setIsDeletingHistory(false);
+      return;
     }
+
     setAnalyses([]);
     setSelectedAnalysisId(null);
     setSelectedFollowUps([]);
+    Object.keys(window.localStorage)
+      .filter((key) => key.startsWith("lexalyze-checklist:"))
+      .forEach((key) => window.localStorage.removeItem(key));
     setIsDeletingHistory(false);
     setShowDeleteConfirmation(null);
-    setIsSettingsModalOpen(false);
+    setSettingsMsg({ type: "success", text: "Analysis history deleted." });
   }
 
   async function handleDeleteAnalysis(id: string) {
-    await supabase.from("followups").delete().eq("analysis_id", id);
-    await supabase.from("analyses").delete().eq("id", id);
+    const response = await fetch(`/api/history/${id}`, { method: "DELETE" });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      console.error("Analysis delete failed:", data.error || response.statusText);
+      return;
+    }
+
     setAnalyses((prev) => prev.filter((a) => a.id !== id));
+    window.localStorage.removeItem(`lexalyze-checklist:${id}`);
     if (selectedAnalysisId === id) {
       setSelectedAnalysisId(null);
       setSelectedFollowUps([]);
     }
+  }
+
+  async function handleDeleteAccount() {
+    if (isDeletingAccount) return;
+    setIsDeletingAccount(true);
+    setSettingsMsg(null);
+
+    const response = await fetch("/api/account", { method: "DELETE" });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      setSettingsMsg({ type: "error", text: data.error || "Could not delete account. Please try again." });
+      setIsDeletingAccount(false);
+      return;
+    }
+
+    await supabase.auth.signOut({ scope: "local" }).catch(() => null);
+    clearLocalSessionState();
+    router.replace("/auth/signup?deleted=1");
+    router.refresh();
   }
 
   const renderSidebarContent = () => (
@@ -602,7 +691,11 @@ export default function DashboardPage() {
                 <DocumentUpload
                   key={selectedAnalysisId ?? "new"}
                   language={language}
-                  onAnalysisComplete={fetchHistory}
+                  plan={plan}
+                  onAnalysisComplete={() => {
+                    fetchHistory();
+                    fetchProfileUsage();
+                  }}
                 />
               </div>
 
@@ -699,6 +792,7 @@ export default function DashboardPage() {
                   key={selectedAnalysis.id}
                   result={selectedAnalysis.result}
                   analysisId={selectedAnalysis.id}
+                  plan={plan}
                   savedFollowUps={selectedFollowUps}
                   savedChecklist={getSavedChecklist(selectedAnalysis)}
                   onChecklistChange={(newState) => handleChecklistChange(selectedAnalysis.id, newState)}
@@ -810,6 +904,12 @@ export default function DashboardPage() {
                 </button>
               </div>
 
+              {settingsMsg && (
+                <div className={`mb-4 rounded-lg px-4 py-3 text-sm font-medium ${settingsMsg.type === "success" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border border-rose-500/20"}`}>
+                  {settingsMsg.text}
+                </div>
+              )}
+
               {/* Tab content */}
               {selectedSettingsTab === "general" ? (
                 <div className="space-y-4">
@@ -827,9 +927,10 @@ export default function DashboardPage() {
                   <button
                     type="button"
                     onClick={handleSignOut}
-                    className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-[#C9A84C]/40 hover:bg-white/[0.04] hover:text-[#C9A84C]"
+                    disabled={isSigningOut}
+                    className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-[#C9A84C]/40 hover:bg-white/[0.04] hover:text-[#C9A84C] disabled:opacity-50"
                   >
-                    Sign out
+                    {isSigningOut ? "Signing out..." : "Sign out"}
                   </button>
 
                   {/* Delete Account */}
@@ -843,34 +944,39 @@ export default function DashboardPage() {
                     <button
                       type="button"
                       onClick={() => setShowDeleteConfirmation("account")}
-                      className="w-full rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
+                      disabled={isDeletingAccount}
+                      className="w-full rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
                     >
-                      Delete my account
+                      {isDeletingAccount ? "Deleting..." : "Delete my account"}
                     </button>
                   </div>
                 </div>
               ) : selectedSettingsTab === "billing" ? (
                 <div className="space-y-4">
                   {(() => {
-                    const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0,0,0,0);
-                    const docsThisMonth = analyses.filter(a => new Date(a.created_at) >= startOfMonth).length;
-                    const pct = Math.min(100, Math.round((docsThisMonth / 5) * 100));
+                    const pct = monthlyLimit === null ? 100 : Math.min(100, Math.round((docsThisMonth / monthlyLimit) * 100));
                     return (
                       <>
                         <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
                           <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">Current Plan</p>
                           <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium text-white">Starter (Free)</p>
-                            <span className="rounded-full bg-neutral-800 px-2.5 py-0.5 text-[10px] font-semibold text-neutral-400">Free forever</span>
+                            <p className="text-sm font-medium text-white">{planLabel[plan]}{plan === "free" ? " (Free)" : ""}</p>
+                            <span className="rounded-full bg-neutral-800 px-2.5 py-0.5 text-[10px] font-semibold text-neutral-400">
+                              {plan === "free" ? "Free forever" : "Active"}
+                            </span>
                           </div>
                         </div>
                         <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
                           <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-1">Documents This Month</p>
-                          <p className="text-sm text-neutral-300 mb-3">{docsThisMonth} / 5 used</p>
+                          <p className="text-sm text-neutral-300 mb-3">
+                            {monthlyLimit === null ? `${docsThisMonth} used` : `${docsThisMonth} / ${monthlyLimit} used`}
+                          </p>
                           <div className="h-2 w-full rounded-full bg-white/[0.08] overflow-hidden">
                             <div className="h-full rounded-full bg-[#C9A84C] transition-all" style={{ width: `${pct}%` }} />
                           </div>
-                          <p className="mt-2 text-xs text-neutral-500">{Math.max(0, 5 - docsThisMonth)} documents remaining this month</p>
+                          <p className="mt-2 text-xs text-neutral-500">
+                            {remainingDocs === null ? "Unlimited documents on this plan" : `${remainingDocs} documents remaining this month`}
+                          </p>
                         </div>
                         <button
                           type="button"
@@ -885,7 +991,7 @@ export default function DashboardPage() {
                         </div>
                         <button
                           type="button"
-                          onClick={() => { setIsSettingsModalOpen(false); router.push("/contact"); }}
+                          onClick={() => setSettingsMsg({ type: "success", text: "Subscription management will unlock when payments are connected." })}
                           className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-[#C9A84C]/40 hover:bg-white/[0.04] hover:text-[#C9A84C]"
                         >
                           Manage Subscription
@@ -897,8 +1003,6 @@ export default function DashboardPage() {
               ) : selectedSettingsTab === "usage" ? (
                 <div className="space-y-4">
                   {(() => {
-                    const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0,0,0,0);
-                    const docsThisMonth = analyses.filter(a => new Date(a.created_at) >= startOfMonth).length;
                     const lastAnalysis = analyses[0];
                     const lastDate = lastAnalysis ? new Date(lastAnalysis.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
                     return (
@@ -909,7 +1013,9 @@ export default function DashboardPage() {
                         </div>
                         <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
                           <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">This Month</p>
-                          <p className="text-2xl font-bold text-[#C9A84C]">{docsThisMonth} <span className="text-sm font-normal text-neutral-500">/ 5</span></p>
+                          <p className="text-2xl font-bold text-[#C9A84C]">
+                            {docsThisMonth} <span className="text-sm font-normal text-neutral-500">/ {monthlyLimit === null ? "unlimited" : monthlyLimit}</span>
+                          </p>
                         </div>
                         <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
                           <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">High Risk Documents</p>
@@ -925,11 +1031,6 @@ export default function DashboardPage() {
                 </div>
               ) : selectedSettingsTab === "security" ? (
                 <div className="space-y-4">
-                  {settingsMsg && (
-                    <div className={`rounded-lg px-4 py-3 text-sm font-medium ${settingsMsg.type === "success" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border border-rose-500/20"}`}>
-                      {settingsMsg.text}
-                    </div>
-                  )}
                   <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
                     <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">Change / Reset Password</p>
                     <p className="text-xs text-neutral-500 mb-3">We will send a secure password reset link to your email address.</p>
@@ -1020,13 +1121,13 @@ export default function DashboardPage() {
                             if (showDeleteConfirmation === "history") {
                               handleDeleteHistory();
                             } else {
-                              setShowDeleteConfirmation(null);
+                              handleDeleteAccount();
                             }
                           }}
-                          disabled={isDeletingHistory}
+                          disabled={isDeletingHistory || isDeletingAccount}
                           className="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
                         >
-                          {isDeletingHistory ? "Deleting…" : "Confirm"}
+                          {isDeletingHistory || isDeletingAccount ? "Deleting..." : "Confirm"}
                         </button>
                       </div>
                     </div>

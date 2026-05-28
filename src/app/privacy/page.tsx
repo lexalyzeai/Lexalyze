@@ -17,7 +17,7 @@ export default function PrivacyPage() {
         </h1>
         <p className="mt-4 text-xs text-neutral-500">Last updated: {LAST_UPDATED}</p>
         <p className="mt-6 text-base leading-8 text-neutral-400">
-          Lexalyze is an independent, non-commercial project. We take your privacy seriously and are transparent about how your data is handled.
+          Lexalyze is an independent project. We take your privacy seriously and are transparent about how your data is handled.
         </p>
 
         <div className="mt-12 space-y-10 border-t border-white/[0.06] pt-10">
@@ -26,8 +26,8 @@ export default function PrivacyPage() {
             <h2 className={`${playfair.className} text-xl font-semibold text-[#C9A84C]`}>1. What data we collect</h2>
             <div className="mt-4 space-y-3 text-sm leading-7 text-neutral-400">
               <p><strong className="text-neutral-200">Account data:</strong> When you sign up, we collect your email address. This is stored securely in Supabase (a Postgres-based cloud database). We do not collect your name, phone number, or any other personal identifier unless you voluntarily provide it.</p>
-              <p><strong className="text-neutral-200">Document text:</strong> When you upload a document for analysis, we extract the text content and send it to Groq's API for AI processing. We store the analysis result (the AI-generated summary and findings) in your account. We do not permanently store the raw document file on our servers.</p>
-              <p><strong className="text-neutral-200">Follow-up questions:</strong> Any follow-up questions you ask about a document, along with the AI's answers, are stored in your account so you can review them later.</p>
+              <p><strong className="text-neutral-200">Document text:</strong> When you upload a document for analysis, we extract the text content and send it to Groq&apos;s API for AI processing. We store the analysis result (the AI-generated summary and findings) in your account. We do not permanently store the raw document file on our servers.</p>
+              <p><strong className="text-neutral-200">Follow-up questions:</strong> Any follow-up questions you ask about a document, along with the AI&apos;s answers, are stored in your account so you can review them later.</p>
               <p><strong className="text-neutral-200">Usage data:</strong> Basic server logs may be generated as part of normal web application operation. We do not use third-party analytics trackers or advertising cookies.</p>
             </div>
           </section>
@@ -35,7 +35,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className={`${playfair.className} text-xl font-semibold text-[#C9A84C]`}>2. How your documents are processed</h2>
             <div className="mt-4 space-y-3 text-sm leading-7 text-neutral-400">
-              <p>When you upload a document, its text content is sent to <strong className="text-neutral-200">Groq's API</strong> (api.groq.com) for AI analysis. This means the document text leaves our application and is processed by Groq's infrastructure. Groq's own privacy policy governs how they handle API request data.</p>
+              <p>When you upload a document, its text content is sent to <strong className="text-neutral-200">Groq&apos;s API</strong> (api.groq.com) for AI analysis. This means the document text leaves our application and is processed by Groq&apos;s infrastructure. Groq&apos;s own privacy policy governs how they handle API request data.</p>
               <p>We strongly recommend that you do not upload documents containing highly sensitive personal information (such as Aadhaar numbers, bank account details, or medical records) unless you are comfortable with how third-party AI APIs handle data.</p>
               <p>We do not use your document content to train AI models, advertise to you, or share it with any third party other than Groq for the purpose of generating your analysis.</p>
             </div>

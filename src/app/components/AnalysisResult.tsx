@@ -3,6 +3,7 @@
 import { Playfair_Display } from "next/font/google";
 import { FormEvent, useState } from "react";
 import ErrorMessage, { ErrorType, mapBackendError } from "@/app/components/ErrorMessage";
+import { normalizePlan, type PlanId } from "@/lib/plans";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -69,8 +70,9 @@ export type AnalysisResultData = {
 };
 
 export type AnalysisResultProps = {
-  result?: AnalysisResultData;
+  result?: AnalysisResultData | null;
   analysisId?: string;
+  plan?: PlanId | string | null;
   savedFollowUps?: { question: string; answer: string }[];
   savedChecklist?: boolean[];
   onChecklistChange?: (newState: boolean[]) => void;
@@ -127,6 +129,11 @@ const EMPTY_FOLLOW_UPS: FollowUpEntry[] = [];
 const EMPTY_CHECKLIST: boolean[] = [];
 const CHECKLIST_STORAGE_PREFIX = "lexalyze-checklist:";
 
+type ChecklistResult = AnalysisResultData & {
+  checkbox?: boolean[];
+  checklistState?: boolean[];
+};
+
 // Pure layout support
 function normalizeChecklist(savedChecklist: boolean[], itemCount: number) {
   return Array.from({ length: itemCount }, (_, index) => savedChecklist[index] ?? false);
@@ -151,15 +158,16 @@ function saveLocalChecklist(analysisId: string | undefined, checklist: boolean[]
   window.localStorage.setItem(`${CHECKLIST_STORAGE_PREFIX}${analysisId}`, JSON.stringify(checklist));
 }
 
-function getInitialChecklist(savedChecklist: boolean[], result: AnalysisResultData | undefined, analysisId: string | undefined) {
+function getInitialChecklist(savedChecklist: boolean[], result: AnalysisResultData | null | undefined, analysisId: string | undefined) {
   const itemCount = result?.actionItems?.length ?? 0;
   const localChecklist = readLocalChecklist(analysisId, itemCount);
   if (localChecklist) return localChecklist;
 
-  const resultChecklist = Array.isArray((result as any)?.checkbox)
-    ? (result as any).checkbox
-    : Array.isArray((result as any)?.checklistState)
-      ? (result as any).checklistState
+  const checklistResult = result as ChecklistResult | undefined;
+  const resultChecklist = Array.isArray(checklistResult?.checkbox)
+    ? checklistResult.checkbox
+    : Array.isArray(checklistResult?.checklistState)
+      ? checklistResult.checklistState
       : savedChecklist;
 
   return normalizeChecklist(resultChecklist, itemCount);
@@ -176,6 +184,7 @@ function safePdfName(name?: string) {
 export default function AnalysisResult({
   result,
   analysisId,
+  plan,
   savedFollowUps = EMPTY_FOLLOW_UPS,
   savedChecklist = EMPTY_CHECKLIST,
   onChecklistChange,
@@ -197,6 +206,9 @@ export default function AnalysisResult({
       </div>
     );
   }
+
+  const currentPlan = normalizePlan(plan);
+  const canUseOutputs = currentPlan !== "free";
 
   function persistChecklist(next: boolean[]) {
     saveLocalChecklist(analysisId, next);
@@ -233,6 +245,7 @@ export default function AnalysisResult({
   }
 
   async function handleDownloadPDF() {
+    if (!canUseOutputs) return;
     setIsDownloading(true);
     const pdfWindow = window.open("", "_blank");
 
@@ -560,12 +573,13 @@ export default function AnalysisResult({
 
 
   async function handleShare() {
+    if (!canUseOutputs) return;
     const url = analysisId
       ? `${window.location.origin}/dashboard/analysis/${analysisId}`
       : window.location.href;
     try {
       if (navigator.share) {
-        await navigator.share({ title: result.documentTitle || "Lexalyze Analysis", url });
+        await navigator.share({ title: result?.documentTitle || "Lexalyze Analysis", url });
         return;
       }
     } catch { /* fallback to clipboard */ }
@@ -587,7 +601,9 @@ export default function AnalysisResult({
         <button
           type="button"
           onClick={handleShare}
-          className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/20 bg-[#121216]/95 px-4 py-2.5 text-xs font-bold tracking-wider uppercase text-neutral-400 shadow-2xl shadow-black/80 backdrop-blur transition-all duration-300 hover:border-white/40 hover:text-white active:scale-95"
+          disabled={!canUseOutputs}
+          title={canUseOutputs ? "Share analysis" : "Upgrade to Solo to unlock sharing"}
+          className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/20 bg-[#121216]/95 px-4 py-2.5 text-xs font-bold tracking-wider uppercase text-neutral-400 shadow-2xl shadow-black/80 backdrop-blur transition-all duration-300 hover:border-white/40 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-white/20 disabled:hover:text-neutral-400"
           aria-label="Share analysis"
         >
           {isCopied ? (
@@ -610,8 +626,9 @@ export default function AnalysisResult({
         <button
           type="button"
           onClick={handleDownloadPDF}
-          disabled={isDownloading}
-          className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-[#C9A84C]/45 bg-[#121216]/95 px-5 py-2.5 text-xs font-bold tracking-wider uppercase text-[#C9A84C] shadow-2xl shadow-black/80 backdrop-blur transition-all duration-300 hover:border-[#C9A84C] hover:bg-[#1E1B15] active:scale-95 disabled:opacity-50"
+          disabled={isDownloading || !canUseOutputs}
+          title={canUseOutputs ? "Download PDF" : "Upgrade to Solo to unlock export"}
+          className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-[#C9A84C]/45 bg-[#121216]/95 px-5 py-2.5 text-xs font-bold tracking-wider uppercase text-[#C9A84C] shadow-2xl shadow-black/80 backdrop-blur transition-all duration-300 hover:border-[#C9A84C] hover:bg-[#1E1B15] active:scale-95 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[#121216]/95"
           aria-label="Download PDF"
         >
           {isDownloading ? (
@@ -658,7 +675,7 @@ export default function AnalysisResult({
         </h1>
 
         <p className="mt-4 rounded-2xl border-l-2 border-[#C9A84C] bg-[#C9A84C]/5 px-5 py-4 text-sm leading-relaxed text-[#f5e2ac] italic">
-          "{result.oneLineSummary}"
+          &quot;{result.oneLineSummary}&quot;
         </p>
 
         {result.partyFavour && (
@@ -739,7 +756,7 @@ export default function AnalysisResult({
               
               {flag.exactQuote && flag.exactQuote !== "No exact quote found in document." && (
                 <p className="mt-3.5 border-l-2 border-rose-400/40 pl-4 text-xs italic leading-relaxed text-rose-200/80">
-                  "{flag.exactQuote}"
+                  &quot;{flag.exactQuote}&quot;
                 </p>
               )}
               {flag.legalContext && (
@@ -778,7 +795,7 @@ export default function AnalysisResult({
               <p className="mt-3.5 text-xs leading-relaxed text-emerald-100/90 font-medium">{point.explanation}</p>
               {point.exactQuote && point.exactQuote !== "No exact quote found in document." && (
                 <p className="mt-3.5 border-l-2 border-emerald-400/40 pl-4 text-xs italic leading-relaxed text-emerald-200/80">
-                  "{point.exactQuote}"
+                  &quot;{point.exactQuote}&quot;
                 </p>
               )}
             </article>

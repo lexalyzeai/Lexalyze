@@ -49,19 +49,13 @@ export async function POST(req: NextRequest) {
 
   const { error: resultError } = await supabase
     .from('analyses')
-    .update({ result: nextResult })
+    .update({ result: nextResult, checklist_state: checklist })
     .eq('id', analysisId)
     .eq('user_id', user.id)
 
   if (resultError) {
     return NextResponse.json({ error: resultError.message || 'Checklist save failed.' }, { status: 500 })
   }
-
-  await supabase
-    .from('analyses')
-    .update({ checkbox: checklist })
-    .eq('id', analysisId)
-    .eq('user_id', user.id)
 
   return NextResponse.json({ checklist })
 }

@@ -58,8 +58,8 @@ const TOPICS = [
 ];
 
 const FAQS = [
-  { q: "Is Lexalyze free?", a: "Yes, Lexalyze is currently free to use. There are no paid plans at this time." },
-  { q: "How many documents can I analyse?", a: "There is a daily rate limit to ensure fair use. If you hit the limit, you will see a message asking you to try again the next day." },
+  { q: "Is Lexalyze free?", a: "Yes. Starter is free with 5 documents per month, 3 follow-ups per document, and 14-day history." },
+  { q: "How many documents can I analyse?", a: "Starter includes 5 documents per month. Solo includes 30 documents per month, and Team includes unlimited documents." },
   { q: "Can I upload confidential documents?", a: "Your document text is sent to Groq's AI API for processing. We do not store the raw document file. If your document contains highly sensitive personal information, please review our Privacy Policy and consider whether you are comfortable with third-party AI processing." },
   { q: "Why does my PDF not work?", a: "Scanned or image-based PDFs cannot be read by our text extractor. Only text-based PDFs work. Try converting to a Word .docx if you have the original." },
   { q: "Is the analysis accurate?", a: "Lexalyze uses a powerful AI model, but AI can make mistakes. Always treat the analysis as a helpful first read, not a definitive legal opinion. Consult a lawyer for important decisions." },

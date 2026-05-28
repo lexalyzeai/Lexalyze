@@ -2,9 +2,8 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { analyzeDocument } from '@/lib/groq'
-
-const FREE_MONTHLY_LIMIT = 5
-const SOLO_MONTHLY_LIMIT = 30
+import { createSupabaseAdmin } from '@/lib/supabase-admin'
+import { currentUsageMonth, normalizePlan, PLAN_LIMITS } from '@/lib/plans'
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
@@ -28,42 +27,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Get user plan from profiles
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('plan')
-    .eq('id', user.id)
-    .single()
-
-  const plan = profile?.plan || 'free'
-
-  // Count analyses this calendar month
-  const startOfMonth = new Date()
-  startOfMonth.setDate(1)
-  startOfMonth.setHours(0, 0, 0, 0)
-
-  const { count: monthlyCount } = await supabase
-    .from('analyses')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)
-    .gte('created_at', startOfMonth.toISOString())
-
-  const used = monthlyCount ?? 0
-
-  if (plan === 'free' && used >= FREE_MONTHLY_LIMIT) {
-    return NextResponse.json(
-      { error: `Monthly limit reached (${FREE_MONTHLY_LIMIT} documents on Starter plan). Upgrade to Solo for 30 documents per month.` },
-      { status: 429 }
-    )
-  }
-
-  if (plan === 'solo' && used >= SOLO_MONTHLY_LIMIT) {
-    return NextResponse.json(
-      { error: `Monthly limit reached (${SOLO_MONTHLY_LIMIT} documents on Solo plan). Upgrade to Team for unlimited documents.` },
-      { status: 429 }
-    )
-  }
-
   const { text, language, filename } = await req.json()
 
   if (!text || text.trim().length === 0) {
@@ -71,6 +34,27 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const admin = createSupabaseAdmin()
+    const usageMonth = currentUsageMonth()
+
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('id, full_name, analyses_used, plan, usage_month, monthly_analyses_used')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    const plan = normalizePlan(profile?.plan)
+    const limit = PLAN_LIMITS[plan].monthlyDocuments
+    const used = profile?.usage_month === usageMonth ? profile.monthly_analyses_used ?? 0 : 0
+
+    if (limit !== null && used >= limit) {
+      const nextPlan = plan === 'free' ? 'Solo' : 'Team'
+      return NextResponse.json(
+        { error: `Monthly limit reached (${limit} documents on ${plan === 'free' ? 'Starter' : 'Solo'} plan). Upgrade to ${nextPlan} to continue.` },
+        { status: 429 }
+      )
+    }
+
     const result = await analyzeDocument(text, language || 'en')
 
     const { data: analysis, error: saveError } = await supabase
@@ -88,7 +72,19 @@ export async function POST(req: NextRequest) {
 
     if (saveError) {
       console.error('Save error:', saveError)
+      return NextResponse.json({ error: 'Analysis could not be saved. Please try again.' }, { status: 500 })
     }
+
+    await admin
+      .from('profiles')
+      .upsert({
+        id: user.id,
+        full_name: profile?.full_name ?? user.user_metadata?.full_name ?? null,
+        analyses_used: (profile?.analyses_used ?? 0) + 1,
+        plan,
+        usage_month: usageMonth,
+        monthly_analyses_used: used + 1,
+      })
 
     return NextResponse.json({ result, analysisId: analysis?.id })
 

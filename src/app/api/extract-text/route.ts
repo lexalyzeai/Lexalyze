@@ -13,7 +13,6 @@ const ALLOWED_TYPES = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/msword',
 ]
-const FREE_LIMIT = 10
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
@@ -35,19 +34,6 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('analyses_used')
-    .eq('id', user.id)
-    .single()
-
-  if (profile && profile.analyses_used >= FREE_LIMIT) {
-    return NextResponse.json(
-      { error: 'Daily limit reached. Try again tomorrow.' },
-      { status: 429 }
-    )
   }
 
   const formData = await req.formData()
