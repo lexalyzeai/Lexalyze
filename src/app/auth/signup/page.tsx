@@ -84,6 +84,24 @@ function SignupForm() {
   }, [searchParams]);
 
   useEffect(() => {
+    const resetGoogleLoading = () => setIsGoogleLoading(false);
+    const handlePageShow = () => resetGoogleLoading();
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") resetGoogleLoading();
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    window.addEventListener("focus", resetGoogleLoading);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      window.removeEventListener("pageshow", handlePageShow);
+      window.removeEventListener("focus", resetGoogleLoading);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, []);
+
+  useEffect(() => {
     if (errorMessage && errorRef.current) {
       errorRef.current.scrollIntoView({
         behavior: "smooth",
@@ -158,6 +176,7 @@ function SignupForm() {
 
   async function handleGoogle() {
     setIsGoogleLoading(true);
+    const fallbackTimer = window.setTimeout(() => setIsGoogleLoading(false), 10000);
   
     const { error } =
       await supabase.auth.signInWithOAuth({
@@ -175,6 +194,7 @@ function SignupForm() {
       });
   
     if (error) {
+      window.clearTimeout(fallbackTimer);
       setErrorMessage(
         "Google sign-in failed. Please try again."
       );

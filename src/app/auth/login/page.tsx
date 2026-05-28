@@ -108,9 +108,30 @@ function LoginForm() {
       if (error === 'session_expired') {
         setFormError('Your session expired due to inactivity. Please sign in again.')
       }
+      if (error === 'account_deleted') {
+        setFormError('Account deleted. That account no longer exists.')
+      }
     }, 0)
     return () => clearTimeout(timer)
   }, [searchParams])
+
+  useEffect(() => {
+    const resetGoogleLoading = () => setIsGoogleLoading(false)
+    const handlePageShow = () => resetGoogleLoading()
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') resetGoogleLoading()
+    }
+
+    window.addEventListener('pageshow', handlePageShow)
+    window.addEventListener('focus', resetGoogleLoading)
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    return () => {
+      window.removeEventListener('pageshow', handlePageShow)
+      window.removeEventListener('focus', resetGoogleLoading)
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
+  }, [])
 
   // Feature 11 — session timeout warning
   useEffect(() => {
@@ -205,7 +226,7 @@ function LoginForm() {
       }
 
       const remaining = MAX_ATTEMPTS - newAttempts;
-      setFormError(`Invalid email or password. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`);
+      setFormError(`No account exists for that email, or the password is incorrect. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`);
       return;
     }
 
@@ -222,6 +243,7 @@ function LoginForm() {
 
   async function handleGoogle() {
     setIsGoogleLoading(true);
+    const fallbackTimer = window.setTimeout(() => setIsGoogleLoading(false), 10000);
     const returnTo = searchParams.get('returnTo') || '/dashboard'
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -230,6 +252,7 @@ function LoginForm() {
       },
     });
     if (error) {
+      window.clearTimeout(fallbackTimer);
       setFormError("Google sign-in failed. Please try again.");
       setIsGoogleLoading(false);
     }

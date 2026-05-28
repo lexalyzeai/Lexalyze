@@ -395,8 +395,20 @@ export default function DashboardPage() {
 
     await supabase.auth.signOut({ scope: "local" }).catch(() => null);
     clearLocalSessionState();
-    router.replace("/auth/signup?deleted=1");
+    router.replace("/auth/login?error=account_deleted");
     router.refresh();
+  }
+
+  function closeSettingsModal() {
+    setSettingsMsg(null);
+    setShowDeleteConfirmation(null);
+    setIsSettingsModalOpen(false);
+  }
+
+  function switchSettingsTab(tab: typeof selectedSettingsTab) {
+    setSettingsMsg(null);
+    setShowDeleteConfirmation(null);
+    setSelectedSettingsTab(tab);
   }
 
   const renderSidebarContent = () => (
@@ -810,7 +822,7 @@ export default function DashboardPage() {
           {/* Backdrop overlay */}
           <div
             className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
-            onClick={() => setIsSettingsModalOpen(false)}
+            onClick={closeSettingsModal}
           />
 
           {/* Modal */}
@@ -828,7 +840,7 @@ export default function DashboardPage() {
                 </h2>
                 <button
                   type="button"
-                  onClick={() => setIsSettingsModalOpen(false)}
+                  onClick={closeSettingsModal}
                   className="flex size-8 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-white/[0.04] hover:text-white"
                   aria-label="Close settings"
                 >
@@ -849,7 +861,7 @@ export default function DashboardPage() {
               <div className="flex gap-2 mb-6 border-b border-white/[0.06] pb-4">
                 <button
                   type="button"
-                  onClick={() => setSelectedSettingsTab("general")}
+                  onClick={() => switchSettingsTab("general")}
                   className={`px-4 py-2 text-sm font-medium transition ${
                     selectedSettingsTab === "general"
                       ? "text-[#C9A84C]"
@@ -860,7 +872,7 @@ export default function DashboardPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSelectedSettingsTab("billing")}
+                  onClick={() => switchSettingsTab("billing")}
                   className={`px-4 py-2 text-sm font-medium transition ${
                     selectedSettingsTab === "billing"
                       ? "text-[#C9A84C]"
@@ -871,7 +883,7 @@ export default function DashboardPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSelectedSettingsTab("usage")}
+                  onClick={() => switchSettingsTab("usage")}
                   className={`px-4 py-2 text-sm font-medium transition ${
                     selectedSettingsTab === "usage"
                       ? "text-[#C9A84C]"
@@ -882,7 +894,7 @@ export default function DashboardPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSelectedSettingsTab("security")}
+                  onClick={() => switchSettingsTab("security")}
                   className={`px-4 py-2 text-sm font-medium transition ${
                     selectedSettingsTab === "security"
                       ? "text-[#C9A84C]"
@@ -893,7 +905,7 @@ export default function DashboardPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setSelectedSettingsTab("deletion")}
+                  onClick={() => switchSettingsTab("deletion")}
                   className={`px-4 py-2 text-sm font-medium transition ${
                     selectedSettingsTab === "deletion"
                       ? "text-[#C9A84C]"
@@ -980,7 +992,7 @@ export default function DashboardPage() {
                         </div>
                         <button
                           type="button"
-                          onClick={() => { setIsSettingsModalOpen(false); router.push("/pricing"); }}
+                          onClick={() => { closeSettingsModal(); router.push("/pricing"); }}
                           className="w-full rounded-lg bg-[#C9A84C] px-4 py-2.5 text-sm font-semibold text-[#0A0A0A] transition hover:bg-[#d4b55d]"
                         >
                           Upgrade Plan →
