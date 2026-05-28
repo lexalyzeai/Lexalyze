@@ -3,6 +3,7 @@
 import { Playfair_Display } from "next/font/google";
 import { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import DocumentUpload from "../components/DocumentUpload";
 import AnalysisResult from "../components/AnalysisResult";
@@ -447,7 +448,7 @@ export default function DashboardPage() {
         <aside className="absolute left-0 top-0 h-full w-[280px] max-w-[80vw] flex flex-col border-r border-white/[0.06] bg-[#0B0C0E]">
           <div className="flex items-center justify-between px-5 pt-8 pb-5">
             <div>
-              <p className={`${playfair.className} text-[1.25rem] font-bold leading-none tracking-[0.15em] text-[#C9A84C]`}>LEXALYZE</p>
+              <Link href="/" className={`${playfair.className} text-[1.25rem] font-bold leading-none tracking-[0.15em] text-[#C9A84C] hover:opacity-80 transition-opacity`}>LEXALYZE</Link>
               <p className="mt-1 text-[8px] font-bold uppercase tracking-[0.25em] text-neutral-600">Workspace</p>
             </div>
             <button
@@ -467,7 +468,7 @@ export default function DashboardPage() {
       {/* Desktop sidebar */}
       <aside className="hidden h-screen w-[280px] shrink-0 flex-col border-r border-white/[0.06] bg-[#0A0A0C] md:flex">
         <div className="px-5 pt-8 pb-5">
-          <p className={`${playfair.className} text-[1.35rem] font-bold leading-none tracking-[0.18em] text-[#C9A84C]`}>LEXALYZE</p>
+          <Link href="/" className={`${playfair.className} text-[1.35rem] font-bold leading-none tracking-[0.18em] text-[#C9A84C] hover:opacity-80 transition-opacity`}>LEXALYZE</Link>
           <p className="mt-1.5 text-[8px] font-bold uppercase tracking-[0.28em] text-neutral-500">Document intelligence</p>
         </div>
         {renderSidebarContent()}

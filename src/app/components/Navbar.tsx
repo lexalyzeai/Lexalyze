@@ -12,7 +12,7 @@ export default function Navbar() {
   return (
     <header className="sticky top-4 z-50 mx-auto w-[92%] max-w-6xl rounded-full border border-white/[0.06] bg-black/50 shadow-[0_12px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl transition-all duration-300">
       <nav className="flex w-full items-center justify-between px-6 py-3">
-        <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <span
             className="inline-block h-2.5 w-2.5 animate-pulse-gold rounded-full bg-[#C9A84C] shadow-[0_0_10px_rgba(201,168,76,0.8)]"
             aria-hidden
@@ -22,7 +22,7 @@ export default function Navbar() {
           >
             LEXALYZE
           </span>
-        </div>
+        </Link>
 
         <div className="flex items-center gap-2 sm:gap-4">
           <Link
@@ -39,12 +39,6 @@ export default function Navbar() {
             Get started
           </Link>
 
-          <Link
-            href="/dashboard/history"
-            className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium tracking-wide text-neutral-400 transition-all duration-300 hover:bg-white/[0.05] hover:text-white sm:text-sm"
-          >
-            History
-          </Link>
 
           <span className="hidden text-[10px] font-semibold uppercase tracking-[0.15em] text-neutral-500 md:inline-block">
             Not legal advice

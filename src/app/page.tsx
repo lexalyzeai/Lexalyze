@@ -257,7 +257,7 @@ export default function HomePage() {
 
           <div className="hero-fade-up-delay-2 mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
             <Link
-              href="/auth/login"
+              href="/auth/signup"
               className="w-full rounded-lg bg-[#C9A84C] px-6 py-3 text-sm font-semibold text-[#0A0A0A] transition duration-200 hover:-translate-y-0.5 hover:bg-[#d4b55d] active:bg-[#b89542] sm:w-auto"
             >
               Start analyzing
@@ -629,10 +629,10 @@ export default function HomePage() {
                 Company
               </h3>
               <ul className="mt-4 space-y-3 text-sm text-neutral-400">
-                <li><a href="#" className="footer-link">About</a></li>
-                <li><a href="#" className="footer-link">Contact</a></li>
-                <li><a href="#" className="footer-link">Privacy Policy</a></li>
-                <li><a href="#" className="footer-link">Terms of Service</a></li>
+                <li><Link href="/about" className="footer-link">About</Link></li>
+                <li><Link href="/contact" className="footer-link">Contact</Link></li>
+                <li><Link href="/privacy" className="footer-link">Privacy Policy</Link></li>
+                <li><Link href="/terms" className="footer-link">Terms of Service</Link></li>
               </ul>
             </div>
 
@@ -641,10 +641,10 @@ export default function HomePage() {
                 Resources
               </h3>
               <ul className="mt-4 space-y-3 text-sm text-neutral-400">
-                <li><a href="#" className="footer-link">Supported documents</a></li>
-                <li><a href="#" className="footer-link">Trust &amp; Safety</a></li>
-                <li><a href="#" className="footer-link">Help Center</a></li>
-                <li><a href="#" className="footer-link">Status</a></li>
+                <li><Link href="/supported-documents" className="footer-link">Supported documents</Link></li>
+                <li><Link href="/trust-safety" className="footer-link">Trust &amp; Safety</Link></li>
+                <li><Link href="/help" className="footer-link">Help Center</Link></li>
+                <li><Link href="/status" className="footer-link">Status</Link></li>
               </ul>
             </div>
           </div>
