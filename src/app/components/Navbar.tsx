@@ -11,9 +11,9 @@ const playfair = Playfair_Display({
 });
 
 const NAV_LINKS = [
-  { label: "Features", href: "/#what-lexalyze-reads" },
-  { label: "Demo", href: "/#live-demo" },
-  { label: "FAQ", href: "/#faq" },
+  { label: "About", href: "/about" },
+  { label: "Pricing", href: "/pricing" },
+  { label: "Contact", href: "/contact" },
 ];
 
 export default function Navbar() {

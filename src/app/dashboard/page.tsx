@@ -103,6 +103,11 @@ export default function DashboardPage() {
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState<"history" | "account" | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [pinnedAnalysisIds, setPinnedAnalysisIds] = useState<string[]>([]);
+  const [isPasswordResetLoading, setIsPasswordResetLoading] = useState(false);
+  const [passwordResetSent, setPasswordResetSent] = useState(false);
+  const [isSigningOutAll, setIsSigningOutAll] = useState(false);
+  const [isDeletingHistory, setIsDeletingHistory] = useState(false);
+  const [settingsMsg, setSettingsMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const selectedAnalysis = analyses.find((a) => a.id === selectedAnalysisId) || null;
   const totalActionItems = analyses.reduce((sum, analysis) => sum + (analysis.result?.actionItems?.length ?? 0), 0);
@@ -257,6 +262,54 @@ export default function DashboardPage() {
     router.push("/auth/login");
   }
 
+  async function handlePasswordReset() {
+    if (!email) return;
+    setIsPasswordResetLoading(true);
+    setSettingsMsg(null);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    });
+    setIsPasswordResetLoading(false);
+    setPasswordResetSent(!error);
+    setSettingsMsg(
+      error
+        ? { type: "error", text: "Failed to send. Please try again." }
+        : { type: "success", text: "Reset link sent — check your inbox." }
+    );
+    setTimeout(() => setSettingsMsg(null), 5000);
+  }
+
+  async function handleSignOutAll() {
+    setIsSigningOutAll(true);
+    await supabase.auth.signOut({ scope: "global" });
+    router.push("/auth/login");
+  }
+
+  async function handleDeleteHistory() {
+    setIsDeletingHistory(true);
+    const ids = analyses.map((a) => a.id);
+    if (ids.length > 0) {
+      await supabase.from("followups").delete().in("analysis_id", ids);
+      await supabase.from("analyses").delete().in("id", ids);
+    }
+    setAnalyses([]);
+    setSelectedAnalysisId(null);
+    setSelectedFollowUps([]);
+    setIsDeletingHistory(false);
+    setShowDeleteConfirmation(null);
+    setIsSettingsModalOpen(false);
+  }
+
+  async function handleDeleteAnalysis(id: string) {
+    await supabase.from("followups").delete().eq("analysis_id", id);
+    await supabase.from("analyses").delete().eq("id", id);
+    setAnalyses((prev) => prev.filter((a) => a.id !== id));
+    if (selectedAnalysisId === id) {
+      setSelectedAnalysisId(null);
+      setSelectedFollowUps([]);
+    }
+  }
+
   const renderSidebarContent = () => (
     <>
       <div className="px-4 pb-6 pt-2">
@@ -368,7 +421,7 @@ export default function DashboardPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => { setOpenDropdownId(null); }}
+                      onClick={() => { handleDeleteAnalysis(analysis.id); setOpenDropdownId(null); }}
                       className="flex w-full items-center gap-2 px-3 py-2.5 text-xs font-semibold text-neutral-300 transition hover:bg-white/[0.06] hover:text-rose-400 rounded-b-xl"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-3.5">
@@ -798,178 +851,116 @@ export default function DashboardPage() {
                 </div>
               ) : selectedSettingsTab === "billing" ? (
                 <div className="space-y-4">
-                  {/* Current Plan */}
-                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
-                      Current Plan
-                    </p>
-                    <p className="text-sm font-medium text-white">
-                      Free Plan
-                    </p>
-                  </div>
-
-                  {/* Usage This Month */}
-                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
-                      Usage This Month
-                    </p>
-                    <p className="text-sm text-neutral-300 mb-3">
-                      Documents analyzed: 3 / 10
-                    </p>
-                    <div className="h-2 w-full rounded-full bg-white/[0.08] overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-[#C9A84C] transition-all"
-                        style={{ width: "30%" }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Upgrade Plan */}
-                  <button
-                    type="button"
-                    className="w-full rounded-lg bg-[#C9A84C] px-4 py-2.5 text-sm font-semibold text-[#0A0A0A] transition hover:bg-[#d4b55d]"
-                  >
-                    Upgrade to Pro
-                  </button>
-
-                  {/* Billing History */}
-                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
-                      Billing History
-                    </p>
-                    <p className="text-sm text-neutral-400">
-                      No invoices yet
-                    </p>
-                  </div>
-
-                  {/* Manage Subscription */}
-                  <button
-                    type="button"
-                    className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-[#C9A84C]/40 hover:bg-white/[0.04] hover:text-[#C9A84C]"
-                  >
-                    Manage Subscription
-                  </button>
+                  {(() => {
+                    const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0,0,0,0);
+                    const docsThisMonth = analyses.filter(a => new Date(a.created_at) >= startOfMonth).length;
+                    const pct = Math.min(100, Math.round((docsThisMonth / 5) * 100));
+                    return (
+                      <>
+                        <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">Current Plan</p>
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium text-white">Starter (Free)</p>
+                            <span className="rounded-full bg-neutral-800 px-2.5 py-0.5 text-[10px] font-semibold text-neutral-400">Free forever</span>
+                          </div>
+                        </div>
+                        <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-1">Documents This Month</p>
+                          <p className="text-sm text-neutral-300 mb-3">{docsThisMonth} / 5 used</p>
+                          <div className="h-2 w-full rounded-full bg-white/[0.08] overflow-hidden">
+                            <div className="h-full rounded-full bg-[#C9A84C] transition-all" style={{ width: `${pct}%` }} />
+                          </div>
+                          <p className="mt-2 text-xs text-neutral-500">{Math.max(0, 5 - docsThisMonth)} documents remaining this month</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => { setIsSettingsModalOpen(false); router.push("/pricing"); }}
+                          className="w-full rounded-lg bg-[#C9A84C] px-4 py-2.5 text-sm font-semibold text-[#0A0A0A] transition hover:bg-[#d4b55d]"
+                        >
+                          Upgrade Plan →
+                        </button>
+                        <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">Billing History</p>
+                          <p className="text-sm text-neutral-400">No invoices yet</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => { setIsSettingsModalOpen(false); router.push("/contact"); }}
+                          className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-[#C9A84C]/40 hover:bg-white/[0.04] hover:text-[#C9A84C]"
+                        >
+                          Manage Subscription
+                        </button>
+                      </>
+                    );
+                  })()}
                 </div>
               ) : selectedSettingsTab === "usage" ? (
                 <div className="space-y-4">
-                  {/* Documents analyzed */}
-                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
-                      Documents Analyzed
-                    </p>
-                    <p className="text-2xl font-bold text-[#C9A84C]">
-                      12
-                    </p>
-                  </div>
-
-                  {/* Follow-up questions asked */}
-                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
-                      Follow-up Questions Asked
-                    </p>
-                    <p className="text-2xl font-bold text-[#C9A84C]">
-                      31
-                    </p>
-                  </div>
-
-                  {/* Average analysis time */}
-                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
-                      Average Analysis Time
-                    </p>
-                    <p className="text-2xl font-bold text-[#C9A84C]">
-                      42 sec
-                    </p>
-                  </div>
-
-                  {/* Last analysis date */}
-                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
-                      Last Analysis Date
-                    </p>
-                    <p className="text-2xl font-bold text-[#C9A84C]">
-                      13 May 2026
-                    </p>
-                  </div>
-
-                  {/* Storage used */}
-                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
-                      Storage Used
-                    </p>
-                    <p className="text-2xl font-bold text-[#C9A84C]">
-                      18 MB
-                    </p>
-                  </div>
+                  {(() => {
+                    const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0,0,0,0);
+                    const docsThisMonth = analyses.filter(a => new Date(a.created_at) >= startOfMonth).length;
+                    const lastAnalysis = analyses[0];
+                    const lastDate = lastAnalysis ? new Date(lastAnalysis.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
+                    return (
+                      <>
+                        <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">Total Documents Analyzed</p>
+                          <p className="text-2xl font-bold text-[#C9A84C]">{analyses.length}</p>
+                        </div>
+                        <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">This Month</p>
+                          <p className="text-2xl font-bold text-[#C9A84C]">{docsThisMonth} <span className="text-sm font-normal text-neutral-500">/ 5</span></p>
+                        </div>
+                        <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">High Risk Documents</p>
+                          <p className="text-2xl font-bold text-rose-400">{highRiskCount}</p>
+                        </div>
+                        <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">Last Analysis</p>
+                          <p className="text-base font-semibold text-[#C9A84C]">{lastDate}</p>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               ) : selectedSettingsTab === "security" ? (
                 <div className="space-y-4">
-                  {/* Change Password */}
+                  {settingsMsg && (
+                    <div className={`rounded-lg px-4 py-3 text-sm font-medium ${settingsMsg.type === "success" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border border-rose-500/20"}`}>
+                      {settingsMsg.text}
+                    </div>
+                  )}
                   <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
-                      Change Password
-                    </p>
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">Change / Reset Password</p>
+                    <p className="text-xs text-neutral-500 mb-3">We will send a secure password reset link to your email address.</p>
                     <button
                       type="button"
-                      className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-[#C9A84C]/40 hover:bg-white/[0.04] hover:text-[#C9A84C]"
+                      onClick={handlePasswordReset}
+                      disabled={isPasswordResetLoading || passwordResetSent}
+                      className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-[#C9A84C]/40 hover:bg-white/[0.04] hover:text-[#C9A84C] disabled:opacity-50"
                     >
-                      Change password
+                      {isPasswordResetLoading ? "Sending…" : passwordResetSent ? "✓ Email sent" : "Send password reset email"}
                     </button>
                   </div>
-
-                  {/* Reset Password */}
                   <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
-                      Reset Password
-                    </p>
-                    <button
-                      type="button"
-                      className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-[#C9A84C]/40 hover:bg-white/[0.04] hover:text-[#C9A84C]"
-                    >
-                      Send password reset email
-                    </button>
-                  </div>
-
-                  {/* Active Session */}
-                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
-                      Active Session
-                    </p>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <p className="text-sm text-neutral-400">
-                          Current device:
-                        </p>
-                        <p className="text-sm text-white">
-                          Chrome on Windows
-                        </p>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <p className="text-sm text-neutral-400">
-                          Status:
-                        </p>
-                        <p className="text-sm text-[#C9A84C]">
-                          Active now
-                        </p>
-                      </div>
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">Active Session</p>
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm text-neutral-400">Status:</p>
+                      <p className="text-sm text-emerald-400">Active now</p>
                     </div>
                   </div>
-
-                  {/* Sign Out All Devices */}
                   <button
                     type="button"
-                    className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-[#C9A84C]/40 hover:bg-white/[0.04] hover:text-[#C9A84C]"
+                    onClick={handleSignOutAll}
+                    disabled={isSigningOutAll}
+                    className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-400 disabled:opacity-50"
                   >
-                    Sign out all devices
+                    {isSigningOutAll ? "Signing out…" : "Sign out all devices"}
                   </button>
-
-                  {/* Security Notice */}
                   <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">
-                      Security Notice
-                    </p>
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">Security Notice</p>
                     <p className="text-sm text-neutral-400 leading-relaxed">
-                      Your documents are encrypted in transit and deleted after analysis. Lexalyze is designed with privacy and confidentiality in mind.
+                      Your documents are encrypted in transit. Lexalyze is designed with privacy and confidentiality in mind.
                     </p>
                   </div>
                 </div>
@@ -986,9 +977,10 @@ export default function DashboardPage() {
                     <button
                       type="button"
                       onClick={() => setShowDeleteConfirmation("history")}
-                      className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400"
+                      disabled={isDeletingHistory}
+                      className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
                     >
-                      Delete all saved analyses
+                      {isDeletingHistory ? "Deleting…" : "Delete all saved analyses"}
                     </button>
                   </div>
                 </div>
@@ -1025,11 +1017,16 @@ export default function DashboardPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            setShowDeleteConfirmation(null);
+                            if (showDeleteConfirmation === "history") {
+                              handleDeleteHistory();
+                            } else {
+                              setShowDeleteConfirmation(null);
+                            }
                           }}
-                          className="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700"
+                          disabled={isDeletingHistory}
+                          className="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
                         >
-                          Confirm
+                          {isDeletingHistory ? "Deleting…" : "Confirm"}
                         </button>
                       </div>
                     </div>

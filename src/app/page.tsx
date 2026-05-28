@@ -629,6 +629,7 @@ export default function HomePage() {
                 Company
               </h3>
               <ul className="mt-4 space-y-3 text-sm text-neutral-400">
+                <li><Link href="/pricing" className="footer-link">Pricing</Link></li>
                 <li><Link href="/about" className="footer-link">About</Link></li>
                 <li><Link href="/contact" className="footer-link">Contact</Link></li>
                 <li><Link href="/privacy" className="footer-link">Privacy Policy</Link></li>

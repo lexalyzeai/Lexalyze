@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { FOLLOWUP_PROMPT } from '@/lib/prompt'
 import { AnalysisResult } from '@/types/analysis'
 
+const FREE_FOLLOWUP_LIMIT = 3
+
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
   const supabase = createServerClient(
@@ -30,6 +32,30 @@ export async function POST(req: NextRequest) {
 
   if (!question || !analysisId) {
     return NextResponse.json({ error: 'Question and analysisId are required.' }, { status: 400 })
+  }
+
+  // Check user plan
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('plan')
+    .eq('id', user.id)
+    .single()
+
+  const plan = profile?.plan || 'free'
+
+  // Enforce follow-up limits for free plan (3 per document)
+  if (plan === 'free') {
+    const { count: followupCount } = await supabase
+      .from('followups')
+      .select('*', { count: 'exact', head: true })
+      .eq('analysis_id', analysisId)
+
+    if ((followupCount ?? 0) >= FREE_FOLLOWUP_LIMIT) {
+      return NextResponse.json(
+        { error: `Follow-up limit reached for this document (${FREE_FOLLOWUP_LIMIT} per document on Starter plan). Upgrade to Solo for unlimited follow-ups.` },
+        { status: 429 }
+      )
+    }
   }
 
   const { data: analysis } = await supabase

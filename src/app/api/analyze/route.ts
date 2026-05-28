@@ -3,7 +3,8 @@ import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { analyzeDocument } from '@/lib/groq'
 
-const FREE_LIMIT = 10
+const FREE_MONTHLY_LIMIT = 5
+const SOLO_MONTHLY_LIMIT = 30
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
@@ -27,15 +28,38 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Get user plan from profiles
   const { data: profile } = await supabase
     .from('profiles')
-    .select('analyses_used')
+    .select('plan')
     .eq('id', user.id)
     .single()
 
-  if (profile && profile.analyses_used >= FREE_LIMIT) {
+  const plan = profile?.plan || 'free'
+
+  // Count analyses this calendar month
+  const startOfMonth = new Date()
+  startOfMonth.setDate(1)
+  startOfMonth.setHours(0, 0, 0, 0)
+
+  const { count: monthlyCount } = await supabase
+    .from('analyses')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .gte('created_at', startOfMonth.toISOString())
+
+  const used = monthlyCount ?? 0
+
+  if (plan === 'free' && used >= FREE_MONTHLY_LIMIT) {
     return NextResponse.json(
-      { error: 'Daily limit reached. Try again tomorrow.' },
+      { error: `Monthly limit reached (${FREE_MONTHLY_LIMIT} documents on Starter plan). Upgrade to Solo for 30 documents per month.` },
+      { status: 429 }
+    )
+  }
+
+  if (plan === 'solo' && used >= SOLO_MONTHLY_LIMIT) {
+    return NextResponse.json(
+      { error: `Monthly limit reached (${SOLO_MONTHLY_LIMIT} documents on Solo plan). Upgrade to Team for unlimited documents.` },
       { status: 429 }
     )
   }
@@ -65,11 +89,6 @@ export async function POST(req: NextRequest) {
     if (saveError) {
       console.error('Save error:', saveError)
     }
-
-    await supabase
-      .from('profiles')
-      .update({ analyses_used: (profile?.analyses_used ?? 0) + 1 })
-      .eq('id', user.id)
 
     return NextResponse.json({ result, analysisId: analysis?.id })
 

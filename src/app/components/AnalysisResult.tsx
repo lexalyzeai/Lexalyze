@@ -188,6 +188,7 @@ export default function AnalysisResult({
     getInitialChecklist(savedChecklist, result, analysisId)
   );
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   if (!result) {
     return (
@@ -557,13 +558,55 @@ export default function AnalysisResult({
     }
   }
 
+
+  async function handleShare() {
+    const url = analysisId
+      ? `${window.location.origin}/dashboard/analysis/${analysisId}`
+      : window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: result.documentTitle || "Lexalyze Analysis", url });
+        return;
+      }
+    } catch { /* fallback to clipboard */ }
+    try {
+      await navigator.clipboard.writeText(url);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch { /* ignore */ }
+  }
+
   const favourStyles = partyFavourStyles(result.partyFavour);
 
   return (
     <section id="analysis-result-content" className="w-full space-y-6 rounded-3xl bg-transparent text-white">
 
-      {/* Floating Sticky PDF Downloader */}
-      <div className="pointer-events-none sticky top-4 z-30 flex justify-end">
+      {/* Floating Sticky action bar */}
+      <div className="pointer-events-none sticky top-4 z-30 flex justify-end gap-2">
+        {/* Share button */}
+        <button
+          type="button"
+          onClick={handleShare}
+          className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/20 bg-[#121216]/95 px-4 py-2.5 text-xs font-bold tracking-wider uppercase text-neutral-400 shadow-2xl shadow-black/80 backdrop-blur transition-all duration-300 hover:border-white/40 hover:text-white active:scale-95"
+          aria-label="Share analysis"
+        >
+          {isCopied ? (
+            <>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="size-4 text-emerald-400">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+              <span className="text-emerald-400">Copied!</span>
+            </>
+          ) : (
+            <>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="size-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+              </svg>
+              <span>Share</span>
+            </>
+          )}
+        </button>
+        {/* Download PDF button */}
         <button
           type="button"
           onClick={handleDownloadPDF}
