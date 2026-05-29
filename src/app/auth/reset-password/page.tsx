@@ -10,6 +10,23 @@ const playfair = Playfair_Display({ subsets: ["latin"], weight: ["600", "700"] }
 const inputClass =
   "w-full rounded-lg border border-white/10 bg-[#1a1a1a] px-4 py-3 text-white placeholder:text-neutral-600 outline-none transition focus:border-[#C9A84C]/50 focus:ring-2 focus:ring-[#C9A84C]/25";
 
+function mapResetPasswordError(message: string) {
+  const lower = message.toLowerCase();
+  if (lower.includes("same")) {
+    return "Choose a new password that is different from your current password.";
+  }
+  if (lower.includes("weak") || lower.includes("password")) {
+    return "Choose a stronger password and try again.";
+  }
+  if (lower.includes("expired") || lower.includes("invalid")) {
+    return "This reset link is invalid or expired. Please request a new one.";
+  }
+  if (lower.includes("rate limit") || lower.includes("too many requests")) {
+    return "Too many attempts. Please wait a moment and try again.";
+  }
+  return "Could not update your password. Please try again.";
+}
+
 export default function ResetPasswordPage() {
   const router = useRouter();
   const [password, setPassword] = useState("");
@@ -29,7 +46,7 @@ export default function ResetPasswordPage() {
             if (retryData.session) {
               setValidSession(true);
             } else {
-              router.push("/auth/login");
+              router.push("/auth/login?error=reset_expired");
             }
           });
         }, 1000);
@@ -58,7 +75,7 @@ export default function ResetPasswordPage() {
     setIsLoading(false);
 
     if (error) {
-      setError(error.message);
+      setError(mapResetPasswordError(error.message));
       return;
     }
 

@@ -12,6 +12,47 @@ const playfair = Playfair_Display({ subsets: ["latin"], weight: ["600", "700"] }
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type FormErrors = { fullName?: string; email?: string; password?: string; confirm?: string; terms?: string };
+type AccountLookup = { exists: boolean; providers: string[]; hasPassword: boolean };
+
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+async function lookupAccount(email: string): Promise<AccountLookup> {
+  const response = await fetch("/api/auth/account", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || "Could not check this account right now. Please try again.");
+  }
+
+  return {
+    exists: Boolean(data.exists),
+    providers: Array.isArray(data.providers) ? data.providers : [],
+    hasPassword: Boolean(data.hasPassword),
+  };
+}
+
+function mapSignupError(message: string) {
+  const lower = message.toLowerCase();
+  if (lower.includes("already registered") || lower.includes("already exists") || lower.includes("user already")) {
+    return "An account with this email already exists. Please sign in instead.";
+  }
+  if (lower.includes("password")) {
+    return "Choose a stronger password and try again.";
+  }
+  if (lower.includes("rate limit") || lower.includes("too many requests")) {
+    return "Too many attempts. Please wait a moment and try again.";
+  }
+  if (lower.includes("network") || lower.includes("fetch")) {
+    return "Network error. Check your connection and try again.";
+  }
+  return "Could not create your account. Please try again.";
+}
 
 function EyeIcon({ className }: { className?: string }) {
   return (
@@ -134,8 +175,28 @@ function SignupForm() {
     setErrorMessage("");
     setIsLoading(true);
 
+    const normalizedEmail = normalizeEmail(email);
+    let account: AccountLookup;
+    try {
+      account = await lookupAccount(normalizedEmail);
+    } catch (error) {
+      setIsLoading(false);
+      setErrorMessage(error instanceof Error ? error.message : "Could not check this account right now. Please try again.");
+      return;
+    }
+
+    if (account.exists) {
+      setIsLoading(false);
+      setErrorMessage(
+        account.providers.includes("google") && !account.hasPassword
+          ? "An account with this email already exists through Google. Please sign in with Google instead."
+          : "An account with this email already exists. Please sign in instead."
+      );
+      return;
+    }
+
     const { data, error } = await supabase.auth.signUp({
-      email: email.trim(),
+      email: normalizedEmail,
       password,
       options: { data: { full_name: fullName.trim() } },
     })
@@ -150,7 +211,7 @@ function SignupForm() {
       ) {
         setErrorMessage("An account with this email already exists. Please sign in instead.")
       } else {
-        setErrorMessage(error.message)
+        setErrorMessage(mapSignupError(error.message))
       }
       return
     }
@@ -175,6 +236,7 @@ function SignupForm() {
   }
 
   async function handleGoogle() {
+    setErrorMessage("");
     setIsGoogleLoading(true);
     const fallbackTimer = window.setTimeout(() => setIsGoogleLoading(false), 10000);
   
@@ -258,7 +320,7 @@ function SignupForm() {
             <input
               id="fullName" name="fullName" type="text" autoComplete="name"
               value={fullName}
-              onChange={(e) => { setFullName(e.target.value); setErrors(p => ({ ...p, fullName: undefined })); }}
+              onChange={(e) => { setFullName(e.target.value); setErrors(p => ({ ...p, fullName: undefined })); setErrorMessage(""); }}
               className={inputClass} placeholder="Jane Doe"
             />
             {errors.fullName && <p className="mt-1.5 text-xs text-red-400 font-medium">{errors.fullName}</p>}
@@ -269,7 +331,7 @@ function SignupForm() {
             <input
               id="email" name="email" type="email" autoComplete="email"
               value={email}
-              onChange={(e) => { setEmail(e.target.value); setErrors(p => ({ ...p, email: undefined })); }}
+              onChange={(e) => { setEmail(e.target.value); setErrors(p => ({ ...p, email: undefined })); setErrorMessage(""); }}
               className={inputClass} placeholder="you@example.com"
             />
             {errors.email && <p className="mt-1.5 text-xs text-red-400 font-medium">{errors.email}</p>}
@@ -283,7 +345,7 @@ function SignupForm() {
                 type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
                 value={password}
-                onChange={(e) => { setPassword(e.target.value); setErrors(p => ({ ...p, password: undefined })); }}
+                onChange={(e) => { setPassword(e.target.value); setErrors(p => ({ ...p, password: undefined })); setErrorMessage(""); }}
                 className={`${inputClass} pr-12`} placeholder="••••••••"
               />
               <button
@@ -325,7 +387,7 @@ function SignupForm() {
                 type={showConfirm ? "text" : "password"}
                 autoComplete="new-password"
                 value={confirm}
-                onChange={(e) => { setConfirm(e.target.value); setErrors(p => ({ ...p, confirm: undefined })); }}
+                onChange={(e) => { setConfirm(e.target.value); setErrors(p => ({ ...p, confirm: undefined })); setErrorMessage(""); }}
                 className={`${inputClass} pr-12`} placeholder="••••••••"
               />
 
@@ -351,7 +413,7 @@ function SignupForm() {
               <input
                 type="checkbox"
                 checked={agreedToTerms}
-                onChange={(e) => { setAgreedToTerms(e.target.checked); setErrors(p => ({ ...p, terms: undefined })); }}
+                onChange={(e) => { setAgreedToTerms(e.target.checked); setErrors(p => ({ ...p, terms: undefined })); setErrorMessage(""); }}
                 className="mt-0.5 size-4 rounded-full border-white/20 bg-white/5 accent-[#C9A84C]"
               />
 

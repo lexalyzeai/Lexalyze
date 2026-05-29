@@ -12,6 +12,94 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SESSION_TIMEOUT_MINUTES = 30;
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
+const LOCKOUT_PREFIX = "lexalyze_login";
+
+type AccountLookup = {
+  exists: boolean;
+  providers: string[];
+  hasPassword: boolean;
+};
+
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+function attemptKey(email: string) {
+  return `${LOCKOUT_PREFIX}:${email}:attempts`;
+}
+
+function lockedUntilKey(email: string) {
+  return `${LOCKOUT_PREFIX}:${email}:locked_until`;
+}
+
+function readLockout(email: string) {
+  if (typeof window === "undefined" || !email) return { attempts: 0, lockedUntil: null as number | null };
+
+  const attempts = Number.parseInt(localStorage.getItem(attemptKey(email)) || "0", 10) || 0;
+  const lockedUntil = Number.parseInt(localStorage.getItem(lockedUntilKey(email)) || "0", 10) || null;
+
+  if (lockedUntil && Date.now() >= lockedUntil) {
+    clearLockout(email);
+    return { attempts: 0, lockedUntil: null };
+  }
+
+  return { attempts, lockedUntil };
+}
+
+function clearLockout(email: string) {
+  if (typeof window === "undefined" || !email) return;
+  localStorage.removeItem(attemptKey(email));
+  localStorage.removeItem(lockedUntilKey(email));
+  localStorage.removeItem("login_attempts");
+  localStorage.removeItem("login_locked_until");
+}
+
+function saveFailedAttempt(email: string, attempts: number, lockedUntil?: number) {
+  if (typeof window === "undefined" || !email) return;
+  localStorage.setItem(attemptKey(email), attempts.toString());
+  if (lockedUntil) {
+    localStorage.setItem(lockedUntilKey(email), lockedUntil.toString());
+  } else {
+    localStorage.removeItem(lockedUntilKey(email));
+  }
+}
+
+function isInvalidCredentials(message: string) {
+  return message.toLowerCase().includes("invalid login credentials");
+}
+
+function mapLoginError(message: string) {
+  const lower = message.toLowerCase();
+  if (lower.includes("email not confirmed")) {
+    return "Please confirm your email before signing in.";
+  }
+  if (lower.includes("too many requests") || lower.includes("rate limit")) {
+    return "Too many requests. Please wait a moment and try again.";
+  }
+  if (lower.includes("network") || lower.includes("fetch")) {
+    return "Network error. Check your connection and try again.";
+  }
+  return "Sign in failed. Please try again.";
+}
+
+async function lookupAccount(email: string): Promise<AccountLookup> {
+  const response = await fetch("/api/auth/account", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || "Could not check this account right now. Please try again.");
+  }
+
+  return {
+    exists: Boolean(data.exists),
+    providers: Array.isArray(data.providers) ? data.providers : [],
+    hasPassword: Boolean(data.hasPassword),
+  };
+}
 
 function EyeIcon({ className }: { className?: string }) {
   return (
@@ -62,24 +150,8 @@ function LoginForm() {
   const [sessionWarning, setSessionWarning] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
-  // Persist lockout across refreshes
-  const [attempts, setAttempts] = useState(() => {
-    if (typeof window === 'undefined') return 0
-    return parseInt(localStorage.getItem('login_attempts') || '0')
-  })
-  const [lockedUntil, setLockedUntil] = useState<number | null>(() => {
-    if (typeof window === 'undefined') return null
-    const stored = localStorage.getItem('login_locked_until')
-    if (!stored) return null
-    const until = parseInt(stored)
-    // Already expired
-    if (Date.now() >= until) {
-      localStorage.removeItem('login_attempts')
-      localStorage.removeItem('login_locked_until')
-      return null
-    }
-    return until
-  })
+  // Persist lockout per email so one account's failures do not block another.
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null)
 
   // Compute derived lockout state
   const isLocked = lockedUntil ? now < lockedUntil : false
@@ -96,6 +168,11 @@ function LoginForm() {
     const timer = setTimeout(() => {
       if (errorCode === 'otp_expired' || hashErrorCode === 'otp_expired') {
         setFormError('Your password reset link has expired. Please request a new one.')
+        setShowForgot(true)
+        return
+      }
+      if (error === 'reset_expired') {
+        setFormError('Your password reset link is invalid or expired. Please request a new one.')
         setShowForgot(true)
         return
       }
@@ -167,15 +244,14 @@ function LoginForm() {
     const interval = setInterval(() => {
       setNow(Date.now())
       if (Date.now() >= lockedUntil) {
+        const normalizedEmail = normalizeEmail(email);
         setLockedUntil(null)
-        setAttempts(0)
-        localStorage.removeItem('login_attempts')
-        localStorage.removeItem('login_locked_until')
+        clearLockout(normalizedEmail)
         clearInterval(interval)
       }
     }, 1000)
     return () => clearInterval(interval)
-  }, [lockedUntil])
+  }, [email, lockedUntil])
 
   // Resend cooldown countdown
   useEffect(() => {
@@ -205,35 +281,72 @@ function LoginForm() {
     if (isLocked) return;
     if (!validate()) return;
 
+    const normalizedEmail = normalizeEmail(email);
+    const currentLockout = readLockout(normalizedEmail);
+    if (currentLockout.lockedUntil && Date.now() < currentLockout.lockedUntil) {
+      setLockedUntil(currentLockout.lockedUntil);
+      return;
+    }
+
     setIsLoading(true);
+
+    let account: AccountLookup;
+    try {
+      account = await lookupAccount(normalizedEmail);
+    } catch (error) {
+      setIsLoading(false);
+      setFormError(error instanceof Error ? error.message : "Could not check this account right now. Please try again.");
+      return;
+    }
+
+    if (!account.exists) {
+      setIsLoading(false);
+      setLockedUntil(null);
+      clearLockout(normalizedEmail);
+      setFormError("No account exists for that email. Check the address or create a new account.");
+      return;
+    }
+
+    if (!account.hasPassword) {
+      setIsLoading(false);
+      const message = account.providers.includes("google")
+        ? "This account uses Google sign-in. Continue with Google instead."
+        : "This account uses a social sign-in method. Use that method instead.";
+      setFormError(message);
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
+      email: normalizedEmail,
       password,
     });
     setIsLoading(false);
 
     if (error) {
-      const newAttempts = attempts + 1;
-      setAttempts(newAttempts);
-      localStorage.setItem('login_attempts', newAttempts.toString())
+      if (!isInvalidCredentials(error.message)) {
+        setFormError(mapLoginError(error.message));
+        return;
+      }
+
+      const newAttempts = currentLockout.attempts + 1;
 
       if (newAttempts >= MAX_ATTEMPTS) {
         const until = Date.now() + LOCKOUT_MINUTES * 60 * 1000;
         setLockedUntil(until);
-        localStorage.setItem('login_locked_until', until.toString())
+        saveFailedAttempt(normalizedEmail, newAttempts, until);
         setFormError(`Too many failed attempts. Try again in ${LOCKOUT_MINUTES} minutes.`);
         return;
       }
 
+      saveFailedAttempt(normalizedEmail, newAttempts);
       const remaining = MAX_ATTEMPTS - newAttempts;
-      setFormError(`No account exists for that email, or the password is incorrect. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`);
+      setFormError(`Incorrect password. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`);
       return;
     }
 
-    // Clear lockout on success
-    setAttempts(0);
-    localStorage.removeItem('login_attempts')
-    localStorage.removeItem('login_locked_until')
+    // Clear password-attempt lockout on any successful password sign-in.
+    setLockedUntil(null);
+    clearLockout(normalizedEmail);
 
     // Feature 2 — return URL
     const returnTo = searchParams.get('returnTo') || '/dashboard'
@@ -242,6 +355,7 @@ function LoginForm() {
   }
 
   async function handleGoogle() {
+    setFormError(null);
     setIsGoogleLoading(true);
     const fallbackTimer = window.setTimeout(() => setIsGoogleLoading(false), 10000);
     const returnTo = searchParams.get('returnTo') || '/dashboard'
@@ -267,14 +381,40 @@ function LoginForm() {
       return;
     }
 
+    const normalizedEmail = normalizeEmail(forgotEmail);
     setForgotLoading(true);
+    let account: AccountLookup;
+    try {
+      account = await lookupAccount(normalizedEmail);
+    } catch (error) {
+      setForgotLoading(false);
+      setFormError(error instanceof Error ? error.message : "Could not check this account right now. Please try again.");
+      return;
+    }
+
+    if (!account.exists) {
+      setForgotLoading(false);
+      setFormError("No account exists for that email. Check the address or create a new account.");
+      return;
+    }
+
+    if (!account.hasPassword) {
+      setForgotLoading(false);
+      setFormError(
+        account.providers.includes("google")
+          ? "This account uses Google sign-in, so there is no password to reset."
+          : "This account uses a social sign-in method, so there is no password to reset."
+      );
+      return;
+    }
+
     const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
       redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
     });
     setForgotLoading(false);
 
     if (error) {
-      setFormError(error.message);
+      setFormError(mapLoginError(error.message));
       return;
     }
 
@@ -285,10 +425,14 @@ function LoginForm() {
   async function handleResendReset() {
     if (resendCooldown > 0) return;
     setForgotLoading(true);
-    await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
       redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
     });
     setForgotLoading(false);
+    if (error) {
+      setFormError(mapLoginError(error.message));
+      return;
+    }
     setResendCooldown(60);
   }
 
@@ -423,7 +567,13 @@ function LoginForm() {
                   type="email"
                   autoComplete="email"
                   value={email}
-                  onChange={(e) => { setEmail(e.target.value); setFormError(null); }}
+                  onChange={(e) => {
+                    const nextEmail = e.target.value;
+                    const normalizedEmail = normalizeEmail(nextEmail);
+                    setEmail(nextEmail);
+                    setFormError(null);
+                    setLockedUntil(EMAIL_RE.test(normalizedEmail) ? readLockout(normalizedEmail).lockedUntil : null);
+                  }}
                   className={inputClass}
                   placeholder="you@example.com"
                   disabled={isLocked}
