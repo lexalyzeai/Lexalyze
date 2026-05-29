@@ -58,7 +58,7 @@ const TOPICS = [
 ];
 
 const FAQS = [
-  { q: "Is Lexalyze free?", a: "Yes. Starter is free with 5 documents per month, 3 follow-ups per document, and 14-day history." },
+  { q: "Is Lexalyze free?", a: "Yes. Starter is free with 5 documents per month, 3 follow-up questions per month, and 14-day history." },
   { q: "How many documents can I analyse?", a: "Starter includes 5 documents per month. Solo includes 30 documents per month, and Team includes unlimited documents." },
   { q: "Can I upload confidential documents?", a: "Your document text is sent to Groq's AI API for processing. We do not store the raw document file. If your document contains highly sensitive personal information, please review our Privacy Policy and consider whether you are comfortable with third-party AI processing." },
   { q: "Why does my PDF not work?", a: "Scanned or image-based PDFs cannot be read by our text extractor. Only text-based PDFs work. Try converting to a Word .docx if you have the original." },

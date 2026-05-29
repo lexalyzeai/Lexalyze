@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { FOLLOWUP_PROMPT } from '@/lib/prompt'
 import { AnalysisResult } from '@/types/analysis'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
-import { normalizePlan, PLAN_LIMITS } from '@/lib/plans'
+import { currentUsageMonth, normalizePlan, PLAN_LIMITS, usageMonthRange } from '@/lib/plans'
 import { FRIENDLY_ERRORS } from '@/lib/error-handling'
 
 export async function POST(req: NextRequest) {
@@ -54,17 +54,42 @@ export async function POST(req: NextRequest) {
     .maybeSingle()
 
   const plan = normalizePlan(profile?.plan)
-  const followUpLimit = PLAN_LIMITS[plan].followUpsPerDocument
+  const followUpLimit = PLAN_LIMITS[plan].monthlyFollowUps
 
   if (followUpLimit !== null) {
-    const { count: followupCount } = await admin
-      .from('followups')
-      .select('*', { count: 'exact', head: true })
-      .eq('analysis_id', analysisId)
+    const { data: userAnalyses, error: analysesError } = await admin
+      .from('analyses')
+      .select('id')
+      .eq('user_id', user.id)
 
-    if ((followupCount ?? 0) >= followUpLimit) {
+    if (analysesError) {
+      console.error('Follow-up monthly usage lookup failed:', analysesError)
+      return NextResponse.json({ error: FRIENDLY_ERRORS.load_failed.message, code: 'load_failed' }, { status: 500 })
+    }
+
+    const analysisIds = (userAnalyses ?? []).map((item) => item.id)
+    let followupCount = 0
+
+    if (analysisIds.length > 0) {
+      const { startIso, endIso } = usageMonthRange(currentUsageMonth())
+      const { count, error: countError } = await admin
+        .from('followups')
+        .select('*', { count: 'exact', head: true })
+        .in('analysis_id', analysisIds)
+        .gte('created_at', startIso)
+        .lt('created_at', endIso)
+
+      if (countError) {
+        console.error('Follow-up monthly count failed:', countError)
+        return NextResponse.json({ error: FRIENDLY_ERRORS.load_failed.message, code: 'load_failed' }, { status: 500 })
+      }
+
+      followupCount = count ?? 0
+    }
+
+    if (followupCount >= followUpLimit) {
       return NextResponse.json(
-        { error: `Follow-up limit reached for this document (${followUpLimit} per document on Starter plan). Upgrade to Solo for unlimited follow-ups.`, code: 'rate_limit_hit' },
+        { error: `Monthly follow-up limit reached (${followUpLimit} follow-up questions per month on Starter plan). Upgrade to Solo for unlimited follow-ups.`, code: 'rate_limit_hit' },
         { status: 429 }
       )
     }

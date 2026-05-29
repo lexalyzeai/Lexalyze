@@ -4,6 +4,7 @@ import { Playfair_Display } from "next/font/google";
 import { FormEvent, useState } from "react";
 import ErrorMessage, { ErrorType, mapBackendError } from "@/app/components/ErrorMessage";
 import { normalizePlan, type PlanId } from "@/lib/plans";
+import { readApiError } from "@/lib/error-handling";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -76,6 +77,7 @@ export type AnalysisResultProps = {
   savedFollowUps?: { question: string; answer: string }[];
   savedChecklist?: boolean[];
   onChecklistChange?: (newState: boolean[]) => void;
+  language?: "en" | "hi" | string | null;
 };
 
 function confidenceBadgeClass(confidence: Confidence): string {
@@ -181,6 +183,84 @@ function safePdfName(name?: string) {
     .toLowerCase() || "analysis";
 }
 
+function pdfCopy(language?: string | null) {
+  const isHindi = language?.toLowerCase().startsWith("hi");
+
+  if (!isHindi) {
+    return {
+      reportType: "DOCUMENT INTELLIGENCE REPORT",
+      generated: "Generated",
+      documentAnalysis: "Document analysis",
+      completed: "Analysis completed.",
+      executiveSnapshot: "Executive snapshot",
+      documentType: "Document type",
+      notSpecified: "Not specified",
+      confidence: "Confidence",
+      riskScore: "Risk score",
+      notScored: "Not scored",
+      partyFavour: "Party favour",
+      summary: "Summary",
+      noSummary: "No full summary provided.",
+      keyItems: "Key numbers and dates",
+      riskFlags: "Risk flags",
+      quote: "Quote",
+      legalContext: "Legal context",
+      whatToDo: "What to do",
+      favourableClauses: "Favourable clauses",
+      missingClauses: "Missing clauses",
+      whatToAdd: "What to add",
+      actionChecklist: "Action checklist",
+      done: "[Done]",
+      open: "[Open]",
+      negotiationTips: "Negotiation tips",
+      consumerRights: "Consumer rights",
+      stampDuty: "Stamp duty and registration",
+      limitations: "Limitations",
+      noLimitations: "No specific limitations were provided.",
+      lawyerGuidance: "Lawyer guidance",
+      fallbackGuidance: "This AI summary is informational and not legal advice. Consult a qualified lawyer before making important legal or financial decisions.",
+      followUps: "Follow-up questions",
+      footer: "Lexalyze AI-generated analysis. Not legal advice.",
+    };
+  }
+
+  return {
+    reportType: "कानूनी दस्तावेज विश्लेषण रिपोर्ट",
+    generated: "तैयार किया गया",
+    documentAnalysis: "दस्तावेज विश्लेषण",
+    completed: "विश्लेषण पूरा हुआ.",
+    executiveSnapshot: "मुख्य झलक",
+    documentType: "दस्तावेज प्रकार",
+    notSpecified: "स्पष्ट नहीं",
+    confidence: "विश्वसनीयता",
+    riskScore: "जोखिम स्कोर",
+    notScored: "स्कोर उपलब्ध नहीं",
+    partyFavour: "किस पक्ष में",
+    summary: "सारांश",
+    noSummary: "पूरा सारांश उपलब्ध नहीं है.",
+    keyItems: "मुख्य संख्याएं और तारीखें",
+    riskFlags: "जोखिम संकेत",
+    quote: "उद्धरण",
+    legalContext: "कानूनी संदर्भ",
+    whatToDo: "क्या करें",
+    favourableClauses: "अनुकूल धाराएं",
+    missingClauses: "छूटी हुई धाराएं",
+    whatToAdd: "क्या जोड़ें",
+    actionChecklist: "कार्य सूची",
+    done: "[पूरा]",
+    open: "[बाकी]",
+    negotiationTips: "बातचीत सुझाव",
+    consumerRights: "उपभोक्ता अधिकार",
+    stampDuty: "स्टाम्प ड्यूटी और पंजीकरण",
+    limitations: "सीमाएं",
+    noLimitations: "कोई विशेष सीमा नहीं दी गई.",
+    lawyerGuidance: "वकील मार्गदर्शन",
+    fallbackGuidance: "यह AI सारांश केवल जानकारी के लिए है, कानूनी सलाह नहीं. महत्वपूर्ण कानूनी या वित्तीय निर्णय से पहले योग्य वकील से सलाह लें.",
+    followUps: "फॉलो-अप प्रश्न",
+    footer: "Lexalyze AI-generated analysis. Not legal advice.",
+  };
+}
+
 export default function AnalysisResult({
   result,
   analysisId,
@@ -188,11 +268,13 @@ export default function AnalysisResult({
   savedFollowUps = EMPTY_FOLLOW_UPS,
   savedChecklist = EMPTY_CHECKLIST,
   onChecklistChange,
+  language = "en",
 }: AnalysisResultProps) {
   const [followUpQuestion, setFollowUpQuestion] = useState("");
   const [followUpLoading, setFollowUpLoading] = useState(false);
   const [followUpHistory, setFollowUpHistory] = useState<FollowUpEntry[]>(savedFollowUps);
   const [followUpError, setFollowUpError] = useState<ErrorType | "">("");
+  const [followUpErrorMessage, setFollowUpErrorMessage] = useState("");
   const [actionError, setActionError] = useState<ErrorType | "">("");
   const [checkedItems, setCheckedItems] = useState<boolean[]>(
     getInitialChecklist(savedChecklist, result, analysisId)
@@ -262,6 +344,7 @@ export default function AnalysisResult({
       const margin = 16;
       const contentWidth = pageWidth - margin * 2;
       const bottom = pageHeight - 18;
+      const copy = pdfCopy(language);
       let y = 18;
 
       const colors = {
@@ -381,7 +464,7 @@ export default function AnalysisResult({
       pdf.text("LEXALYZE", margin, y);
       pdf.setFontSize(8);
       setText(colors.muted);
-      pdf.text("DOCUMENT INTELLIGENCE REPORT", margin, y + 7);
+      pdf.text(copy.reportType, margin, y + 7);
       pdf.text(
         new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
         pageWidth - margin,
@@ -393,40 +476,40 @@ export default function AnalysisResult({
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(19);
       setText(colors.ink);
-      pdf.text(lines(pdfResult.documentTitle || "Document analysis", contentWidth), margin, y);
-      y += Math.max(12, lines(pdfResult.documentTitle || "Document analysis", contentWidth).length * 8);
-      callout(pdfResult.oneLineSummary || "Analysis completed.", colors.gold);
+      pdf.text(lines(pdfResult.documentTitle || copy.documentAnalysis, contentWidth), margin, y);
+      y += Math.max(12, lines(pdfResult.documentTitle || copy.documentAnalysis, contentWidth).length * 8);
+      callout(pdfResult.oneLineSummary || copy.completed, colors.gold);
 
-      section("Executive snapshot", colors.gold, 38);
+      section(copy.executiveSnapshot, colors.gold, 38);
       const facts = [
-        ["Document type", pdfResult.documentType || "Not specified"],
-        ["Confidence", pdfResult.overallConfidence],
-        ["Risk score", pdfResult.riskScore !== undefined ? `${pdfResult.riskScore}/10` : "Not scored"],
-        ["Party favour", pdfResult.partyFavour ? pdfResult.partyFavour.replace(/_/g, " ") : "Not specified"],
+        [copy.documentType, pdfResult.documentType || copy.notSpecified],
+        [copy.confidence, pdfResult.overallConfidence],
+        [copy.riskScore, pdfResult.riskScore !== undefined ? `${pdfResult.riskScore}/10` : copy.notScored],
+        [copy.partyFavour, pdfResult.partyFavour ? pdfResult.partyFavour.replace(/_/g, " ") : copy.notSpecified],
       ];
       facts.forEach(([label, value]) => itemBlock(label, value, undefined, colors.gold));
       if (pdfResult.overallConfidenceReason) paragraph(pdfResult.overallConfidenceReason, { accent: colors.muted });
       if (pdfResult.riskScoreReason) paragraph(pdfResult.riskScoreReason, { accent: colors.muted });
 
-      section("Summary", colors.gold, 24);
-      paragraph(pdfResult.fullSummary || "No full summary provided.");
+      section(copy.summary, colors.gold, 24);
+      paragraph(pdfResult.fullSummary || copy.noSummary);
 
       const keyItems = [...(pdfResult.keyNumbers ?? []), ...(pdfResult.keyDeadlines ?? [])];
       if (keyItems.length > 0) {
-        section("Key numbers and dates", colors.gold, 18);
+        section(copy.keyItems, colors.gold, 18);
         keyItems.forEach((item) => itemBlock(item, "", undefined, colors.gold));
       }
 
       if ((pdfResult.redFlags?.length ?? 0) > 0) {
-        section("Risk flags", colors.rose, 24);
+        section(copy.riskFlags, colors.rose, 24);
         pdfResult.redFlags.forEach((flag, index) => {
           itemBlock(
             `${index + 1}. ${flag.title}`,
             [
               flag.explanation,
-              flag.exactQuote && flag.exactQuote !== "No exact quote found in document." ? `Quote: "${flag.exactQuote}"` : "",
-              flag.legalContext ? `Legal context: ${flag.legalContext}` : "",
-              flag.whatToDoAboutIt ? `What to do: ${flag.whatToDoAboutIt}` : "",
+              flag.exactQuote && flag.exactQuote !== "No exact quote found in document." ? `${copy.quote}: "${flag.exactQuote}"` : "",
+              flag.legalContext ? `${copy.legalContext}: ${flag.legalContext}` : "",
+              flag.whatToDoAboutIt ? `${copy.whatToDo}: ${flag.whatToDoAboutIt}` : "",
             ].filter(Boolean).join("\n"),
             `${flag.severity} risk | ${flag.confidence} confidence`,
             priorityColor(flag.severity)
@@ -435,13 +518,13 @@ export default function AnalysisResult({
       }
 
       if ((pdfResult.positivePoints?.length ?? 0) > 0) {
-        section("Favourable clauses", colors.emerald, 20);
+        section(copy.favourableClauses, colors.emerald, 20);
         pdfResult.positivePoints.forEach((point, index) => {
           itemBlock(
             `${index + 1}. ${point.title}`,
             [
               point.explanation,
-              point.exactQuote && point.exactQuote !== "No exact quote found in document." ? `Quote: "${point.exactQuote}"` : "",
+              point.exactQuote && point.exactQuote !== "No exact quote found in document." ? `${copy.quote}: "${point.exactQuote}"` : "",
             ].filter(Boolean).join("\n"),
             `${point.confidence} confidence`,
             colors.emerald
@@ -450,11 +533,11 @@ export default function AnalysisResult({
       }
 
       if ((pdfResult.missingClauses?.length ?? 0) > 0) {
-        section("Missing clauses", colors.amber, 20);
+        section(copy.missingClauses, colors.amber, 20);
         pdfResult.missingClauses!.forEach((item, index) => {
           itemBlock(
             `${index + 1}. ${item.clause}`,
-            [item.whyItMatters, item.whatToAdd ? `What to add: ${item.whatToAdd}` : ""].filter(Boolean).join("\n"),
+            [item.whyItMatters, item.whatToAdd ? `${copy.whatToAdd}: ${item.whatToAdd}` : ""].filter(Boolean).join("\n"),
             `${item.riskIfAbsent} risk if absent`,
             priorityColor(item.riskIfAbsent)
           );
@@ -462,10 +545,10 @@ export default function AnalysisResult({
       }
 
       if ((pdfResult.actionItems?.length ?? 0) > 0) {
-        section("Action checklist", colors.gold, 20);
+        section(copy.actionChecklist, colors.gold, 20);
         pdfResult.actionItems.forEach((item, index) => {
           itemBlock(
-            `${checkedItems[index] ? "[Done]" : "[Open]"} ${item.action}`,
+            `${checkedItems[index] ? copy.done : copy.open} ${item.action}`,
             item.reason,
             item.priority,
             checkedItems[index] ? colors.emerald : priorityColor(item.priority)
@@ -474,29 +557,29 @@ export default function AnalysisResult({
       }
 
       if ((pdfResult.negotiationTips?.length ?? 0) > 0) {
-        section("Negotiation tips", colors.gold, 18);
+        section(copy.negotiationTips, colors.gold, 18);
         pdfResult.negotiationTips!.forEach((tip) => itemBlock(tip, "", undefined, colors.gold));
       }
 
       if (pdfResult.consumerRightsNote) {
-        section("Consumer rights", colors.blue, 20);
+        section(copy.consumerRights, colors.blue, 20);
         paragraph(pdfResult.consumerRightsNote);
       }
 
       if (pdfResult.stampDutyNote) {
-        section("Stamp duty and registration", colors.amber, 20);
+        section(copy.stampDuty, colors.amber, 20);
         paragraph(pdfResult.stampDutyNote);
       }
 
-      section("Limitations", colors.amber, 20);
-      (pdfResult.cannotDetermineList?.length ? pdfResult.cannotDetermineList : ["No specific limitations were provided."])
+      section(copy.limitations, colors.amber, 20);
+      (pdfResult.cannotDetermineList?.length ? pdfResult.cannotDetermineList : [copy.noLimitations])
         .forEach((item) => itemBlock(item, "", undefined, colors.amber));
 
-      section("Lawyer guidance", colors.gold, 20);
-      paragraph(pdfResult.lawyerGuidance ?? "This AI summary is informational and not legal advice. Consult a qualified lawyer before making important legal or financial decisions.");
+      section(copy.lawyerGuidance, colors.gold, 20);
+      paragraph(pdfResult.lawyerGuidance ?? copy.fallbackGuidance);
 
       if (followUpHistory.length > 0) {
-        section("Follow-up questions", colors.gold, 20);
+        section(copy.followUps, colors.gold, 20);
         followUpHistory.forEach((entry, index) => itemBlock(`${index + 1}. ${entry.question}`, entry.answer, undefined, colors.gold));
       }
 
@@ -508,7 +591,7 @@ export default function AnalysisResult({
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(7.5);
         setText(colors.muted);
-        pdf.text("Lexalyze AI-generated analysis. Not legal advice.", margin, pageHeight - 8);
+        pdf.text(copy.footer, margin, pageHeight - 8);
         pdf.text(`${page} / ${totalPages}`, pageWidth - margin, pageHeight - 8, { align: "right" });
       }
 
@@ -546,21 +629,24 @@ export default function AnalysisResult({
     const question = followUpQuestion.trim();
     setFollowUpLoading(true);
     setFollowUpError("");
+    setFollowUpErrorMessage("");
     setFollowUpQuestion("");
 
     try {
       const response = await fetch("/api/followup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, analysisId }),
+        body: JSON.stringify({ question, analysisId, language: language || "en" }),
       });
 
-      const data = await response.json().catch(() => ({}));
-
       if (!response.ok) {
-        setFollowUpError(mapBackendError(data.code || data.error || "Failed to get answer."));
+        const apiError = await readApiError(response, "api_failure");
+        setFollowUpError(apiError.code);
+        setFollowUpErrorMessage(apiError.message);
         return;
       }
+
+      const data = await response.json().catch(() => ({}));
 
       if (!data.answer) {
         setFollowUpError("api_failure");
@@ -572,6 +658,7 @@ export default function AnalysisResult({
       const errorMessage = err instanceof Error ? err.message : "Something went wrong. Please try again.";
       const mappedError = mapBackendError(errorMessage) || "api_failure";
       setFollowUpError(mappedError);
+      setFollowUpErrorMessage(errorMessage);
     } finally {
       setFollowUpLoading(false);
     }
@@ -998,7 +1085,14 @@ export default function AnalysisResult({
 
           {followUpError && (
             <div className="mt-4">
-              <ErrorMessage errorType={followUpError} onDismiss={() => setFollowUpError("")} />
+              <ErrorMessage
+                errorType={followUpError}
+                message={followUpErrorMessage || undefined}
+                onDismiss={() => {
+                  setFollowUpError("");
+                  setFollowUpErrorMessage("");
+                }}
+              />
             </div>
           )}
         </form>

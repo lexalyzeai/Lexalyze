@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import ErrorMessage, { mapBackendError, type ErrorType } from "@/app/components/ErrorMessage";
+import { readApiError } from "@/lib/error-handling";
 
 type FollowUpResponse = {
   answer?: string;
@@ -20,6 +21,7 @@ export default function FollowUpQuestion({
   const [answer, setAnswer] = useState("");
   const [fromDocument, setFromDocument] = useState<boolean | null>(null);
   const [error, setError] = useState<ErrorType | "">("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -30,6 +32,7 @@ export default function FollowUpQuestion({
 
     setLoading(true);
     setError("");
+    setErrorMessage("");
     setAnswer("");
     setFromDocument(null);
 
@@ -46,15 +49,14 @@ export default function FollowUpQuestion({
         }),
       });
 
-      const data = (await response.json()) as FollowUpResponse & {
-        error?: string;
-        code?: string;
-      };
-
       if (!response.ok) {
-        setError(mapBackendError(data.code || data.error || "Could not fetch follow-up answer."));
+        const apiError = await readApiError(response, "api_failure");
+        setError(apiError.code);
+        setErrorMessage(apiError.message);
         return;
       }
+
+      const data = (await response.json()) as FollowUpResponse;
 
       if (!data.answer) {
         setError("api_failure");
@@ -64,7 +66,9 @@ export default function FollowUpQuestion({
       setAnswer(data.answer);
       setFromDocument(Boolean(data.fromDocument));
     } catch (err) {
-      setError(mapBackendError(err instanceof Error ? err.message : "Something went wrong while searching the document."));
+      const errorMessage = err instanceof Error ? err.message : "Something went wrong while searching the document.";
+      setError(mapBackendError(errorMessage));
+      setErrorMessage(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -91,7 +95,16 @@ export default function FollowUpQuestion({
           </button>
         </div>
 
-        {error ? <ErrorMessage errorType={error} onDismiss={() => setError("")} /> : null}
+        {error ? (
+          <ErrorMessage
+            errorType={error}
+            message={errorMessage || undefined}
+            onDismiss={() => {
+              setError("");
+              setErrorMessage("");
+            }}
+          />
+        ) : null}
       </form>
 
       {answer ? (

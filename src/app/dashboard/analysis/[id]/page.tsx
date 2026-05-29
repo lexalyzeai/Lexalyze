@@ -79,6 +79,7 @@ export default async function AnalysisPage({
             result={analysis.result}
             analysisId={id}
             plan={normalizePlan(profile?.plan)}
+            language={analysis.language || 'en'}
             savedChecklist={analysis.checklist_state || analysis.result?.checkbox || []}
             savedFollowUps={followUps || []}
           />

@@ -15,6 +15,81 @@ const ALLOWED_TYPES = [
   'application/msword',
 ]
 
+async function extractImageText(buffer: Buffer, mimeType: string) {
+  const geminiKey =
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+    process.env.GOOGLE_API_KEY
+
+  if (geminiKey) {
+    const { GoogleGenerativeAI } = await import('@google/generative-ai')
+    const genAI = new GoogleGenerativeAI(geminiKey)
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    const result = await model.generateContent([
+      {
+        text: 'Extract all readable text from this legal document image. Preserve clauses, dates, parties, amounts, and signatures where readable. Return only extracted text.',
+      },
+      {
+        inlineData: {
+          data: buffer.toString('base64'),
+          mimeType,
+        },
+      },
+    ])
+
+    return result.response.text().trim()
+  }
+
+  const groqKey = process.env.GROQ_API_KEY
+  if (!groqKey) {
+    throw new Error('image_ocr_unconfigured')
+  }
+
+  const base64 = buffer.toString('base64')
+  if (base64.length > 4_000_000) {
+    throw new Error('image_ocr_too_large')
+  }
+
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${groqKey}`,
+    },
+    body: JSON.stringify({
+      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: 'Extract all readable text from this legal document image. Preserve clauses, dates, parties, amounts, and signatures where readable. Return only extracted text.',
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:${mimeType};base64,${base64}`,
+              },
+            },
+          ],
+        },
+      ],
+      temperature: 0,
+      max_tokens: 2500,
+    }),
+  })
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}))
+    console.error('Groq image OCR error:', errorBody)
+    throw new Error('image_ocr_failed')
+  }
+
+  const data = await response.json()
+  return String(data.choices?.[0]?.message?.content ?? '').trim()
+}
+
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
   const supabase = createServerClient(
@@ -73,7 +148,7 @@ export async function POST(req: NextRequest) {
     } else if (effectiveType === 'text/plain') {
       text = buffer.toString('utf-8')
     } else if (effectiveType === 'image/png' || effectiveType === 'image/jpeg') {
-      text = buffer.toString('base64')
+      text = await extractImageText(buffer, effectiveType)
     } else if (
       effectiveType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
       effectiveType === 'application/msword'
@@ -100,6 +175,25 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const error = err instanceof Error ? err.message : String(err)
     console.error('[/api/extract-text] Extraction error', { userId: user.id, fileName: file.name, error })
+    if (error === 'image_ocr_unconfigured') {
+      return NextResponse.json(
+        { error: 'Image text extraction is not configured yet. Upload a PDF, DOCX, or TXT file, or add a Gemini or Groq key to enable PNG/JPG OCR.', code: 'no_text_extracted' },
+        { status: 400 }
+      )
+    }
+    if (error === 'image_ocr_too_large') {
+      return NextResponse.json(
+        { error: 'This image is too large for OCR. Upload a smaller JPG/PNG, or use a PDF, DOCX, or TXT file.', code: 'file_too_large' },
+        { status: 400 }
+      )
+    }
+    if (error === 'image_ocr_failed') {
+      return NextResponse.json(
+        { error: 'We could not read text from this image. Upload a clearer JPG/PNG, or use a PDF, DOCX, or TXT file.', code: 'no_text_extracted' },
+        { status: 400 }
+      )
+    }
+
     return NextResponse.json(
       { error: FRIENDLY_ERRORS.parse_error.message, code: 'parse_error' },
       { status: 400 }

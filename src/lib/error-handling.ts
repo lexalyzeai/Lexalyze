@@ -5,6 +5,7 @@ export type AppErrorCode =
   | "validation"
   | "file_too_large"
   | "unsupported_file_type"
+  | "non_legal_document"
   | "no_text_extracted"
   | "parse_error"
   | "rate_limit_hit"
@@ -55,6 +56,11 @@ export const FRIENDLY_ERRORS: Record<AppErrorCode, FriendlyError> = {
     title: "Unsupported file type",
     message: "Please upload a PDF, DOCX, TXT, PNG, or JPG document.",
   },
+  non_legal_document: {
+    code: "non_legal_document",
+    title: "Legal document required",
+    message: "Only legal documents can be analysed. Upload a contract, agreement, notice, deed, policy, court filing, or similar legal document.",
+  },
   no_text_extracted: {
     code: "no_text_extracted",
     title: "Couldn't read this document",
@@ -68,7 +74,7 @@ export const FRIENDLY_ERRORS: Record<AppErrorCode, FriendlyError> = {
   rate_limit_hit: {
     code: "rate_limit_hit",
     title: "Limit reached",
-    message: "You've reached the limit for your current plan. Upgrade or wait for the next reset.",
+    message: "You've reached your Starter limit: 5 document analyses and 3 follow-up questions per month. Upgrade or wait for the next monthly reset.",
   },
   ai_capacity: {
     code: "ai_capacity",
@@ -122,10 +128,12 @@ export function toErrorCode(error: string | Error | unknown, fallback: AppErrorC
   const lower = message.toLowerCase();
 
   if (!lower) return fallback;
+  if (message in FRIENDLY_ERRORS) return message as AppErrorCode;
   if (lower.includes("unauthorized") || lower.includes("session") || lower.includes("jwt")) return "unauthorized";
   if (lower.includes("not found") || lower.includes("no rows") || lower.includes("does not exist")) return "not_found";
   if (lower.includes("too large") || lower.includes("file size") || lower.includes("10mb")) return "file_too_large";
   if (lower.includes("unsupported") || lower.includes("file type") || lower.includes("mime") || lower.includes("format")) return "unsupported_file_type";
+  if (lower.includes("legal document") || lower.includes("legal documents") || lower.includes("contract, agreement")) return "non_legal_document";
   if (lower.includes("no text") || lower.includes("extract") || lower.includes("readable") || lower.includes("ocr")) return "no_text_extracted";
   if (lower.includes("parse") || lower.includes("corrupt") || lower.includes("invalid json") || lower.includes("malformed")) return "parse_error";
   if (lower.includes("rate limit") || lower.includes("quota") || lower.includes("limit reached") || lower.includes("429")) return "rate_limit_hit";

@@ -22,6 +22,7 @@ type AnalysisRow = {
   id: string;
   filename: string;
   created_at: string;
+  language?: string | null;
   result: (AnalysisResultData & { checkbox?: boolean[]; checklistState?: boolean[] }) | null;
   checkbox?: boolean[] | null;
   checklist_state?: boolean[] | null;
@@ -36,6 +37,17 @@ type ProfileUsage = {
   plan?: string | null;
   usage_month?: string | null;
   monthly_analyses_used?: number | null;
+};
+
+type ActiveSession = {
+  id: string;
+  device_id: string;
+  device_name?: string | null;
+  browser_name?: string | null;
+  os_name?: string | null;
+  created_at?: string | null;
+  last_seen?: string | null;
+  isCurrent?: boolean;
 };
 
 function ConfidenceDot({ confidence }: { confidence: string }) {
@@ -94,6 +106,46 @@ function riskTone(score?: number) {
   return "text-emerald-400";
 }
 
+function getDeviceId() {
+  if (typeof window === "undefined") return "";
+  const key = "lexalyze-device-id";
+  const existing = window.localStorage.getItem(key);
+  if (existing) return existing;
+
+  const next = window.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  window.localStorage.setItem(key, next);
+  return next;
+}
+
+function detectDevice() {
+  if (typeof navigator === "undefined") {
+    return { deviceName: "Unknown device", browserName: "Unknown browser", osName: "Unknown OS" };
+  }
+
+  const ua = navigator.userAgent;
+  const browserName = ua.includes("Edg/")
+    ? "Microsoft Edge"
+    : ua.includes("Chrome/")
+      ? "Chrome"
+      : ua.includes("Firefox/")
+        ? "Firefox"
+        : ua.includes("Safari/")
+          ? "Safari"
+          : "Browser";
+  const osName = ua.includes("Windows")
+    ? "Windows"
+    : ua.includes("Mac OS")
+      ? "macOS"
+      : ua.includes("Android")
+        ? "Android"
+        : ua.includes("iPhone") || ua.includes("iPad")
+          ? "iOS"
+          : "Unknown OS";
+  const deviceName = `${browserName} on ${osName}`;
+
+  return { deviceName, browserName, osName };
+}
+
 export default function DashboardPage() {
   const [language, setLanguage] = useState<Language>("EN");
   const [email, setEmail] = useState("");
@@ -119,6 +171,8 @@ export default function DashboardPage() {
   const [isDeletingHistory, setIsDeletingHistory] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [profileUsage, setProfileUsage] = useState<ProfileUsage | null>(null);
+  const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [dashboardMsg, setDashboardMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -152,9 +206,14 @@ export default function DashboardPage() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setEmail(session?.user?.email || "");
+      if (session) {
+        registerCurrentSession();
+      }
     });
     fetchHistory();
     fetchProfileUsage();
+    // Session registration should run once when the dashboard mounts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -303,6 +362,46 @@ export default function DashboardPage() {
     setProfileUsage(data || { plan: "free", usage_month: currentUsageMonth(), monthly_analyses_used: 0 });
   }
 
+  async function fetchActiveSessions(currentDeviceId = getDeviceId()) {
+    setSessionsLoading(true);
+    try {
+      const response = await fetch("/api/sessions", { cache: "no-store" });
+      if (!response.ok) {
+        const apiError = await readApiError(response, "load_failed");
+        setSettingsMsg({ type: "error", text: apiError.message });
+        return;
+      }
+
+      const data = await response.json().catch(() => ({ sessions: [] }));
+      const sessions = Array.isArray(data.sessions) ? data.sessions : [];
+      setActiveSessions(
+        sessions.map((session: ActiveSession) => ({
+          ...session,
+          isCurrent: session.device_id === currentDeviceId,
+        }))
+      );
+    } finally {
+      setSessionsLoading(false);
+    }
+  }
+
+  async function registerCurrentSession() {
+    const deviceId = getDeviceId();
+    const device = detectDevice();
+    const response = await fetch("/api/sessions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deviceId, ...device }),
+    });
+
+    if (!response.ok) {
+      console.error("Could not register active session", await response.text().catch(() => ""));
+      return;
+    }
+
+    await fetchActiveSessions(deviceId);
+  }
+
   function clearLocalSessionState() {
     if (typeof window === "undefined") return;
     Object.keys(window.localStorage)
@@ -314,6 +413,11 @@ export default function DashboardPage() {
   async function handleSignOut() {
     if (isSigningOut) return;
     setIsSigningOut(true);
+    await fetch("/api/sessions", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deviceId: getDeviceId() }),
+    }).catch(() => null);
     const { error } = await supabase.auth.signOut({ scope: "local" });
     if (error) {
       setDashboardMsg({ type: "error", text: "Sign out failed. Please try again." });
@@ -344,12 +448,17 @@ export default function DashboardPage() {
 
   async function handleSignOutAll() {
     setIsSigningOutAll(true);
-    const { error } = await supabase.auth.signOut({ scope: "global" });
-    if (error) {
-      setSettingsMsg({ type: "error", text: "Could not sign out all devices. Please try again." });
+    setSettingsMsg(null);
+
+    const response = await fetch("/api/sessions", { method: "DELETE" });
+    if (!response.ok) {
+      const apiError = await readApiError(response, "api_failure");
+      setSettingsMsg({ type: "error", text: apiError.message });
       setIsSigningOutAll(false);
       return;
     }
+
+    await supabase.auth.signOut({ scope: "global" }).catch(() => null);
     clearLocalSessionState();
     router.replace("/auth/login");
     router.refresh();
@@ -424,6 +533,9 @@ export default function DashboardPage() {
     setSettingsMsg(null);
     setShowDeleteConfirmation(null);
     setSelectedSettingsTab(tab);
+    if (tab === "security") {
+      fetchActiveSessions();
+    }
   }
 
   const renderSidebarContent = () => (
@@ -829,6 +941,7 @@ export default function DashboardPage() {
                   result={selectedAnalysis.result}
                   analysisId={selectedAnalysis.id}
                   plan={plan}
+                  language={selectedAnalysis.language || language.toLowerCase()}
                   savedFollowUps={selectedFollowUps}
                   savedChecklist={getSavedChecklist(selectedAnalysis)}
                   onChecklistChange={(newState) => handleChecklistChange(selectedAnalysis.id, newState)}
@@ -1080,10 +1193,42 @@ export default function DashboardPage() {
                     </button>
                   </div>
                   <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">Active Session</p>
-                    <div className="flex justify-between items-center">
-                      <p className="text-sm text-neutral-400">Status:</p>
-                      <p className="text-sm text-emerald-400">Active now</p>
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600">Active Sessions</p>
+                      <button
+                        type="button"
+                        onClick={() => fetchActiveSessions()}
+                        disabled={sessionsLoading}
+                        className="rounded-full border border-white/10 px-3 py-1 text-[10px] font-semibold text-neutral-400 transition hover:border-[#C9A84C]/35 hover:text-[#C9A84C] disabled:opacity-50"
+                      >
+                        {sessionsLoading ? "Refreshing..." : "Refresh"}
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {activeSessions.length === 0 ? (
+                        <p className="text-sm text-neutral-500">
+                          {sessionsLoading ? "Loading active sessions..." : "No active sessions found yet."}
+                        </p>
+                      ) : (
+                        activeSessions.map((session) => (
+                          <div key={session.id} className="rounded-lg border border-white/[0.06] bg-black/15 px-3 py-2.5">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-semibold text-neutral-200">
+                                  {session.device_name || "Unknown device"}
+                                  {session.isCurrent ? <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-emerald-400">Current</span> : null}
+                                </p>
+                                <p className="mt-1 text-xs text-neutral-500">
+                                  {[session.browser_name, session.os_name].filter(Boolean).join(" · ") || "Browser details unavailable"}
+                                </p>
+                              </div>
+                              <p className="shrink-0 text-right text-[10px] font-semibold uppercase tracking-wider text-neutral-600">
+                                {session.last_seen ? `Seen ${new Date(session.last_seen).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : "Active"}
+                              </p>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                   <button

@@ -150,7 +150,7 @@ export default function PricingPage() {
                 <ul className="space-y-2.5">
                   <Row icon={<Check />} text="5 documents / month" />
                   <Row icon={<Check />} text="Full analysis on every doc" sub="Checklists, red flags, deadlines, laws" />
-                  <Row icon={<Check />} text="3 follow-ups per doc" />
+                  <Row icon={<Check />} text="3 follow-ups / month" />
                   <Row icon={<Check />} text="14-day history" />
                 </ul>
               </div>

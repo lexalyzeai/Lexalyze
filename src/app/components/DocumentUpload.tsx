@@ -46,6 +46,7 @@ export default function DocumentUpload({ language, plan = "free", onAnalysisComp
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<ErrorType | "">("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [loadingStage, setLoadingStage] = useState<LoadingStage>("idle");
   const [extractedText, setExtractedText] = useState("");
   const [analysisResult, setAnalysisResult] = useState<AnalysisResultData | null>(null);
@@ -60,6 +61,7 @@ export default function DocumentUpload({ language, plan = "free", onAnalysisComp
 
   async function extractText(file: File) {
     setError("");
+    setErrorMessage("");
     setExtractedText("");
     setAnalysisResult(null);
     setCurrentAnalysisId("");
@@ -80,6 +82,7 @@ export default function DocumentUpload({ language, plan = "free", onAnalysisComp
       if (!response.ok) {
         const apiError = await readApiError(response, "no_text_extracted");
         setError(apiError.code);
+        setErrorMessage(apiError.message);
         setLoadingStage("idle");
         return;
       }
@@ -101,6 +104,7 @@ export default function DocumentUpload({ language, plan = "free", onAnalysisComp
       const errorMessage = err instanceof Error ? err.message : "Something went wrong while extracting text.";
       const mappedError = mapBackendError(errorMessage) || "api_failure";
       setError(mappedError);
+      setErrorMessage(errorMessage);
       setLoadingStage("idle");
     }
   }
@@ -109,9 +113,11 @@ export default function DocumentUpload({ language, plan = "free", onAnalysisComp
     if (!isAccepted(file)) {
       setSelectedFile(null);
       setError("unsupported_file_type");
+      setErrorMessage("");
       return;
     }
     setError("");
+    setErrorMessage("");
     setSelectedFile(file);
     await extractText(file);
   }
@@ -125,6 +131,7 @@ export default function DocumentUpload({ language, plan = "free", onAnalysisComp
 
     try {
       setError("");
+      setErrorMessage("");
       setAnalysisResult(null);
       setCurrentAnalysisId("");
       setLoadingStage("analysing");
@@ -138,13 +145,15 @@ export default function DocumentUpload({ language, plan = "free", onAnalysisComp
         }),
       });
 
-      const data = await response.json().catch(() => ({}));
-
       if (!response.ok) {
-        setError(mapBackendError(data.code || data.error || "Analysis failed."));
+        const apiError = await readApiError(response, "api_failure");
+        setError(apiError.code);
+        setErrorMessage(apiError.message);
         setLoadingStage("idle");
         return;
       }
+
+      const data = await response.json().catch(() => ({}));
 
       setAnalysisResult(data.result);
       setCurrentAnalysisId(data.analysisId || "");
@@ -154,6 +163,7 @@ export default function DocumentUpload({ language, plan = "free", onAnalysisComp
       const errorMessage = err instanceof Error ? err.message : "Something went wrong while analyzing the document.";
       const mappedError = mapBackendError(errorMessage) || "api_failure";
       setError(mappedError);
+      setErrorMessage(errorMessage);
       setLoadingStage("idle");
     }
   }
@@ -203,7 +213,7 @@ export default function DocumentUpload({ language, plan = "free", onAnalysisComp
           Drag &amp; drop or click to browse
         </p>
         <p className="mt-1.5 text-[10px] font-bold tracking-widest text-neutral-600 uppercase">
-          PDF, DOCX, TXT, PNG, JPG
+          Legal PDF, DOCX, TXT, PNG, JPG
         </p>
         
         {selectedFile && (
@@ -217,7 +227,11 @@ export default function DocumentUpload({ language, plan = "free", onAnalysisComp
           <div className="mt-5 w-full max-w-lg">
             <ErrorMessage
               errorType={error}
-              onDismiss={() => setError("")}
+              message={errorMessage || undefined}
+              onDismiss={() => {
+                setError("");
+                setErrorMessage("");
+              }}
             />
           </div>
         )}
@@ -269,7 +283,7 @@ export default function DocumentUpload({ language, plan = "free", onAnalysisComp
 
       {analysisResult && (
         <div className="mt-10 w-full max-w-4xl animate-[fadeIn_600ms_cubic-bezier(0.16,1,0.3,1)_both]">
-          <AnalysisResult result={analysisResult} analysisId={currentAnalysisId} plan={plan} />
+          <AnalysisResult result={analysisResult} analysisId={currentAnalysisId} plan={plan} language={language === "HI" ? "hi" : "en"} />
         </div>
       )}
     </div>

@@ -5,6 +5,7 @@ import { analyzeDocument } from '@/lib/groq'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 import { currentUsageMonth, normalizePlan, PLAN_LIMITS } from '@/lib/plans'
 import { FRIENDLY_ERRORS } from '@/lib/error-handling'
+import { isProbablyLegalDocument, LEGAL_DOCUMENT_ERROR } from '@/lib/legal-document'
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
@@ -32,6 +33,10 @@ export async function POST(req: NextRequest) {
 
   if (!text || text.trim().length === 0) {
     return NextResponse.json({ error: FRIENDLY_ERRORS.validation.message, code: 'validation' }, { status: 400 })
+  }
+
+  if (!isProbablyLegalDocument(text)) {
+    return NextResponse.json({ error: LEGAL_DOCUMENT_ERROR, code: 'non_legal_document' }, { status: 400 })
   }
 
   try {

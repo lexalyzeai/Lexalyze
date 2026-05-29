@@ -108,6 +108,11 @@ const ANALYSIS_ERROR_COPY: Partial<Record<AnalysisErrorType, AnalysisErrorConten
     message: "This file may be corrupted or formatted in a way we can't read yet.",
     tone: "red",
   },
+  non_legal_document: {
+    title: "Legal document required",
+    message: "Only legal documents can be analysed. Upload a contract, agreement, notice, deed, policy, court filing, or similar legal document.",
+    tone: "amber",
+  },
 };
 
 export default function HomePage() {
@@ -337,6 +342,7 @@ export default function HomePage() {
   result={{
     ...analysisResult,
   }}
+  language="en"
 />
             </div>
           ) : null}
