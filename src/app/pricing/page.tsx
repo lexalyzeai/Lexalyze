@@ -92,7 +92,7 @@ function PlanCard({ plan, onPaymentNotice }: { plan: PlanDetails; onPaymentNotic
           <span className="ml-1 text-sm text-neutral-500">/month</span>
         </div>
         <p className="mt-1 text-xs text-neutral-500">
-          {isStarter ? "Always free" : isTeam ? "High-volume plan" : "For one user"}
+          {isStarter ? "Always free" : isTeam ? `${plan.includedSeats} seats included` : "For one user"}
         </p>
       </div>
 

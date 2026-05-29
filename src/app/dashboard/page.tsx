@@ -26,6 +26,7 @@ type AnalysisRow = {
   result: (AnalysisResultData & { checkbox?: boolean[]; checklistState?: boolean[] }) | null;
   checkbox?: boolean[] | null;
   checklist_state?: boolean[] | null;
+  folder_id?: string | null;
 };
 
 type FollowUpRow = {
@@ -48,6 +49,20 @@ type ActiveSession = {
   created_at?: string | null;
   last_seen?: string | null;
   isCurrent?: boolean;
+};
+
+type TeamMember = {
+  id: string;
+  email: string;
+  role: "owner" | "admin" | "member" | "viewer";
+  status: "active" | "invited";
+  created_at?: string | null;
+};
+
+type TeamFolder = {
+  id: string;
+  name: string;
+  created_at?: string | null;
 };
 
 function ConfidenceDot({ confidence }: { confidence: string }) {
@@ -160,7 +175,7 @@ export default function DashboardPage() {
   const [followUpsLoading, setFollowUpsLoading] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [selectedSettingsTab, setSelectedSettingsTab] = useState<"general" | "billing" | "usage" | "security" | "deletion">("general");
+  const [selectedSettingsTab, setSelectedSettingsTab] = useState<"general" | "billing" | "usage" | "team" | "security" | "deletion">("general");
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState<"history" | "account" | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [pinnedAnalysisIds, setPinnedAnalysisIds] = useState<string[]>([]);
@@ -175,6 +190,14 @@ export default function DashboardPage() {
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [dashboardMsg, setDashboardMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [teamFolders, setTeamFolders] = useState<TeamFolder[]>([]);
+  const [teamSeatLimit, setTeamSeatLimit] = useState(3);
+  const [teamLoading, setTeamLoading] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<"admin" | "member" | "viewer">("member");
+  const [folderName, setFolderName] = useState("");
+  const [folderAssignment, setFolderAssignment] = useState<Record<string, string>>({});
 
   const selectedAnalysis = analyses.find((a) => a.id === selectedAnalysisId) || null;
   const totalActionItems = analyses.reduce((sum, analysis) => sum + (analysis.result?.actionItems?.length ?? 0), 0);
@@ -563,6 +586,78 @@ export default function DashboardPage() {
     setSelectedSettingsTab(tab);
     if (tab === "security") {
       fetchActiveSessions();
+    }
+    if (tab === "team" && plan === "team") {
+      fetchTeamWorkspace();
+    }
+  }
+
+  async function fetchTeamWorkspace() {
+    if (plan !== "team") return;
+    setTeamLoading(true);
+    try {
+      const response = await fetch("/api/team", { cache: "no-store" });
+      if (!response.ok) {
+        const apiError = await readApiError(response, "load_failed");
+        setSettingsMsg({ type: "error", text: apiError.message });
+        return;
+      }
+      const data = await response.json().catch(() => ({}));
+      setTeamMembers(Array.isArray(data.members) ? data.members : []);
+      setTeamFolders(Array.isArray(data.folders) ? data.folders : []);
+      setTeamSeatLimit(Number(data.seatLimit || 3));
+    } finally {
+      setTeamLoading(false);
+    }
+  }
+
+  async function updateTeam(action: string, payload: Record<string, string>) {
+    setTeamLoading(true);
+    setSettingsMsg(null);
+    try {
+      const response = await fetch("/api/team", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, ...payload }),
+      });
+
+      if (!response.ok) {
+        const apiError = await readApiError(response, "save_failed");
+        setSettingsMsg({ type: "error", text: apiError.message });
+        return false;
+      }
+
+      const data = await response.json().catch(() => ({}));
+      setTeamMembers(Array.isArray(data.members) ? data.members : []);
+      setTeamFolders(Array.isArray(data.folders) ? data.folders : []);
+      setTeamSeatLimit(Number(data.seatLimit || 3));
+      return true;
+    } finally {
+      setTeamLoading(false);
+    }
+  }
+
+  async function inviteTeamMember() {
+    const ok = await updateTeam("invite", { email: inviteEmail, role: inviteRole });
+    if (ok) {
+      setInviteEmail("");
+      setSettingsMsg({ type: "success", text: "Teammate seat added. They can be activated when invite email delivery is connected." });
+    }
+  }
+
+  async function createTeamFolder() {
+    const ok = await updateTeam("folder", { name: folderName });
+    if (ok) {
+      setFolderName("");
+      setSettingsMsg({ type: "success", text: "Workspace folder created." });
+    }
+  }
+
+  async function assignAnalysisFolder(analysisId: string, folderId: string) {
+    const ok = await updateTeam("assignFolder", { analysisId, folderId });
+    if (ok) {
+      setAnalyses((prev) => prev.map((analysis) => analysis.id === analysisId ? { ...analysis, folder_id: folderId } as AnalysisRow : analysis));
+      setSettingsMsg({ type: "success", text: "Analysis moved to folder." });
     }
   }
 
@@ -1057,6 +1152,19 @@ export default function DashboardPage() {
                 >
                   Usage
                 </button>
+                {plan === "team" ? (
+                  <button
+                    type="button"
+                    onClick={() => switchSettingsTab("team")}
+                    className={`px-4 py-2 text-sm font-medium transition ${
+                      selectedSettingsTab === "team"
+                        ? "text-[#C9A84C]"
+                        : "text-neutral-400 hover:text-neutral-200"
+                    }`}
+                  >
+                    Team
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => switchSettingsTab("security")}
@@ -1161,7 +1269,7 @@ export default function DashboardPage() {
                             <span>Follow-ups: {currentPlanDetails.monthlyFollowUps === null ? "Unlimited" : `${currentPlanDetails.monthlyFollowUps}/month`}</span>
                             <span>History: {currentPlanDetails.historyDays === null ? "Unlimited" : `${currentPlanDetails.historyDays} days`}</span>
                             <span>Storage: {currentPlanDetails.storageMb} MB</span>
-                            <span>Outputs: {plan === "team" ? "PDF, DOCX, CSV" : plan === "solo" ? "PDF, DOCX" : "Locked"}</span>
+                            <span>{plan === "team" ? `Seats: ${currentPlanDetails.includedSeats}` : `Outputs: ${plan === "solo" ? "PDF, DOCX" : "Locked"}`}</span>
                           </div>
                         </div>
                         <button
@@ -1214,6 +1322,157 @@ export default function DashboardPage() {
                       </>
                     );
                   })()}
+                </div>
+              ) : selectedSettingsTab === "team" ? (
+                <div className="space-y-4">
+                  <div className="rounded-lg border border-[#C9A84C]/20 bg-[#C9A84C]/5 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-[#C9A84C] mb-2">Team Workspace</p>
+                        <p className="text-sm text-neutral-300">
+                          {teamMembers.length} / {teamSeatLimit} seats used. Roles control who can manage the workspace.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={fetchTeamWorkspace}
+                        disabled={teamLoading}
+                        className="rounded-full border border-[#C9A84C]/30 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#C9A84C] disabled:opacity-50"
+                      >
+                        {teamLoading ? "Loading" : "Refresh"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-3">Seats + Roles</p>
+                    <div className="space-y-2">
+                      {teamMembers.length === 0 ? (
+                        <p className="text-sm text-neutral-500">Open this tab to initialize your workspace.</p>
+                      ) : (
+                        teamMembers.map((member) => (
+                          <div key={member.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/[0.06] bg-black/15 px-3 py-2.5">
+                            <div>
+                              <p className="text-sm font-semibold text-neutral-200">{member.email}</p>
+                              <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-neutral-600">{member.status}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <select
+                                value={member.role}
+                                disabled={member.role === "owner" || teamLoading}
+                                onChange={(event) => updateTeam("role", { memberId: member.id, role: event.target.value })}
+                                className="rounded-full border border-white/10 bg-[#08080C] px-3 py-1.5 text-xs font-semibold text-neutral-300 outline-none disabled:opacity-50"
+                              >
+                                <option value="owner">Owner</option>
+                                <option value="admin">Admin</option>
+                                <option value="member">Member</option>
+                                <option value="viewer">Viewer</option>
+                              </select>
+                              {member.role !== "owner" ? (
+                                <button
+                                  type="button"
+                                  onClick={() => updateTeam("remove", { memberId: member.id })}
+                                  disabled={teamLoading}
+                                  className="rounded-full border border-rose-500/25 px-3 py-1.5 text-xs font-semibold text-rose-400 disabled:opacity-50"
+                                >
+                                  Remove
+                                </button>
+                              ) : null}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+                      <input
+                        value={inviteEmail}
+                        onChange={(event) => setInviteEmail(event.target.value)}
+                        placeholder="teammate@example.com"
+                        className="rounded-lg border border-white/[0.08] bg-[#08080C] px-3 py-2 text-sm text-white outline-none focus:border-[#C9A84C]/45"
+                      />
+                      <select
+                        value={inviteRole}
+                        onChange={(event) => setInviteRole(event.target.value as "admin" | "member" | "viewer")}
+                        className="rounded-lg border border-white/[0.08] bg-[#08080C] px-3 py-2 text-sm text-white outline-none focus:border-[#C9A84C]/45"
+                      >
+                        <option value="admin">Admin</option>
+                        <option value="member">Member</option>
+                        <option value="viewer">Viewer</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={inviteTeamMember}
+                        disabled={teamLoading || !inviteEmail.trim()}
+                        className="rounded-lg bg-[#C9A84C] px-4 py-2 text-sm font-semibold text-black disabled:opacity-50"
+                      >
+                        Add seat
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-3">Shared Workspace Folders</p>
+                    <div className="flex gap-2">
+                      <input
+                        value={folderName}
+                        onChange={(event) => setFolderName(event.target.value)}
+                        placeholder="Folder name"
+                        className="min-w-0 flex-1 rounded-lg border border-white/[0.08] bg-[#08080C] px-3 py-2 text-sm text-white outline-none focus:border-[#C9A84C]/45"
+                      />
+                      <button
+                        type="button"
+                        onClick={createTeamFolder}
+                        disabled={teamLoading || !folderName.trim()}
+                        className="rounded-lg bg-[#C9A84C] px-4 py-2 text-sm font-semibold text-black disabled:opacity-50"
+                      >
+                        Create
+                      </button>
+                    </div>
+                    <div className="mt-4 space-y-2">
+                      {teamFolders.length === 0 ? (
+                        <p className="text-sm text-neutral-500">No folders yet.</p>
+                      ) : (
+                        teamFolders.map((folder) => (
+                          <div key={folder.id} className="rounded-lg border border-white/[0.06] bg-black/15 px-3 py-2 text-sm font-semibold text-neutral-300">
+                            {folder.name}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-3">Move Analyses Into Folders</p>
+                    {analyses.length === 0 ? (
+                      <p className="text-sm text-neutral-500">Upload analyses first, then organize them here.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {analyses.slice(0, 8).map((analysis) => (
+                          <div key={analysis.id} className="grid gap-2 rounded-lg border border-white/[0.06] bg-black/15 p-3 sm:grid-cols-[1fr_auto_auto]">
+                            <p className="truncate text-sm font-semibold text-neutral-300">{cleanTitle(analysis)}</p>
+                            <select
+                              value={folderAssignment[analysis.id] ?? analysis.folder_id ?? ""}
+                              onChange={(event) => setFolderAssignment((prev) => ({ ...prev, [analysis.id]: event.target.value }))}
+                              className="rounded-lg border border-white/[0.08] bg-[#08080C] px-3 py-2 text-xs text-white outline-none"
+                            >
+                              <option value="">No folder</option>
+                              {teamFolders.map((folder) => (
+                                <option key={folder.id} value={folder.id}>{folder.name}</option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => assignAnalysisFolder(analysis.id, folderAssignment[analysis.id] ?? analysis.folder_id ?? "")}
+                              disabled={teamLoading}
+                              className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-neutral-300 disabled:opacity-50"
+                            >
+                              Move
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : selectedSettingsTab === "security" ? (
                 <div className="space-y-4">

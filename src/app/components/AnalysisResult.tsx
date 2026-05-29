@@ -499,6 +499,7 @@ export default function AnalysisResult({
   );
   const [isDownloading, setIsDownloading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [shareMode, setShareMode] = useState<"view" | "comment" | "edit">("view");
 
   if (!result) {
     return (
@@ -900,7 +901,7 @@ export default function AnalysisResult({
         const response = await fetch("/api/share", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ analysisId }),
+          body: JSON.stringify({ analysisId, mode: shareMode }),
         });
 
         if (!response.ok) {
@@ -958,6 +959,18 @@ export default function AnalysisResult({
       <>
       {/* Floating Sticky action bar */}
       <div className="pointer-events-none sticky top-4 z-30 flex flex-wrap justify-end gap-2">
+        {currentPlan === "team" ? (
+          <select
+            value={shareMode}
+            onChange={(event) => setShareMode(event.target.value as "view" | "comment" | "edit")}
+            className="pointer-events-auto rounded-full border border-white/15 bg-[#121216]/95 px-3 py-2 text-xs font-bold uppercase tracking-wider text-neutral-300 shadow-2xl shadow-black/80 outline-none transition hover:border-[#C9A84C]/40"
+            aria-label="Share permissions"
+          >
+            <option value="view">View-only</option>
+            <option value="comment">Comments</option>
+            <option value="edit">Comments + edits</option>
+          </select>
+        ) : null}
         {/* Share button */}
         <button
           type="button"

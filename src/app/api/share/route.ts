@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: FRIENDLY_ERRORS.unauthorized.message, code: "unauthorized" }, { status: 401 });
   }
 
-  const { analysisId } = await req.json().catch(() => ({ analysisId: "" }));
+  const { analysisId, mode } = await req.json().catch(() => ({ analysisId: "", mode: "view" }));
   if (!analysisId || typeof analysisId !== "string") {
     return NextResponse.json({ error: FRIENDLY_ERRORS.validation.message, code: "validation" }, { status: 400 });
   }
@@ -53,10 +53,11 @@ export async function POST(req: NextRequest) {
     if (plan === "free") {
       return NextResponse.json({ error: "Sharing is available on Solo and Team plans.", code: "forbidden" }, { status: 403 });
     }
+    const shareMode = plan === "team" && (mode === "comment" || mode === "edit") ? mode : "view";
 
     const { data: analysis, error: fetchError } = await admin
       .from("analyses")
-      .select("id, share_token, share_enabled")
+      .select("id, share_token, share_enabled, share_mode")
       .eq("id", analysisId)
       .eq("user_id", user.id)
       .maybeSingle();
@@ -66,14 +67,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: FRIENDLY_ERRORS.not_found.message, code: "not_found" }, { status: 404 });
     }
 
-    if (analysis.share_enabled && analysis.share_token) {
+    if (analysis.share_enabled && analysis.share_token && analysis.share_mode === shareMode) {
       return NextResponse.json({ url: shareUrl(req, analysis.share_token) });
     }
 
-    const token = crypto.randomUUID().replace(/-/g, "");
+    const token = analysis.share_token || crypto.randomUUID().replace(/-/g, "");
     const { data: updated, error: updateError } = await admin
       .from("analyses")
-      .update({ share_enabled: true, share_token: token, share_created_at: new Date().toISOString() })
+      .update({ share_enabled: true, share_token: token, share_mode: shareMode, share_created_at: new Date().toISOString() })
       .eq("id", analysisId)
       .eq("user_id", user.id)
       .select("share_token")

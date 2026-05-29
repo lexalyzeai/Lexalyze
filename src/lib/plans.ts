@@ -107,7 +107,10 @@ export const PLAN_CATALOG: Record<PlanId, PlanDetails> = {
     ],
     outputs: [
       { text: "Export PDF, DOCX & CSV" },
-      { text: "Share via view-only link", sub: "Recipients need no account" },
+      { text: "Share with comments & edits" },
+      { text: "3 seats + roles", sub: "+\u20b9999/seat/month for more" },
+      { text: "Shared workspace & folders" },
+      { text: "Bulk upload (up to 10 docs)" },
     ],
     cta: "Start Team trial",
   },

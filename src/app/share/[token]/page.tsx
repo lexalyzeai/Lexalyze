@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { Playfair_Display } from "next/font/google";
 import AnalysisResult from "@/app/components/AnalysisResult";
+import SharedFeedback from "@/app/components/SharedFeedback";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 
 const playfair = Playfair_Display({ subsets: ["latin"], weight: ["600", "700"] });
@@ -17,7 +18,7 @@ export default async function SharedAnalysisPage({
   const admin = createSupabaseAdmin();
   const { data: analysis, error } = await admin
     .from("analyses")
-    .select("id, filename, result, language, checklist_state, created_at, share_enabled")
+    .select("id, filename, result, language, checklist_state, created_at, share_enabled, share_mode")
     .eq("share_token", token)
     .eq("share_enabled", true)
     .maybeSingle();
@@ -35,6 +36,12 @@ export default async function SharedAnalysisPage({
     .eq("analysis_id", analysis.id)
     .order("created_at", { ascending: true });
 
+  const { data: feedback } = await admin
+    .from("share_feedback")
+    .select("id, kind, author_name, body, suggested_text, created_at")
+    .eq("analysis_id", analysis.id)
+    .order("created_at", { ascending: false });
+
   return (
     <main className="min-h-screen bg-[#050505] text-white">
       <div className="mx-auto w-full max-w-3xl px-4 py-10">
@@ -45,7 +52,11 @@ export default async function SharedAnalysisPage({
               {analysis.result?.documentTitle || analysis.filename || "Document analysis"}
             </h1>
             <p className="mt-2 text-xs text-neutral-500">
-              View-only link. Sign in to analyse your own documents.
+              {analysis.share_mode === "edit"
+                ? "Shared with comments and edit suggestions enabled."
+                : analysis.share_mode === "comment"
+                  ? "Shared with comments enabled."
+                  : "View-only link. Sign in to analyse your own documents."}
             </p>
           </div>
           <Link
@@ -63,6 +74,11 @@ export default async function SharedAnalysisPage({
           savedChecklist={analysis.checklist_state || analysis.result?.checkbox || []}
           savedFollowUps={followUps || []}
           readOnlyPublic
+        />
+        <SharedFeedback
+          token={token}
+          mode={analysis.share_mode || "view"}
+          initialFeedback={feedback || []}
         />
       </div>
     </main>
