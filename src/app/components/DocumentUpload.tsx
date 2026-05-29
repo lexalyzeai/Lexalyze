@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import AnalysisResult, { type AnalysisResultData } from "@/app/components/AnalysisResult";
 import ErrorMessage, { ErrorType, mapBackendError } from "@/app/components/ErrorMessage";
 import type { PlanId } from "@/lib/plans";
+import { readApiError } from "@/lib/error-handling";
 
 const ACCEPTED_MIME_TYPES = new Set([
   "application/pdf",
@@ -77,10 +78,8 @@ export default function DocumentUpload({ language, plan = "free", onAnalysisComp
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.error || "Failed to extract text. Please try again.";
-        const mappedError = mapBackendError(errorMessage) || "api_failure";
-        setError(mappedError);
+        const apiError = await readApiError(response, "no_text_extracted");
+        setError(apiError.code);
         setLoadingStage("idle");
         return;
       }
@@ -139,12 +138,10 @@ export default function DocumentUpload({ language, plan = "free", onAnalysisComp
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        const errorMessage = data.error || "Analysis failed.";
-        const mappedError = mapBackendError(errorMessage) || "api_failure";
-        setError(mappedError);
+        setError(mapBackendError(data.code || data.error || "Analysis failed."));
         setLoadingStage("idle");
         return;
       }

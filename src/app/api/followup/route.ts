@@ -5,6 +5,7 @@ import { FOLLOWUP_PROMPT } from '@/lib/prompt'
 import { AnalysisResult } from '@/types/analysis'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 import { normalizePlan, PLAN_LIMITS } from '@/lib/plans'
+import { FRIENDLY_ERRORS } from '@/lib/error-handling'
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
@@ -25,13 +26,13 @@ export async function POST(req: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: FRIENDLY_ERRORS.unauthorized.message, code: 'unauthorized' }, { status: 401 })
   }
 
-  const { question, analysisId, language } = await req.json()
+  const { question, analysisId, language } = await req.json().catch(() => ({ question: '', analysisId: '', language: 'en' }))
 
   if (!question || !analysisId) {
-    return NextResponse.json({ error: 'Question and analysisId are required.' }, { status: 400 })
+    return NextResponse.json({ error: FRIENDLY_ERRORS.validation.message, code: 'validation' }, { status: 400 })
   }
 
   const { data: analysis } = await supabase
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (!analysis) {
-    return NextResponse.json({ error: 'Analysis not found.' }, { status: 404 })
+    return NextResponse.json({ error: FRIENDLY_ERRORS.not_found.message, code: 'not_found' }, { status: 404 })
   }
 
   const admin = createSupabaseAdmin()
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
 
     if ((followupCount ?? 0) >= followUpLimit) {
       return NextResponse.json(
-        { error: `Follow-up limit reached for this document (${followUpLimit} per document on Starter plan). Upgrade to Solo for unlimited follow-ups.` },
+        { error: `Follow-up limit reached for this document (${followUpLimit} per document on Starter plan). Upgrade to Solo for unlimited follow-ups.`, code: 'rate_limit_hit' },
         { status: 429 }
       )
     }
@@ -110,14 +111,14 @@ USER QUESTION: ${question}`
     if (!response.ok) {
       const errorBody = await response.json().catch(() => ({}))
       console.error('Groq followup error:', errorBody)
-      return NextResponse.json({ error: 'Failed to get answer. Please try again.' }, { status: 500 })
+      return NextResponse.json({ error: FRIENDLY_ERRORS.ai_capacity.message, code: 'ai_capacity' }, { status: 503 })
     }
 
     const data = await response.json()
     const answer = data.choices?.[0]?.message?.content
 
     if (!answer) {
-      return NextResponse.json({ error: 'No answer from Groq.' }, { status: 500 })
+      return NextResponse.json({ error: FRIENDLY_ERRORS.api_failure.message, code: 'api_failure' }, { status: 500 })
     }
 
     await supabase
@@ -128,6 +129,6 @@ USER QUESTION: ${question}`
 
   } catch (err) {
     console.error('Followup error:', err)
-    return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })
+    return NextResponse.json({ error: FRIENDLY_ERRORS.api_failure.message, code: 'api_failure' }, { status: 500 })
   }
 }

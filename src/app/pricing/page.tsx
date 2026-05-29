@@ -62,6 +62,7 @@ export default function PricingPage() {
   const [billing, setBilling] = useState<Billing>("monthly");
   const [currency, setCurrency] = useState<Currency>("USD");
   const [detected, setDetected] = useState(false);
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -75,6 +76,10 @@ export default function PricingPage() {
   const soloPrice  = SOLO[currency === "INR" ? "inr" : "usd"][billing];
   const teamPrice  = TEAM[currency === "INR" ? "inr" : "usd"][billing];
   const seatPrice  = SEAT[currency === "INR" ? "inr" : "usd"];
+  const showPaymentNotice = () => {
+    setNotice("Payments are not connected yet. Email lexalyze.ai@gmail.com for early access.");
+    window.setTimeout(() => setNotice(""), 5000);
+  };
 
   if (!detected) return null;
 
@@ -91,6 +96,11 @@ export default function PricingPage() {
           <p className="mt-4 text-base text-neutral-400">
             Start free. Upgrade when you need more.
           </p>
+          {notice && (
+            <div className="mx-auto mt-5 max-w-xl rounded-xl border border-sky-400/25 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100">
+              {notice}
+            </div>
+          )}
         </div>
 
         {/* Billing toggle */}
@@ -215,7 +225,7 @@ export default function PricingPage() {
 
             <button
               type="button"
-              onClick={() => alert("Payment gateway coming soon! Contact us at lexalyze.ai@gmail.com to get early access.")}
+              onClick={showPaymentNotice}
               className="mt-8 block w-full rounded-xl bg-gradient-to-r from-[#C9A84C] to-[#aa8426] py-3 text-center text-sm font-bold text-[#0A0A0A] transition hover:from-[#d4b55d] hover:to-[#b89542]"
             >
               Start Solo
@@ -273,7 +283,7 @@ export default function PricingPage() {
 
             <button
               type="button"
-              onClick={() => alert("Payment gateway coming soon! Contact us at lexalyze.ai@gmail.com to get early access.")}
+              onClick={showPaymentNotice}
               className="mt-8 block w-full rounded-xl border border-white/10 py-3 text-center text-sm font-semibold text-neutral-200 transition hover:border-white/20 hover:bg-white/[0.04] hover:text-white"
             >
               Start Team trial

@@ -6,7 +6,8 @@ import { useMemo, useState } from "react";
 import Navbar from "./components/Navbar";
 import AnalysisLoadingOverlay from "./components/AnalysisLoadingOverlay";
 import AnalysisResult from "@/app/components/AnalysisResult";
-import ErrorMessage, { type ErrorTone } from "./components/ErrorMessage";
+import ErrorMessage, { type ErrorTone, type ErrorType } from "./components/ErrorMessage";
+import { readApiError } from "@/lib/error-handling";
 import type { AnalysisResult as AiAnalysisResult } from "@/types/analysis";
 
 const playfair = Playfair_Display({
@@ -82,7 +83,7 @@ const FAQ_ITEMS = [
   },
 ] as const;
 
-type AnalysisErrorType = "api-failure" | "rate-limit" | "parse-error";
+type AnalysisErrorType = ErrorType;
 
 type AnalysisErrorContent = {
   title: string;
@@ -91,18 +92,18 @@ type AnalysisErrorContent = {
   tone: ErrorTone;
 };
 
-const ANALYSIS_ERROR_COPY: Record<AnalysisErrorType, AnalysisErrorContent> = {
-  "api-failure": {
+const ANALYSIS_ERROR_COPY: Partial<Record<AnalysisErrorType, AnalysisErrorContent>> = {
+  api_failure: {
     title: "Something went wrong",
     message: "We couldn't process your document right now. Please try again.",
     tone: "red",
   },
-  "rate-limit": {
+  rate_limit_hit: {
     title: "Monthly limit reached",
     message: "You've reached the Starter monthly analysis limit. Upgrade or wait for the next monthly reset.",
     tone: "blue",
   },
-  "parse-error": {
+  parse_error: {
     title: "Document could not be analysed",
     message: "This file may be corrupted or formatted in a way we can't read yet.",
     tone: "red",
@@ -148,25 +149,21 @@ export default function HomePage() {
       });
   
       if (!response.ok) {
-        if (response.status === 429) {
-          setAnalysisErrorType("rate-limit");
-          return;
-        }
-  
-        setAnalysisErrorType("api-failure");
+        const apiError = await readApiError(response, response.status === 429 ? "rate_limit_hit" : "api_failure");
+        setAnalysisErrorType(apiError.code);
         return;
       }
   
       const data = await response.json();
   
       if (!data?.result) {
-        setAnalysisErrorType("parse-error");
+        setAnalysisErrorType("parse_error");
         return;
       }
   
       setAnalysisResult(data.result as AiAnalysisResult);
     } catch {
-      setAnalysisErrorType("api-failure");
+      setAnalysisErrorType("network_error");
     } finally {
       clearInterval(stepTimer);
       setIsAnalysing(false);
@@ -320,10 +317,11 @@ export default function HomePage() {
               </button>
               {analysisErrorType ? (
                 <ErrorMessage
-                  title={ANALYSIS_ERROR_COPY[analysisErrorType].title}
-                  message={ANALYSIS_ERROR_COPY[analysisErrorType].message}
-                  hint={ANALYSIS_ERROR_COPY[analysisErrorType].hint}
-                  tone={ANALYSIS_ERROR_COPY[analysisErrorType].tone}
+                  title={ANALYSIS_ERROR_COPY[analysisErrorType]?.title}
+                  message={ANALYSIS_ERROR_COPY[analysisErrorType]?.message}
+                  hint={ANALYSIS_ERROR_COPY[analysisErrorType]?.hint}
+                  tone={ANALYSIS_ERROR_COPY[analysisErrorType]?.tone}
+                  errorType={analysisErrorType}
                   className="w-full max-w-xl"
                   onDismiss={() => setAnalysisErrorType(null)}
                 />

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import ErrorMessage, { mapBackendError, type ErrorType } from "@/app/components/ErrorMessage";
 
 type FollowUpResponse = {
   answer?: string;
@@ -18,7 +19,7 @@ export default function FollowUpQuestion({
   const [loading, setLoading] = useState(false);
   const [answer, setAnswer] = useState("");
   const [fromDocument, setFromDocument] = useState<boolean | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<ErrorType | "">("");
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -47,26 +48,23 @@ export default function FollowUpQuestion({
 
       const data = (await response.json()) as FollowUpResponse & {
         error?: string;
+        code?: string;
       };
 
       if (!response.ok) {
-        throw new Error(
-          data.error || "Could not fetch follow-up answer."
-        );
+        setError(mapBackendError(data.code || data.error || "Could not fetch follow-up answer."));
+        return;
       }
 
       if (!data.answer) {
-        throw new Error("No answer was returned.");
+        setError("api_failure");
+        return;
       }
 
       setAnswer(data.answer);
       setFromDocument(Boolean(data.fromDocument));
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong while searching the document."
-      );
+      setError(mapBackendError(err instanceof Error ? err.message : "Something went wrong while searching the document."));
     } finally {
       setLoading(false);
     }
@@ -93,11 +91,7 @@ export default function FollowUpQuestion({
           </button>
         </div>
 
-        {error ? (
-          <p className="text-sm text-red-400" role="alert">
-            {error}
-          </p>
-        ) : null}
+        {error ? <ErrorMessage errorType={error} onDismiss={() => setError("")} /> : null}
       </form>
 
       {answer ? (

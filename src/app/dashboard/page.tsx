@@ -6,8 +6,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { currentUsageMonth, normalizePlan, PLAN_LIMITS, type PlanId } from "@/lib/plans";
+import { readApiError, toUserMessage } from "@/lib/error-handling";
 import DocumentUpload from "../components/DocumentUpload";
 import AnalysisResult, { type AnalysisResultData } from "../components/AnalysisResult";
+import ErrorMessage from "../components/ErrorMessage";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -118,6 +120,7 @@ export default function DashboardPage() {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [profileUsage, setProfileUsage] = useState<ProfileUsage | null>(null);
   const [settingsMsg, setSettingsMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [dashboardMsg, setDashboardMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const selectedAnalysis = analyses.find((a) => a.id === selectedAnalysisId) || null;
   const totalActionItems = analyses.reduce((sum, analysis) => sum + (analysis.result?.actionItems?.length ?? 0), 0);
@@ -223,8 +226,7 @@ export default function DashboardPage() {
     });
 
     if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      console.error("Checklist save failed:", data.error || response.statusText);
+      setDashboardMsg({ type: "error", text: "Checklist saved locally, but could not sync yet." });
     }
   }
 
@@ -276,6 +278,7 @@ export default function DashboardPage() {
       .order("created_at", { ascending: false });
     if (error) {
       console.error("History load failed:", error.message || error);
+      setDashboardMsg({ type: "error", text: toUserMessage(error.message, "load_failed") });
     }
     setAnalyses(data || []);
     setHistoryLoading(false);
@@ -293,6 +296,7 @@ export default function DashboardPage() {
 
     if (error) {
       console.error("Profile usage load failed:", error.message || error);
+      setDashboardMsg({ type: "error", text: "Plan and usage details could not be loaded. Refresh to try again." });
       return;
     }
 
@@ -310,7 +314,12 @@ export default function DashboardPage() {
   async function handleSignOut() {
     if (isSigningOut) return;
     setIsSigningOut(true);
-    await supabase.auth.signOut({ scope: "local" });
+    const { error } = await supabase.auth.signOut({ scope: "local" });
+    if (error) {
+      setDashboardMsg({ type: "error", text: "Sign out failed. Please try again." });
+      setIsSigningOut(false);
+      return;
+    }
     clearLocalSessionState();
     router.replace("/auth/login");
     router.refresh();
@@ -327,7 +336,7 @@ export default function DashboardPage() {
     setPasswordResetSent(!error);
     setSettingsMsg(
       error
-        ? { type: "error", text: "Failed to send. Please try again." }
+        ? { type: "error", text: toUserMessage(error.message, "api_failure") }
         : { type: "success", text: "Reset link sent — check your inbox." }
     );
     setTimeout(() => setSettingsMsg(null), 5000);
@@ -335,7 +344,12 @@ export default function DashboardPage() {
 
   async function handleSignOutAll() {
     setIsSigningOutAll(true);
-    await supabase.auth.signOut({ scope: "global" });
+    const { error } = await supabase.auth.signOut({ scope: "global" });
+    if (error) {
+      setSettingsMsg({ type: "error", text: "Could not sign out all devices. Please try again." });
+      setIsSigningOutAll(false);
+      return;
+    }
     clearLocalSessionState();
     router.replace("/auth/login");
     router.refresh();
@@ -347,8 +361,8 @@ export default function DashboardPage() {
 
     const response = await fetch("/api/history", { method: "DELETE" });
     if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      setSettingsMsg({ type: "error", text: data.error || "Could not delete history. Please try again." });
+      const data = await readApiError(response, "delete_failed");
+      setSettingsMsg({ type: "error", text: data.message });
       setIsDeletingHistory(false);
       return;
     }
@@ -367,8 +381,8 @@ export default function DashboardPage() {
   async function handleDeleteAnalysis(id: string) {
     const response = await fetch(`/api/history/${id}`, { method: "DELETE" });
     if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      console.error("Analysis delete failed:", data.error || response.statusText);
+      const data = await readApiError(response, "delete_failed");
+      setDashboardMsg({ type: "error", text: data.message });
       return;
     }
 
@@ -378,6 +392,7 @@ export default function DashboardPage() {
       setSelectedAnalysisId(null);
       setSelectedFollowUps([]);
     }
+    setDashboardMsg({ type: "success", text: "Analysis deleted." });
   }
 
   async function handleDeleteAccount() {
@@ -387,8 +402,8 @@ export default function DashboardPage() {
 
     const response = await fetch("/api/account", { method: "DELETE" });
     if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      setSettingsMsg({ type: "error", text: data.error || "Could not delete account. Please try again." });
+      const data = await readApiError(response, "delete_failed");
+      setSettingsMsg({ type: "error", text: data.message });
       setIsDeletingAccount(false);
       return;
     }
@@ -667,6 +682,15 @@ export default function DashboardPage() {
               </div>
             </div>
           </header>
+
+          {dashboardMsg && (
+            <ErrorMessage
+              title={dashboardMsg.type === "success" ? "Done" : undefined}
+              message={dashboardMsg.text}
+              tone={dashboardMsg.type === "success" ? "blue" : "red"}
+              onDismiss={() => setDashboardMsg(null)}
+            />
+          )}
 
           {view === "new" && (
             <section className="grid flex-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">

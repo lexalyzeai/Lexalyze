@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
+import { FRIENDLY_ERRORS } from "@/lib/error-handling";
 
 async function getUser() {
   const cookieStore = await cookies();
@@ -26,7 +27,7 @@ async function getUser() {
 export async function DELETE() {
   const { data: { user } } = await getUser();
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: FRIENDLY_ERRORS.unauthorized.message, code: "unauthorized" }, { status: 401 });
   }
 
   try {
@@ -38,7 +39,8 @@ export async function DELETE() {
       .eq("user_id", user.id);
 
     if (fetchError) {
-      return NextResponse.json({ error: fetchError.message }, { status: 500 });
+      console.error("History fetch before delete failed:", fetchError);
+      return NextResponse.json({ error: FRIENDLY_ERRORS.delete_failed.message, code: "delete_failed" }, { status: 500 });
     }
 
     const ids = (rows || []).map((row) => row.id);
@@ -50,7 +52,8 @@ export async function DELETE() {
         .in("analysis_id", ids);
 
       if (followupError) {
-        return NextResponse.json({ error: followupError.message }, { status: 500 });
+        console.error("Followup bulk delete failed:", followupError);
+        return NextResponse.json({ error: FRIENDLY_ERRORS.delete_failed.message, code: "delete_failed" }, { status: 500 });
       }
     }
 
@@ -60,15 +63,15 @@ export async function DELETE() {
       .eq("user_id", user.id);
 
     if (analysisError) {
-      return NextResponse.json({ error: analysisError.message }, { status: 500 });
+      console.error("Analysis bulk delete failed:", analysisError);
+      return NextResponse.json({ error: FRIENDLY_ERRORS.delete_failed.message, code: "delete_failed" }, { status: 500 });
     }
 
     return NextResponse.json({ deleted: ids.length });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "History deletion failed." },
+      { error: FRIENDLY_ERRORS.delete_failed.message, code: "delete_failed" },
       { status: 500 }
     );
   }
 }
-

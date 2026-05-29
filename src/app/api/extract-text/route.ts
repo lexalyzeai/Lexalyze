@@ -2,6 +2,7 @@ import { extractText } from 'unpdf'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { FRIENDLY_ERRORS } from '@/lib/error-handling'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 const MAX_TEXT_LENGTH = 12000
@@ -33,18 +34,21 @@ export async function POST(req: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: FRIENDLY_ERRORS.unauthorized.message, code: 'unauthorized' }, { status: 401 })
   }
 
-  const formData = await req.formData()
+  const formData = await req.formData().catch(() => null)
+  if (!formData) {
+    return NextResponse.json({ error: FRIENDLY_ERRORS.validation.message, code: 'validation' }, { status: 400 })
+  }
   const file = formData.get('file') as File | null
 
   if (!file) {
-    return NextResponse.json({ error: 'No file uploaded.' }, { status: 400 })
+    return NextResponse.json({ error: FRIENDLY_ERRORS.validation.message, code: 'validation' }, { status: 400 })
   }
 
   if (file.size > MAX_FILE_SIZE) {
-    return NextResponse.json({ error: 'File too large. Maximum size is 10MB.' }, { status: 400 })
+    return NextResponse.json({ error: FRIENDLY_ERRORS.file_too_large.message, code: 'file_too_large' }, { status: 400 })
   }
 
   const isDocx = file.name.toLowerCase().endsWith('.docx') || file.name.toLowerCase().endsWith('.doc')
@@ -54,7 +58,7 @@ export async function POST(req: NextRequest) {
 
   if (!ALLOWED_TYPES.includes(effectiveType)) {
     return NextResponse.json(
-      { error: 'Unsupported file type. Please upload a PDF, DOCX, TXT, PNG, or JPG.' },
+      { error: FRIENDLY_ERRORS.unsupported_file_type.message, code: 'unsupported_file_type' },
       { status: 400 }
     )
   }
@@ -81,7 +85,7 @@ export async function POST(req: NextRequest) {
 
     if (!text || text.trim().length === 0) {
       return NextResponse.json(
-        { error: 'Could not extract text from this file.' },
+        { error: FRIENDLY_ERRORS.no_text_extracted.message, code: 'no_text_extracted' },
         { status: 400 }
       )
     }
@@ -97,7 +101,7 @@ export async function POST(req: NextRequest) {
     const error = err instanceof Error ? err.message : String(err)
     console.error('[/api/extract-text] Extraction error', { userId: user.id, fileName: file.name, error })
     return NextResponse.json(
-      { error: 'Could not read this file. It may be corrupted.' },
+      { error: FRIENDLY_ERRORS.parse_error.message, code: 'parse_error' },
       { status: 400 }
     )
   }

@@ -193,6 +193,7 @@ export default function AnalysisResult({
   const [followUpLoading, setFollowUpLoading] = useState(false);
   const [followUpHistory, setFollowUpHistory] = useState<FollowUpEntry[]>(savedFollowUps);
   const [followUpError, setFollowUpError] = useState<ErrorType | "">("");
+  const [actionError, setActionError] = useState<ErrorType | "">("");
   const [checkedItems, setCheckedItems] = useState<boolean[]>(
     getInitialChecklist(savedChecklist, result, analysisId)
   );
@@ -227,11 +228,11 @@ export default function AnalysisResult({
     })
       .then(async (response) => {
         if (response.ok) return;
-        const data = await response.json().catch(() => ({}));
-        console.error("Checklist save failed:", data.error || response.statusText);
+        setActionError("checklist_save_failed");
       })
       .catch((error) => {
         console.error("Checklist save failed:", error instanceof Error ? error.message : error);
+        setActionError("checklist_save_failed");
       });
   }
 
@@ -246,6 +247,7 @@ export default function AnalysisResult({
 
   async function handleDownloadPDF() {
     if (!canUseOutputs) return;
+    setActionError("");
     setIsDownloading(true);
     const pdfWindow = window.open("", "_blank");
 
@@ -531,6 +533,7 @@ export default function AnalysisResult({
     } catch (err) {
       pdfWindow?.close();
       console.error("PDF download failed:", err);
+      setActionError("download_failed");
     } finally {
       setIsDownloading(false);
     }
@@ -552,12 +555,15 @@ export default function AnalysisResult({
         body: JSON.stringify({ question, analysisId }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        const errorMessage = data.error || "Failed to get answer.";
-        const mappedError = mapBackendError(errorMessage) || "api_failure";
-        setFollowUpError(mappedError);
+        setFollowUpError(mapBackendError(data.code || data.error || "Failed to get answer."));
+        return;
+      }
+
+      if (!data.answer) {
+        setFollowUpError("api_failure");
         return;
       }
 
@@ -574,6 +580,7 @@ export default function AnalysisResult({
 
   async function handleShare() {
     if (!canUseOutputs) return;
+    setActionError("");
     const url = analysisId
       ? `${window.location.origin}/dashboard/analysis/${analysisId}`
       : window.location.href;
@@ -587,7 +594,9 @@ export default function AnalysisResult({
       await navigator.clipboard.writeText(url);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
-    } catch { /* ignore */ }
+    } catch {
+      setActionError("share_failed");
+    }
   }
 
   const favourStyles = partyFavourStyles(result.partyFavour);
@@ -646,6 +655,14 @@ export default function AnalysisResult({
           )}
         </button>
       </div>
+
+      {actionError && (
+        <ErrorMessage
+          errorType={actionError}
+          className="mx-auto max-w-2xl"
+          onDismiss={() => setActionError("")}
+        />
+      )}
 
       {/* Document header Card */}
       <div className="rounded-3xl border border-white/[0.06] bg-[#0E0E12]/80 p-6 backdrop-blur-xl shadow-lg relative overflow-hidden">

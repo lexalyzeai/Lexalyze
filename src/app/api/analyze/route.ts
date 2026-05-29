@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { analyzeDocument } from '@/lib/groq'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 import { currentUsageMonth, normalizePlan, PLAN_LIMITS } from '@/lib/plans'
+import { FRIENDLY_ERRORS } from '@/lib/error-handling'
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
@@ -24,13 +25,13 @@ export async function POST(req: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: FRIENDLY_ERRORS.unauthorized.message, code: 'unauthorized' }, { status: 401 })
   }
 
-  const { text, language, filename } = await req.json()
+  const { text, language, filename } = await req.json().catch(() => ({ text: '', language: 'en', filename: 'document' }))
 
   if (!text || text.trim().length === 0) {
-    return NextResponse.json({ error: 'No document text provided.' }, { status: 400 })
+    return NextResponse.json({ error: FRIENDLY_ERRORS.validation.message, code: 'validation' }, { status: 400 })
   }
 
   try {
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
     if (limit !== null && used >= limit) {
       const nextPlan = plan === 'free' ? 'Solo' : 'Team'
       return NextResponse.json(
-        { error: `Monthly limit reached (${limit} documents on ${plan === 'free' ? 'Starter' : 'Solo'} plan). Upgrade to ${nextPlan} to continue.` },
+        { error: `Monthly limit reached (${limit} documents on ${plan === 'free' ? 'Starter' : 'Solo'} plan). Upgrade to ${nextPlan} to continue.`, code: 'rate_limit_hit' },
         { status: 429 }
       )
     }
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest) {
 
     if (saveError) {
       console.error('Save error:', saveError)
-      return NextResponse.json({ error: 'Analysis could not be saved. Please try again.' }, { status: 500 })
+      return NextResponse.json({ error: FRIENDLY_ERRORS.save_failed.message, code: 'save_failed' }, { status: 500 })
     }
 
     await admin
@@ -97,8 +98,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error: isRateLimit
-          ? 'Our AI is temporarily at capacity. Please try again in a few minutes.'
-          : 'Analysis failed. Please try again.'
+          ? FRIENDLY_ERRORS.ai_capacity.message
+          : FRIENDLY_ERRORS.api_failure.message,
+        code: isRateLimit ? 'ai_capacity' : 'api_failure'
       },
       { status: isRateLimit ? 503 : 500 }
     )

@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
+import { FRIENDLY_ERRORS } from "@/lib/error-handling";
 
 async function getUser() {
   const cookieStore = await cookies();
@@ -31,7 +32,7 @@ export async function DELETE(
   const { data: { user } } = await getUser();
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: FRIENDLY_ERRORS.unauthorized.message, code: "unauthorized" }, { status: 401 });
   }
 
   try {
@@ -45,7 +46,7 @@ export async function DELETE(
       .single();
 
     if (fetchError || !analysis) {
-      return NextResponse.json({ error: "Analysis not found." }, { status: 404 });
+      return NextResponse.json({ error: FRIENDLY_ERRORS.not_found.message, code: "not_found" }, { status: 404 });
     }
 
     const { error: followupError } = await admin
@@ -54,7 +55,8 @@ export async function DELETE(
       .eq("analysis_id", id);
 
     if (followupError) {
-      return NextResponse.json({ error: followupError.message }, { status: 500 });
+      console.error("Followup delete failed:", followupError);
+      return NextResponse.json({ error: FRIENDLY_ERRORS.delete_failed.message, code: "delete_failed" }, { status: 500 });
     }
 
     const { error: analysisError } = await admin
@@ -64,15 +66,15 @@ export async function DELETE(
       .eq("user_id", user.id);
 
     if (analysisError) {
-      return NextResponse.json({ error: analysisError.message }, { status: 500 });
+      console.error("Analysis delete failed:", analysisError);
+      return NextResponse.json({ error: FRIENDLY_ERRORS.delete_failed.message, code: "delete_failed" }, { status: 500 });
     }
 
     return NextResponse.json({ deleted: id });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Analysis deletion failed." },
+      { error: FRIENDLY_ERRORS.delete_failed.message, code: "delete_failed" },
       { status: 500 }
     );
   }
 }
-

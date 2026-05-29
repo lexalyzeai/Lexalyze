@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { FRIENDLY_ERRORS } from '@/lib/error-handling'
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
@@ -21,13 +22,13 @@ export async function POST(req: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: FRIENDLY_ERRORS.unauthorized.message, code: 'unauthorized' }, { status: 401 })
   }
 
-  const { analysisId, checklist } = await req.json()
+  const { analysisId, checklist } = await req.json().catch(() => ({ analysisId: null, checklist: null }))
 
   if (!analysisId || !Array.isArray(checklist) || checklist.some((item) => typeof item !== 'boolean')) {
-    return NextResponse.json({ error: 'Invalid checklist payload.' }, { status: 400 })
+    return NextResponse.json({ error: FRIENDLY_ERRORS.validation.message, code: 'validation' }, { status: 400 })
   }
 
   const { data: analysis, error: fetchError } = await supabase
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (fetchError || !analysis) {
-    return NextResponse.json({ error: 'Analysis not found.' }, { status: 404 })
+    return NextResponse.json({ error: FRIENDLY_ERRORS.not_found.message, code: 'not_found' }, { status: 404 })
   }
 
   const nextResult = {
@@ -54,7 +55,8 @@ export async function POST(req: NextRequest) {
     .eq('user_id', user.id)
 
   if (resultError) {
-    return NextResponse.json({ error: resultError.message || 'Checklist save failed.' }, { status: 500 })
+    console.error('Checklist save failed:', resultError)
+    return NextResponse.json({ error: FRIENDLY_ERRORS.checklist_save_failed.message, code: 'checklist_save_failed' }, { status: 500 })
   }
 
   return NextResponse.json({ checklist })
