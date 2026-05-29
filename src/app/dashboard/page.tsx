@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { currentUsageMonth, normalizePlan, PLAN_LIMITS, type PlanId } from "@/lib/plans";
+import { currentUsageMonth, normalizePlan, PLAN_CATALOG, PLAN_LIMITS } from "@/lib/plans";
 import { readApiError, toUserMessage } from "@/lib/error-handling";
 import DocumentUpload from "../components/DocumentUpload";
 import AnalysisResult, { type AnalysisResultData } from "../components/AnalysisResult";
@@ -185,7 +185,7 @@ export default function DashboardPage() {
   const monthlyLimit = PLAN_LIMITS[plan].monthlyDocuments;
   const docsThisMonth = profileUsage?.usage_month === currentUsageMonth() ? profileUsage?.monthly_analyses_used ?? 0 : 0;
   const remainingDocs = monthlyLimit === null ? null : Math.max(0, monthlyLimit - docsThisMonth);
-  const planLabel: Record<PlanId, string> = { free: "Starter", solo: "Solo", team: "Team" };
+  const currentPlanDetails = PLAN_CATALOG[plan];
 
   const sortedAnalyses = [
     ...analyses.filter((analysis) => pinnedAnalysisIds.includes(analysis.id)),
@@ -330,11 +330,27 @@ export default function DashboardPage() {
       setHistoryLoading(false);
       return;
     }
-    const { data, error } = await supabase
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("plan")
+      .eq("id", session.user.id)
+      .maybeSingle();
+
+    const historyDays = PLAN_CATALOG[normalizePlan(profile?.plan)].historyDays;
+    let query = supabase
       .from("analyses")
       .select("*")
       .eq("user_id", session.user.id)
       .order("created_at", { ascending: false });
+
+    if (historyDays !== null) {
+      const cutoff = new Date();
+      cutoff.setUTCDate(cutoff.getUTCDate() - historyDays);
+      query = query.gte("created_at", cutoff.toISOString());
+    }
+
+    const { data, error } = await query;
     if (error) {
       console.error("History load failed:", error.message || error);
       setDashboardMsg({ type: "error", text: toUserMessage(error.message, "load_failed") });
@@ -928,7 +944,7 @@ export default function DashboardPage() {
                     </span>
                   )}
                 </div>
-                <p className="text-xs font-semibold text-neutral-500">PDF export is available at the top right of the report.</p>
+                <p className="text-xs font-semibold text-neutral-500">Exports and sharing are available at the top right of the report.</p>
               </div>
               {followUpsLoading ? (
                 <div className="flex items-center gap-3 rounded-3xl border border-white/[0.06] bg-[#0E0E12]/80 p-6 text-sm text-neutral-500 shadow-xl backdrop-blur-xl">
@@ -1109,7 +1125,7 @@ export default function DashboardPage() {
                         <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
                           <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">Current Plan</p>
                           <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium text-white">{planLabel[plan]}{plan === "free" ? " (Free)" : ""}</p>
+                            <p className="text-sm font-medium text-white">{currentPlanDetails.name}{plan === "free" ? " (Free)" : ""}</p>
                             <span className="rounded-full bg-neutral-800 px-2.5 py-0.5 text-[10px] font-semibold text-neutral-400">
                               {plan === "free" ? "Free forever" : "Active"}
                             </span>
@@ -1126,6 +1142,15 @@ export default function DashboardPage() {
                           <p className="mt-2 text-xs text-neutral-500">
                             {remainingDocs === null ? "Unlimited documents on this plan" : `${remainingDocs} documents remaining this month`}
                           </p>
+                        </div>
+                        <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">Plan Access</p>
+                          <div className="grid grid-cols-2 gap-2 text-xs text-neutral-400">
+                            <span>Follow-ups: {currentPlanDetails.monthlyFollowUps === null ? "Unlimited" : `${currentPlanDetails.monthlyFollowUps}/month`}</span>
+                            <span>History: {currentPlanDetails.historyDays === null ? "Unlimited" : `${currentPlanDetails.historyDays} days`}</span>
+                            <span>Storage: {currentPlanDetails.storageMb} MB</span>
+                            <span>Seats: {currentPlanDetails.includedSeats}</span>
+                          </div>
                         </div>
                         <button
                           type="button"

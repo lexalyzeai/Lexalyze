@@ -291,6 +291,192 @@ async function registerHindiPdfFont(pdf: {
   pdf.addFont("NotoSansDevanagari-Bold.ttf", "NotoSansDevanagari", "bold");
 }
 
+function escapeXml(value: string) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function escapeCsv(value: string | number | undefined | null) {
+  const text = String(value ?? "");
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function downloadBlob(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+function analysisRows(result: AnalysisResultData, checklist: boolean[]) {
+  const rows: Array<[string, string, string, string]> = [
+    ["Summary", result.documentTitle || "Document analysis", result.fullSummary || result.oneLineSummary || "", ""],
+    ["Risk", "Risk score", result.riskScore !== undefined ? `${result.riskScore}/10` : "", result.riskScoreReason || ""],
+    ["Confidence", result.overallConfidence || "", result.overallConfidenceReason || "", ""],
+  ];
+
+  result.keyNumbers?.forEach((item) => rows.push(["Key number", item, "", ""]));
+  result.keyDeadlines?.forEach((item) => rows.push(["Key deadline", item, "", ""]));
+  result.redFlags?.forEach((flag) => rows.push(["Risk flag", flag.title, flag.explanation, `${flag.severity} risk | ${flag.confidence} confidence`]));
+  result.positivePoints?.forEach((point) => rows.push(["Favourable clause", point.title, point.explanation, `${point.confidence} confidence`]));
+  result.missingClauses?.forEach((item) => rows.push(["Missing clause", item.clause, item.whyItMatters, `${item.riskIfAbsent} risk if absent`]));
+  result.actionItems?.forEach((item, index) => rows.push(["Action item", item.action, item.reason, `${item.priority}${checklist[index] ? " | Done" : " | Open"}`]));
+  result.negotiationTips?.forEach((tip) => rows.push(["Negotiation tip", tip, "", ""]));
+  result.cannotDetermineList?.forEach((item) => rows.push(["Limitation", item, "", ""]));
+
+  if (result.consumerRightsNote) rows.push(["Consumer rights", "Consumer rights", result.consumerRightsNote, ""]);
+  if (result.stampDutyNote) rows.push(["Stamp duty", "Stamp duty and registration", result.stampDutyNote, ""]);
+  if (result.lawyerGuidance) rows.push(["Lawyer guidance", "Lawyer guidance", result.lawyerGuidance, ""]);
+
+  return rows;
+}
+
+const CRC_TABLE = Array.from({ length: 256 }, (_, index) => {
+  let value = index;
+  for (let bit = 0; bit < 8; bit += 1) {
+    value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1;
+  }
+  return value >>> 0;
+});
+
+function crc32(bytes: Uint8Array) {
+  let crc = 0xffffffff;
+  for (const byte of bytes) {
+    crc = CRC_TABLE[(crc ^ byte) & 0xff] ^ (crc >>> 8);
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function writeUint16(bytes: number[], value: number) {
+  bytes.push(value & 0xff, (value >>> 8) & 0xff);
+}
+
+function writeUint32(bytes: number[], value: number) {
+  bytes.push(value & 0xff, (value >>> 8) & 0xff, (value >>> 16) & 0xff, (value >>> 24) & 0xff);
+}
+
+function concatBytes(parts: Uint8Array[]) {
+  const length = parts.reduce((sum, part) => sum + part.length, 0);
+  const output = new Uint8Array(length);
+  let offset = 0;
+  parts.forEach((part) => {
+    output.set(part, offset);
+    offset += part.length;
+  });
+  return output;
+}
+
+function createZip(files: Array<{ name: string; content: string }>) {
+  const encoder = new TextEncoder();
+  const parts: Uint8Array[] = [];
+  const centralParts: Uint8Array[] = [];
+  let offset = 0;
+  const now = new Date();
+  const dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | Math.floor(now.getSeconds() / 2);
+  const dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+
+  files.forEach((file) => {
+    const nameBytes = encoder.encode(file.name);
+    const data = encoder.encode(file.content);
+    const crc = crc32(data);
+    const local: number[] = [];
+    writeUint32(local, 0x04034b50);
+    writeUint16(local, 20);
+    writeUint16(local, 0);
+    writeUint16(local, 0);
+    writeUint16(local, dosTime);
+    writeUint16(local, dosDate);
+    writeUint32(local, crc);
+    writeUint32(local, data.length);
+    writeUint32(local, data.length);
+    writeUint16(local, nameBytes.length);
+    writeUint16(local, 0);
+    const localHeader = concatBytes([new Uint8Array(local), nameBytes, data]);
+    parts.push(localHeader);
+
+    const central: number[] = [];
+    writeUint32(central, 0x02014b50);
+    writeUint16(central, 20);
+    writeUint16(central, 20);
+    writeUint16(central, 0);
+    writeUint16(central, 0);
+    writeUint16(central, dosTime);
+    writeUint16(central, dosDate);
+    writeUint32(central, crc);
+    writeUint32(central, data.length);
+    writeUint32(central, data.length);
+    writeUint16(central, nameBytes.length);
+    writeUint16(central, 0);
+    writeUint16(central, 0);
+    writeUint16(central, 0);
+    writeUint16(central, 0);
+    writeUint32(central, 0);
+    writeUint32(central, offset);
+    centralParts.push(concatBytes([new Uint8Array(central), nameBytes]));
+    offset += localHeader.length;
+  });
+
+  const centralDirectory = concatBytes(centralParts);
+  const end: number[] = [];
+  writeUint32(end, 0x06054b50);
+  writeUint16(end, 0);
+  writeUint16(end, 0);
+  writeUint16(end, files.length);
+  writeUint16(end, files.length);
+  writeUint32(end, centralDirectory.length);
+  writeUint32(end, offset);
+  writeUint16(end, 0);
+
+  return concatBytes([...parts, centralDirectory, new Uint8Array(end)]);
+}
+
+function buildDocxBlob(result: AnalysisResultData, checklist: boolean[]) {
+  const paragraph = (text: string, style?: string) => `
+    <w:p>${style ? `<w:pPr><w:pStyle w:val="${style}"/></w:pPr>` : ""}<w:r><w:t xml:space="preserve">${escapeXml(text)}</w:t></w:r></w:p>`;
+  const rows = analysisRows(result, checklist);
+  const body = [
+    paragraph("LEXALYZE", "Title"),
+    paragraph(result.documentTitle || "Document analysis", "Heading1"),
+    ...rows.flatMap(([category, title, detail, meta]) => [
+      paragraph(category, "Heading2"),
+      paragraph(title),
+      detail ? paragraph(detail) : "",
+      meta ? paragraph(meta) : "",
+    ]),
+  ].join("");
+
+  const files = [
+    {
+      name: "[Content_Types].xml",
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`,
+    },
+    {
+      name: "_rels/.rels",
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`,
+    },
+    {
+      name: "word/document.xml",
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr></w:body></w:document>`,
+    },
+  ];
+
+  return new Blob([createZip(files)], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+}
+
+function buildCsvBlob(result: AnalysisResultData, checklist: boolean[]) {
+  const header = ["Category", "Title", "Detail", "Meta"].map(escapeCsv).join(",");
+  const lines = analysisRows(result, checklist).map((row) => row.map(escapeCsv).join(","));
+  return new Blob([[header, ...lines].join("\r\n")], { type: "text/csv;charset=utf-8" });
+}
+
 export default function AnalysisResult({
   result,
   analysisId,
@@ -322,6 +508,8 @@ export default function AnalysisResult({
 
   const currentPlan = normalizePlan(plan);
   const canUseOutputs = currentPlan !== "free";
+  const canExportCsv = currentPlan === "team";
+  const report = result;
 
   function persistChecklist(next: boolean[]) {
     saveLocalChecklist(analysisId, next);
@@ -722,13 +910,35 @@ export default function AnalysisResult({
     }
   }
 
+  function handleDownloadDOCX() {
+    if (!canUseOutputs) return;
+    setActionError("");
+    try {
+      downloadBlob(buildDocxBlob(report, checkedItems), `lexalyze-${safePdfName(report.documentTitle)}.docx`);
+    } catch (err) {
+      console.error("DOCX download failed:", err);
+      setActionError("download_failed");
+    }
+  }
+
+  function handleDownloadCSV() {
+    if (!canExportCsv) return;
+    setActionError("");
+    try {
+      downloadBlob(buildCsvBlob(report, checkedItems), `lexalyze-${safePdfName(report.documentTitle)}.csv`);
+    } catch (err) {
+      console.error("CSV download failed:", err);
+      setActionError("download_failed");
+    }
+  }
+
   const favourStyles = partyFavourStyles(result.partyFavour);
 
   return (
     <section id="analysis-result-content" className="w-full space-y-6 rounded-3xl bg-transparent text-white">
 
       {/* Floating Sticky action bar */}
-      <div className="pointer-events-none sticky top-4 z-30 flex justify-end gap-2">
+      <div className="pointer-events-none sticky top-4 z-30 flex flex-wrap justify-end gap-2">
         {/* Share button */}
         <button
           type="button"
@@ -753,6 +963,26 @@ export default function AnalysisResult({
               <span>Share</span>
             </>
           )}
+        </button>
+        <button
+          type="button"
+          onClick={handleDownloadDOCX}
+          disabled={!canUseOutputs}
+          title={canUseOutputs ? "Download DOCX" : "Upgrade to Solo to unlock DOCX export"}
+          className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-[#C9A84C]/35 bg-[#121216]/95 px-4 py-2.5 text-xs font-bold tracking-wider uppercase text-[#C9A84C] shadow-2xl shadow-black/80 backdrop-blur transition-all duration-300 hover:border-[#C9A84C] hover:bg-[#1E1B15] active:scale-95 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[#121216]/95"
+          aria-label="Download DOCX"
+        >
+          <span>DOCX</span>
+        </button>
+        <button
+          type="button"
+          onClick={handleDownloadCSV}
+          disabled={!canExportCsv}
+          title={canExportCsv ? "Download CSV" : "Team plan unlocks CSV export"}
+          className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#121216]/95 px-4 py-2.5 text-xs font-bold tracking-wider uppercase text-neutral-400 shadow-2xl shadow-black/80 backdrop-blur transition-all duration-300 hover:border-white/30 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-white/15 disabled:hover:text-neutral-400"
+          aria-label="Download CSV"
+        >
+          <span>CSV</span>
         </button>
         {/* Download PDF button */}
         <button
