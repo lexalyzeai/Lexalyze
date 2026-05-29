@@ -261,6 +261,36 @@ function pdfCopy(language?: string | null) {
   };
 }
 
+async function fetchFontAsBase64(path: string) {
+  const response = await fetch(path);
+  if (!response.ok) throw new Error(`Could not load PDF font: ${path}`);
+
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  let binary = "";
+  const chunkSize = 0x8000;
+
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+  }
+
+  return btoa(binary);
+}
+
+async function registerHindiPdfFont(pdf: {
+  addFileToVFS: (filename: string, data: string) => void;
+  addFont: (filename: string, fontName: string, fontStyle: string) => void;
+}) {
+  const [regular, bold] = await Promise.all([
+    fetchFontAsBase64("/fonts/NotoSansDevanagari-Regular.ttf"),
+    fetchFontAsBase64("/fonts/NotoSansDevanagari-Bold.ttf"),
+  ]);
+
+  pdf.addFileToVFS("NotoSansDevanagari-Regular.ttf", regular);
+  pdf.addFont("NotoSansDevanagari-Regular.ttf", "NotoSansDevanagari", "normal");
+  pdf.addFileToVFS("NotoSansDevanagari-Bold.ttf", bold);
+  pdf.addFont("NotoSansDevanagari-Bold.ttf", "NotoSansDevanagari", "bold");
+}
+
 export default function AnalysisResult({
   result,
   analysisId,
@@ -345,6 +375,11 @@ export default function AnalysisResult({
       const contentWidth = pageWidth - margin * 2;
       const bottom = pageHeight - 18;
       const copy = pdfCopy(language);
+      const isHindiPdf = language?.toLowerCase().startsWith("hi");
+      const pdfFont = isHindiPdf ? "NotoSansDevanagari" : "helvetica";
+      if (isHindiPdf) {
+        await registerHindiPdfFont(pdf);
+      }
       let y = 18;
 
       const colors = {
@@ -363,6 +398,7 @@ export default function AnalysisResult({
       const setText = (rgb: number[]) => pdf.setTextColor(rgb[0], rgb[1], rgb[2]);
       const setFill = (rgb: number[]) => pdf.setFillColor(rgb[0], rgb[1], rgb[2]);
       const setDraw = (rgb: number[]) => pdf.setDrawColor(rgb[0], rgb[1], rgb[2]);
+      const setPdfFont = (style: "normal" | "bold") => pdf.setFont(pdfFont, style);
       const lines = (text: string, width = contentWidth) =>
         pdf.splitTextToSize(String(text || ""), width) as string[];
       const priorityColor = (value: string) => {
@@ -388,7 +424,7 @@ export default function AnalysisResult({
 
       const section = (title: string, accent = colors.gold, expectedHeight = 18) => {
         ensure(expectedHeight + 10);
-        pdf.setFont("helvetica", "bold");
+        setPdfFont("bold");
         pdf.setFontSize(10);
         setText(accent);
         pdf.text(title.toUpperCase(), margin, y);
@@ -403,7 +439,7 @@ export default function AnalysisResult({
         const wrapped = lines(text, contentWidth - indent);
         const height = wrapped.length * 4.6 + 3;
         ensure(height);
-        pdf.setFont("helvetica", "normal");
+        setPdfFont("normal");
         pdf.setFontSize(fontSize);
         setText(options?.accent ?? colors.ink);
         pdf.text(wrapped, margin + indent, y);
@@ -420,7 +456,7 @@ export default function AnalysisResult({
         pdf.roundedRect(margin, y, contentWidth, height, 3, 3, "S");
         setFill(accent);
         pdf.rect(margin, y, 2, height, "F");
-        pdf.setFont("helvetica", "normal");
+        setPdfFont("normal");
         pdf.setFontSize(9.5);
         setText(colors.ink);
         pdf.text(wrapped, margin + 7, y + 8);
@@ -437,7 +473,7 @@ export default function AnalysisResult({
         pdf.roundedRect(margin, y, contentWidth, height, 3, 3, "S");
         setFill(accent);
         pdf.rect(margin, y, 1.5, height, "F");
-        pdf.setFont("helvetica", "bold");
+        setPdfFont("bold");
         pdf.setFontSize(9.2);
         setText(colors.ink);
         pdf.text(titleLines, margin + 6, y + 7);
@@ -448,7 +484,7 @@ export default function AnalysisResult({
           pdf.text(meta.toUpperCase(), margin + 6, textY);
           textY += 5;
         }
-        pdf.setFont("helvetica", "normal");
+        setPdfFont("normal");
         pdf.setFontSize(8.7);
         setText(colors.muted);
         if (bodyLines.length > 0) {
@@ -458,7 +494,7 @@ export default function AnalysisResult({
       };
 
       paintPage();
-      pdf.setFont("helvetica", "bold");
+      setPdfFont("bold");
       pdf.setFontSize(18);
       setText(colors.goldDark);
       pdf.text("LEXALYZE", margin, y);
@@ -473,7 +509,7 @@ export default function AnalysisResult({
       );
       y += 18;
 
-      pdf.setFont("helvetica", "bold");
+      setPdfFont("bold");
       pdf.setFontSize(19);
       setText(colors.ink);
       pdf.text(lines(pdfResult.documentTitle || copy.documentAnalysis, contentWidth), margin, y);
@@ -588,7 +624,7 @@ export default function AnalysisResult({
         pdf.setPage(page);
         setDraw(colors.line);
         pdf.line(margin, pageHeight - 13, pageWidth - margin, pageHeight - 13);
-        pdf.setFont("helvetica", "normal");
+        setPdfFont("normal");
         pdf.setFontSize(7.5);
         setText(colors.muted);
         pdf.text(copy.footer, margin, pageHeight - 8);
