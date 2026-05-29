@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Playfair_Display } from "next/font/google";
 import { useEffect, useState, useRef } from "react";
@@ -210,8 +210,10 @@ export default function DashboardPage() {
         registerCurrentSession();
       }
     });
-    fetchHistory();
-    fetchProfileUsage();
+    cleanupPlanRetention().finally(() => {
+      fetchHistory();
+      fetchProfileUsage();
+    });
     // Session registration should run once when the dashboard mounts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -324,6 +326,16 @@ export default function DashboardPage() {
     }
   };
 
+  async function cleanupPlanRetention() {
+    try {
+      const response = await fetch("/api/retention", { method: "POST", cache: "no-store" });
+      if (!response.ok && response.status !== 401) {
+        console.error("Plan retention cleanup failed", await response.text().catch(() => ""));
+      }
+    } catch (error) {
+      console.error("Plan retention cleanup failed", error);
+    }
+  }
   async function fetchHistory() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
@@ -457,7 +469,7 @@ export default function DashboardPage() {
     setSettingsMsg(
       error
         ? { type: "error", text: toUserMessage(error.message, "api_failure") }
-        : { type: "success", text: "Reset link sent — check your inbox." }
+        : { type: "success", text: "Reset link sent â€” check your inbox." }
     );
     setTimeout(() => setSettingsMsg(null), 5000);
   }
@@ -716,7 +728,7 @@ export default function DashboardPage() {
       {linkedBanner && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md rounded-full border border-emerald-500/30 bg-emerald-500/10 px-5 py-3 text-xs font-semibold text-emerald-300 shadow-2xl backdrop-blur-xl flex items-center justify-between gap-4">
           <span>Your Google account has been linked successfully.</span>
-          <button onClick={() => setLinkedBanner(false)} className="shrink-0 text-emerald-400 hover:text-emerald-200 font-bold">✕</button>
+          <button onClick={() => setLinkedBanner(false)} className="shrink-0 text-emerald-400 hover:text-emerald-200 font-bold">âœ•</button>
         </div>
       )}
 
@@ -789,7 +801,7 @@ export default function DashboardPage() {
               </h1>
               <p className="mt-2 max-w-2xl text-xs leading-relaxed text-neutral-400 sm:text-sm">
                 {view === "history" && selectedAnalysis
-                  ? `${formatDate(selectedAnalysis.created_at)} · ${selectedAnalysis.result?.documentType || "Contract Document"}`
+                  ? `${formatDate(selectedAnalysis.created_at)} Â· ${selectedAnalysis.result?.documentType || "Contract Document"}`
                   : "Review, flag risks, create action items, and query legal agreements in seconds."}
               </p>
             </div>
@@ -847,7 +859,7 @@ export default function DashboardPage() {
                       className={`rounded-full px-4.5 py-1.5 text-xs font-bold transition-all duration-300 ${language === "HI" ? "bg-gradient-to-r from-[#C9A84C] to-[#aa8426] text-black shadow-md" : "text-neutral-400 hover:text-white"}`}
                       aria-pressed={language === "HI"}
                     >
-                      हिंदी
+                      à¤¹à¤¿à¤‚à¤¦à¥€
                     </button>
                   </div>
                 </div>
@@ -1149,7 +1161,7 @@ export default function DashboardPage() {
                             <span>Follow-ups: {currentPlanDetails.monthlyFollowUps === null ? "Unlimited" : `${currentPlanDetails.monthlyFollowUps}/month`}</span>
                             <span>History: {currentPlanDetails.historyDays === null ? "Unlimited" : `${currentPlanDetails.historyDays} days`}</span>
                             <span>Storage: {currentPlanDetails.storageMb} MB</span>
-                            <span>Seats: {currentPlanDetails.includedSeats}</span>
+                            <span>Outputs: {plan === "team" ? "PDF, DOCX, CSV" : plan === "solo" ? "PDF, DOCX" : "Locked"}</span>
                           </div>
                         </div>
                         <button
@@ -1157,7 +1169,7 @@ export default function DashboardPage() {
                           onClick={() => { closeSettingsModal(); router.push("/pricing"); }}
                           className="w-full rounded-lg bg-[#C9A84C] px-4 py-2.5 text-sm font-semibold text-[#0A0A0A] transition hover:bg-[#d4b55d]"
                         >
-                          Upgrade Plan →
+                          Upgrade Plan â†’
                         </button>
                         <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
                           <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">Billing History</p>
@@ -1178,7 +1190,7 @@ export default function DashboardPage() {
                 <div className="space-y-4">
                   {(() => {
                     const lastAnalysis = analyses[0];
-                    const lastDate = lastAnalysis ? new Date(lastAnalysis.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
+                    const lastDate = lastAnalysis ? new Date(lastAnalysis.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "â€”";
                     return (
                       <>
                         <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
@@ -1214,7 +1226,7 @@ export default function DashboardPage() {
                       disabled={isPasswordResetLoading || passwordResetSent}
                       className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-[#C9A84C]/40 hover:bg-white/[0.04] hover:text-[#C9A84C] disabled:opacity-50"
                     >
-                      {isPasswordResetLoading ? "Sending…" : passwordResetSent ? "✓ Email sent" : "Send password reset email"}
+                      {isPasswordResetLoading ? "Sendingâ€¦" : passwordResetSent ? "âœ“ Email sent" : "Send password reset email"}
                     </button>
                   </div>
                   <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
@@ -1244,7 +1256,7 @@ export default function DashboardPage() {
                                   {session.isCurrent ? <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-emerald-400">Current</span> : null}
                                 </p>
                                 <p className="mt-1 text-xs text-neutral-500">
-                                  {[session.browser_name, session.os_name].filter(Boolean).join(" · ") || "Browser details unavailable"}
+                                  {[session.browser_name, session.os_name].filter(Boolean).join(" Â· ") || "Browser details unavailable"}
                                 </p>
                               </div>
                               <p className="shrink-0 text-right text-[10px] font-semibold uppercase tracking-wider text-neutral-600">
@@ -1262,7 +1274,7 @@ export default function DashboardPage() {
                     disabled={isSigningOutAll}
                     className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-400 disabled:opacity-50"
                   >
-                    {isSigningOutAll ? "Signing out…" : "Sign out all devices"}
+                    {isSigningOutAll ? "Signing outâ€¦" : "Sign out all devices"}
                   </button>
                   <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
                     <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">Security Notice</p>
@@ -1287,7 +1299,7 @@ export default function DashboardPage() {
                       disabled={isDeletingHistory}
                       className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
                     >
-                      {isDeletingHistory ? "Deleting…" : "Delete all saved analyses"}
+                      {isDeletingHistory ? "Deletingâ€¦" : "Delete all saved analyses"}
                     </button>
                   </div>
                 </div>

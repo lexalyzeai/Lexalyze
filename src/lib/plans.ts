@@ -39,7 +39,7 @@ export const PLAN_CATALOG: Record<PlanId, PlanDetails> = {
     includedSeats: 1,
     documents: [
       { text: "5 documents / month" },
-      { text: "Full analysis on every doc", sub: "Checklists, red flags, deadlines, laws" },
+      { text: "Full analysis on every doc" },
       { text: "3 follow-ups / month" },
       { text: "14-day history" },
     ],
@@ -67,7 +67,7 @@ export const PLAN_CATALOG: Record<PlanId, PlanDetails> = {
     includedSeats: 1,
     documents: [
       { text: "30 documents / month" },
-      { text: "Full analysis on every doc", sub: "Checklists, red flags, deadlines, laws" },
+      { text: "Full analysis on every doc" },
       { text: "Unlimited follow-ups" },
       { text: "1-year history" },
     ],
@@ -97,7 +97,7 @@ export const PLAN_CATALOG: Record<PlanId, PlanDetails> = {
     extraSeatPriceInr: 999,
     documents: [
       { text: "Unlimited documents" },
-      { text: "Full analysis on every doc", sub: "Checklists, red flags, deadlines, laws" },
+      { text: "Full analysis on every doc" },
       { text: "Unlimited follow-ups" },
       { text: "Unlimited history" },
     ],
@@ -107,10 +107,7 @@ export const PLAN_CATALOG: Record<PlanId, PlanDetails> = {
     ],
     outputs: [
       { text: "Export PDF, DOCX & CSV" },
-      { text: "Share with comments & edits" },
-      { text: "3 seats + roles", sub: "+\u20b9999/seat/month for more" },
-      { text: "Shared workspace & folders" },
-      { text: "Bulk upload (up to 10 docs)" },
+      { text: "Share via view-only link", sub: "Recipients need no account" },
     ],
     cta: "Start Team trial",
   },

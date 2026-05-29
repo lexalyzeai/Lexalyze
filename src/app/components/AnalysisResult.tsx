@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Playfair_Display } from "next/font/google";
 import { FormEvent, useState } from "react";
@@ -78,6 +78,7 @@ export type AnalysisResultProps = {
   savedChecklist?: boolean[];
   onChecklistChange?: (newState: boolean[]) => void;
   language?: "en" | "hi" | string | null;
+  readOnlyPublic?: boolean;
 };
 
 function confidenceBadgeClass(confidence: Confidence): string {
@@ -225,38 +226,38 @@ function pdfCopy(language?: string | null) {
   }
 
   return {
-    reportType: "कानूनी दस्तावेज विश्लेषण रिपोर्ट",
-    generated: "तैयार किया गया",
-    documentAnalysis: "दस्तावेज विश्लेषण",
-    completed: "विश्लेषण पूरा हुआ.",
-    executiveSnapshot: "मुख्य झलक",
-    documentType: "दस्तावेज प्रकार",
-    notSpecified: "स्पष्ट नहीं",
-    confidence: "विश्वसनीयता",
-    riskScore: "जोखिम स्कोर",
-    notScored: "स्कोर उपलब्ध नहीं",
-    partyFavour: "किस पक्ष में",
-    summary: "सारांश",
-    noSummary: "पूरा सारांश उपलब्ध नहीं है.",
-    keyItems: "मुख्य संख्याएं और तारीखें",
-    riskFlags: "जोखिम संकेत",
-    quote: "उद्धरण",
-    legalContext: "कानूनी संदर्भ",
-    whatToDo: "क्या करें",
-    favourableClauses: "अनुकूल धाराएं",
-    missingClauses: "छूटी हुई धाराएं",
-    whatToAdd: "क्या जोड़ें",
-    actionChecklist: "कार्य सूची",
-    done: "[पूरा]",
-    open: "[बाकी]",
-    negotiationTips: "बातचीत सुझाव",
-    consumerRights: "उपभोक्ता अधिकार",
-    stampDuty: "स्टाम्प ड्यूटी और पंजीकरण",
-    limitations: "सीमाएं",
-    noLimitations: "कोई विशेष सीमा नहीं दी गई.",
-    lawyerGuidance: "वकील मार्गदर्शन",
-    fallbackGuidance: "यह AI सारांश केवल जानकारी के लिए है, कानूनी सलाह नहीं. महत्वपूर्ण कानूनी या वित्तीय निर्णय से पहले योग्य वकील से सलाह लें.",
-    followUps: "फॉलो-अप प्रश्न",
+    reportType: "à¤•à¤¾à¤¨à¥‚à¤¨à¥€ à¤¦à¤¸à¥à¤¤à¤¾à¤µà¥‡à¤œ à¤µà¤¿à¤¶à¥à¤²à¥‡à¤·à¤£ à¤°à¤¿à¤ªà¥‹à¤°à¥à¤Ÿ",
+    generated: "à¤¤à¥ˆà¤¯à¤¾à¤° à¤•à¤¿à¤¯à¤¾ à¤—à¤¯à¤¾",
+    documentAnalysis: "à¤¦à¤¸à¥à¤¤à¤¾à¤µà¥‡à¤œ à¤µà¤¿à¤¶à¥à¤²à¥‡à¤·à¤£",
+    completed: "à¤µà¤¿à¤¶à¥à¤²à¥‡à¤·à¤£ à¤ªà¥‚à¤°à¤¾ à¤¹à¥à¤†.",
+    executiveSnapshot: "à¤®à¥à¤–à¥à¤¯ à¤à¤²à¤•",
+    documentType: "à¤¦à¤¸à¥à¤¤à¤¾à¤µà¥‡à¤œ à¤ªà¥à¤°à¤•à¤¾à¤°",
+    notSpecified: "à¤¸à¥à¤ªà¤·à¥à¤Ÿ à¤¨à¤¹à¥€à¤‚",
+    confidence: "à¤µà¤¿à¤¶à¥à¤µà¤¸à¤¨à¥€à¤¯à¤¤à¤¾",
+    riskScore: "à¤œà¥‹à¤–à¤¿à¤® à¤¸à¥à¤•à¥‹à¤°",
+    notScored: "à¤¸à¥à¤•à¥‹à¤° à¤‰à¤ªà¤²à¤¬à¥à¤§ à¤¨à¤¹à¥€à¤‚",
+    partyFavour: "à¤•à¤¿à¤¸ à¤ªà¤•à¥à¤· à¤®à¥‡à¤‚",
+    summary: "à¤¸à¤¾à¤°à¤¾à¤‚à¤¶",
+    noSummary: "à¤ªà¥‚à¤°à¤¾ à¤¸à¤¾à¤°à¤¾à¤‚à¤¶ à¤‰à¤ªà¤²à¤¬à¥à¤§ à¤¨à¤¹à¥€à¤‚ à¤¹à¥ˆ.",
+    keyItems: "à¤®à¥à¤–à¥à¤¯ à¤¸à¤‚à¤–à¥à¤¯à¤¾à¤à¤‚ à¤”à¤° à¤¤à¤¾à¤°à¥€à¤–à¥‡à¤‚",
+    riskFlags: "à¤œà¥‹à¤–à¤¿à¤® à¤¸à¤‚à¤•à¥‡à¤¤",
+    quote: "à¤‰à¤¦à¥à¤§à¤°à¤£",
+    legalContext: "à¤•à¤¾à¤¨à¥‚à¤¨à¥€ à¤¸à¤‚à¤¦à¤°à¥à¤­",
+    whatToDo: "à¤•à¥à¤¯à¤¾ à¤•à¤°à¥‡à¤‚",
+    favourableClauses: "à¤…à¤¨à¥à¤•à¥‚à¤² à¤§à¤¾à¤°à¤¾à¤à¤‚",
+    missingClauses: "à¤›à¥‚à¤Ÿà¥€ à¤¹à¥à¤ˆ à¤§à¤¾à¤°à¤¾à¤à¤‚",
+    whatToAdd: "à¤•à¥à¤¯à¤¾ à¤œà¥‹à¤¡à¤¼à¥‡à¤‚",
+    actionChecklist: "à¤•à¤¾à¤°à¥à¤¯ à¤¸à¥‚à¤šà¥€",
+    done: "[à¤ªà¥‚à¤°à¤¾]",
+    open: "[à¤¬à¤¾à¤•à¥€]",
+    negotiationTips: "à¤¬à¤¾à¤¤à¤šà¥€à¤¤ à¤¸à¥à¤à¤¾à¤µ",
+    consumerRights: "à¤‰à¤ªà¤­à¥‹à¤•à¥à¤¤à¤¾ à¤…à¤§à¤¿à¤•à¤¾à¤°",
+    stampDuty: "à¤¸à¥à¤Ÿà¤¾à¤®à¥à¤ª à¤¡à¥à¤¯à¥‚à¤Ÿà¥€ à¤”à¤° à¤ªà¤‚à¤œà¥€à¤•à¤°à¤£",
+    limitations: "à¤¸à¥€à¤®à¤¾à¤à¤‚",
+    noLimitations: "à¤•à¥‹à¤ˆ à¤µà¤¿à¤¶à¥‡à¤· à¤¸à¥€à¤®à¤¾ à¤¨à¤¹à¥€à¤‚ à¤¦à¥€ à¤—à¤ˆ.",
+    lawyerGuidance: "à¤µà¤•à¥€à¤² à¤®à¤¾à¤°à¥à¤—à¤¦à¤°à¥à¤¶à¤¨",
+    fallbackGuidance: "à¤¯à¤¹ AI à¤¸à¤¾à¤°à¤¾à¤‚à¤¶ à¤•à¥‡à¤µà¤² à¤œà¤¾à¤¨à¤•à¤¾à¤°à¥€ à¤•à¥‡ à¤²à¤¿à¤ à¤¹à¥ˆ, à¤•à¤¾à¤¨à¥‚à¤¨à¥€ à¤¸à¤²à¤¾à¤¹ à¤¨à¤¹à¥€à¤‚. à¤®à¤¹à¤¤à¥à¤µà¤ªà¥‚à¤°à¥à¤£ à¤•à¤¾à¤¨à¥‚à¤¨à¥€ à¤¯à¤¾ à¤µà¤¿à¤¤à¥à¤¤à¥€à¤¯ à¤¨à¤¿à¤°à¥à¤£à¤¯ à¤¸à¥‡ à¤ªà¤¹à¤²à¥‡ à¤¯à¥‹à¤—à¥à¤¯ à¤µà¤•à¥€à¤² à¤¸à¥‡ à¤¸à¤²à¤¾à¤¹ à¤²à¥‡à¤‚.",
+    followUps: "à¤«à¥‰à¤²à¥‹-à¤…à¤ª à¤ªà¥à¤°à¤¶à¥à¤¨",
     footer: "Lexalyze AI-generated analysis. Not legal advice.",
   };
 }
@@ -485,6 +486,7 @@ export default function AnalysisResult({
   savedChecklist = EMPTY_CHECKLIST,
   onChecklistChange,
   language = "en",
+  readOnlyPublic = false,
 }: AnalysisResultProps) {
   const [followUpQuestion, setFollowUpQuestion] = useState("");
   const [followUpLoading, setFollowUpLoading] = useState(false);
@@ -892,10 +894,25 @@ export default function AnalysisResult({
   async function handleShare() {
     if (!canUseOutputs) return;
     setActionError("");
-    const url = analysisId
-      ? `${window.location.origin}/dashboard/analysis/${analysisId}`
-      : window.location.href;
+    let url = window.location.href;
     try {
+      if (analysisId) {
+        const response = await fetch("/api/share", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ analysisId }),
+        });
+
+        if (!response.ok) {
+          const apiError = await readApiError(response, "share_failed");
+          setActionError(apiError.code);
+          return;
+        }
+
+        const data = await response.json().catch(() => ({}));
+        if (typeof data.url === "string") url = data.url;
+      }
+
       if (navigator.share) {
         await navigator.share({ title: result?.documentTitle || "Lexalyze Analysis", url });
         return;
@@ -937,6 +954,8 @@ export default function AnalysisResult({
   return (
     <section id="analysis-result-content" className="w-full space-y-6 rounded-3xl bg-transparent text-white">
 
+      {!readOnlyPublic && (
+      <>
       {/* Floating Sticky action bar */}
       <div className="pointer-events-none sticky top-4 z-30 flex flex-wrap justify-end gap-2">
         {/* Share button */}
@@ -1009,7 +1028,10 @@ export default function AnalysisResult({
         </button>
       </div>
 
-      {actionError && (
+      </>
+      )}
+
+      {!readOnlyPublic && actionError && (
         <ErrorMessage
           errorType={actionError}
           className="mx-auto max-w-2xl"
@@ -1131,18 +1153,18 @@ export default function AnalysisResult({
               )}
               {flag.legalContext && (
                 <p className="mt-3.5 rounded-xl bg-white/[0.03] px-4 py-3 text-xs font-semibold text-neutral-400 border border-white/[0.05]">
-                  ⚖️ {flag.legalContext}
+                  âš–ï¸ {flag.legalContext}
                 </p>
               )}
               {flag.whatToDoAboutIt && (
                 <p className="mt-3.5 text-xs font-bold text-emerald-400 flex items-start gap-1.5">
-                  <span className="shrink-0">✓</span>
+                  <span className="shrink-0">âœ“</span>
                   <span>{flag.whatToDoAboutIt}</span>
                 </p>
               )}
               {flag.confidenceReason && (
                 <p className="mt-3.5 text-[10px] font-semibold text-neutral-500 uppercase tracking-wider">
-                  CONFIDENCE: {flag.confidence} · {flag.confidenceReason}
+                  CONFIDENCE: {flag.confidence} Â· {flag.confidenceReason}
                 </p>
               )}
             </article>
@@ -1188,7 +1210,7 @@ export default function AnalysisResult({
               <p className="mt-3.5 text-xs leading-relaxed text-amber-100/90 font-medium">{item.whyItMatters}</p>
               {item.whatToAdd && (
                 <p className="mt-3.5 rounded-xl bg-white/[0.03] px-4 py-3 text-xs font-semibold text-neutral-400 border border-white/[0.05]">
-                  💡 {item.whatToAdd}
+                  ðŸ’¡ {item.whatToAdd}
                 </p>
               )}
             </article>
@@ -1259,7 +1281,7 @@ export default function AnalysisResult({
           <ul className="mt-4 space-y-3">
             {result.negotiationTips!.map((tip, i) => (
               <li key={i} className="flex gap-3 text-xs font-semibold leading-relaxed text-neutral-300">
-                <span className="mt-0.5 text-[#C9A84C] font-bold">→</span>
+                <span className="mt-0.5 text-[#C9A84C] font-bold">â†’</span>
                 <span>{tip}</span>
               </li>
             ))}
@@ -1303,11 +1325,12 @@ export default function AnalysisResult({
           {result.lawyerGuidance ?? "This AI summary is informational and not legal advice. Consult a qualified lawyer before making important legal or financial decisions."}
         </p>
         <p className="mt-3.5 border-t border-white/[0.05] pt-3 text-[10px] font-semibold text-neutral-500 uppercase tracking-widest">
-          Not legal advice · Lexalyze provides AI-generated insights only.
+          Not legal advice Â· Lexalyze provides AI-generated insights only.
         </p>
       </div>
 
       {/* Follow-up questions */}
+      {(followUpHistory.length > 0 || !readOnlyPublic) && (
       <div className="rounded-3xl border border-white/[0.06] bg-[#0E0E12]/80 p-6 backdrop-blur-xl shadow-lg">
         <h2 className="text-[10px] font-bold uppercase tracking-[0.25em] text-neutral-500">Query Portal</h2>
 
@@ -1324,6 +1347,7 @@ export default function AnalysisResult({
           </div>
         )}
 
+        {!readOnlyPublic && (
         <form onSubmit={onFollowUpSubmit} className="mt-5">
           <div className="flex flex-col gap-2.5 sm:flex-row">
             <input
@@ -1362,7 +1386,9 @@ export default function AnalysisResult({
             </div>
           )}
         </form>
+        )}
       </div>
+      )}
 
     </section>
   );

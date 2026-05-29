@@ -1,4 +1,4 @@
-export type AppErrorCode =
+﻿export type AppErrorCode =
   | "unauthorized"
   | "forbidden"
   | "not_found"
@@ -9,6 +9,7 @@ export type AppErrorCode =
   | "no_text_extracted"
   | "parse_error"
   | "rate_limit_hit"
+  | "storage_limit_hit"
   | "ai_capacity"
   | "network_error"
   | "save_failed"
@@ -76,6 +77,11 @@ export const FRIENDLY_ERRORS: Record<AppErrorCode, FriendlyError> = {
     title: "Limit reached",
     message: "You've reached your Starter limit: 5 document analyses and 3 follow-up questions per month. Upgrade or wait for the next monthly reset.",
   },
+  storage_limit_hit: {
+    code: "storage_limit_hit",
+    title: "Storage limit reached",
+    message: "Your plan storage is full. Delete older history or upgrade to continue.",
+  },
   ai_capacity: {
     code: "ai_capacity",
     title: "AI temporarily busy",
@@ -136,6 +142,7 @@ export function toErrorCode(error: string | Error | unknown, fallback: AppErrorC
   if (lower.includes("legal document") || lower.includes("legal documents") || lower.includes("contract, agreement")) return "non_legal_document";
   if (lower.includes("no text") || lower.includes("extract") || lower.includes("readable") || lower.includes("ocr")) return "no_text_extracted";
   if (lower.includes("parse") || lower.includes("corrupt") || lower.includes("invalid json") || lower.includes("malformed")) return "parse_error";
+  if (lower.includes("storage limit") || lower.includes("storage is full")) return "storage_limit_hit";
   if (lower.includes("rate limit") || lower.includes("quota") || lower.includes("limit reached") || lower.includes("429")) return "rate_limit_hit";
   if (lower.includes("capacity") || lower.includes("503") || lower.includes("502") || lower.includes("504")) return "ai_capacity";
   if (lower.includes("network") || lower.includes("fetch") || lower.includes("failed to fetch")) return "network_error";

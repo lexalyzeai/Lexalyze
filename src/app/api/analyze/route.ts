@@ -1,11 +1,12 @@
-import { createServerClient } from '@supabase/ssr'
+﻿import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { analyzeDocument } from '@/lib/groq'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
-import { currentUsageMonth, normalizePlan, PLAN_LIMITS } from '@/lib/plans'
+import { currentUsageMonth, normalizePlan, PLAN_CATALOG, PLAN_LIMITS } from '@/lib/plans'
 import { FRIENDLY_ERRORS } from '@/lib/error-handling'
 import { isProbablyLegalDocument, LEGAL_DOCUMENT_ERROR } from '@/lib/legal-document'
+import { cleanupExpiredAnalyses, getPlanStorageLimitBytes, getStoredDocumentBytes, textStorageBytes } from '@/lib/plan-maintenance'
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
@@ -58,6 +59,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: `Monthly limit reached (${limit} documents on ${plan === 'free' ? 'Starter' : 'Solo'} plan). Upgrade to ${nextPlan} to continue.`, code: 'rate_limit_hit' },
         { status: 429 }
+      )
+    }
+
+    await cleanupExpiredAnalyses(admin, user.id, plan)
+
+    const storageLimitBytes = getPlanStorageLimitBytes(plan)
+    const storedBytes = await getStoredDocumentBytes(admin, user.id)
+    const incomingBytes = textStorageBytes(text)
+
+    if (storedBytes + incomingBytes > storageLimitBytes) {
+      const planName = PLAN_CATALOG[plan].name
+      const storageMb = PLAN_CATALOG[plan].storageMb
+      const upgradeMessage = plan === 'free' ? 'Delete older history or upgrade to Solo for 50 MB.' : plan === 'solo' ? 'Delete older history or upgrade to Team for 200 MB.' : 'Delete older history before uploading more documents.'
+      return NextResponse.json(
+        { error: `Storage limit reached (${storageMb} MB on ${planName} plan). ${upgradeMessage}`, code: 'storage_limit_hit' },
+        { status: 413 }
       )
     }
 

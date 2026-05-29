@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { FRIENDLY_ERRORS, toErrorCode, type AppErrorCode } from "@/lib/error-handling";
 
@@ -36,6 +36,7 @@ const ERROR_TONES: Record<ErrorType, ErrorTone> = {
   no_text_extracted: "red",
   parse_error: "red",
   rate_limit_hit: "blue",
+  storage_limit_hit: "blue",
   ai_capacity: "blue",
   network_error: "amber",
   save_failed: "red",
@@ -58,6 +59,7 @@ const ERROR_ICONS: Record<ErrorType, string> = {
   no_text_extracted: "?",
   parse_error: "!",
   rate_limit_hit: "i",
+  storage_limit_hit: "i",
   ai_capacity: "i",
   network_error: "!",
   save_failed: "!",

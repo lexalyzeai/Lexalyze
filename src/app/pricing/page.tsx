@@ -92,7 +92,7 @@ function PlanCard({ plan, onPaymentNotice }: { plan: PlanDetails; onPaymentNotic
           <span className="ml-1 text-sm text-neutral-500">/month</span>
         </div>
         <p className="mt-1 text-xs text-neutral-500">
-          {isStarter ? "Always free" : isTeam ? `${plan.includedSeats} seats included` : "For one user"}
+          {isStarter ? "Always free" : isTeam ? "High-volume plan" : "For one user"}
         </p>
       </div>
 
@@ -158,14 +158,6 @@ export default function PricingPage() {
             <PlanCard key={plan.id} plan={plan} onPaymentNotice={showPaymentNotice} />
           ))}
         </div>
-
-        <section className="mt-12 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6">
-          <div className="grid gap-4 text-sm leading-6 text-neutral-400 md:grid-cols-3">
-            <p><span className="font-semibold text-neutral-200">Supabase-free-tier friendly:</span> storage promises are caps, not a reason to keep large raw files forever.</p>
-            <p><span className="font-semibold text-neutral-200">Exports:</span> Starter cannot export or share. Solo unlocks PDF/DOCX and view-only sharing. Team adds CSV.</p>
-            <p><span className="font-semibold text-neutral-200">Payments:</span> subscription management unlocks after payments are connected.</p>
-          </div>
-        </section>
 
         <div className="mt-14 border-t border-white/[0.06] pt-10 text-center">
           <p className="text-sm text-neutral-500">
