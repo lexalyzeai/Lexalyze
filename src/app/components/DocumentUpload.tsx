@@ -28,13 +28,11 @@ function isAccepted(file: File): boolean {
     name.endsWith(".doc")
   );
 }
-
 type LoadingStage = "idle" | "reading" | "extracting" | "ready" | "analysing";
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
-
 type DocumentUploadProps = {
   language: "EN" | "HI";
   plan?: PlanId;
@@ -51,15 +49,13 @@ export default function DocumentUpload({ language, plan = "free", onAnalysisComp
   const [extractedText, setExtractedText] = useState("");
   const [analysisResult, setAnalysisResult] = useState<AnalysisResultData | null>(null);
   const [currentAnalysisId, setCurrentAnalysisId] = useState<string>("");
-  const [bulkProgress, setBulkProgress] = useState("");
-  const [bulkResults, setBulkResults] = useState<Array<{ name: string; status: "done" | "failed"; message: string }>>([]);
 
   const acceptAttr = useMemo(
     () => ".pdf,.txt,.png,.jpg,.jpeg,.docx,.doc,application/pdf,text/plain,image/png,image/jpeg,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     []
   );
 
-  const canAnalyze = extractedText.trim().length > 0 && loadingStage === "idle" && !bulkProgress;
+  const canAnalyze = extractedText.trim().length > 0 && loadingStage === "idle";
 
   async function extractFileText(file: File) {
     const formData = new FormData();
@@ -120,72 +116,6 @@ export default function DocumentUpload({ language, plan = "free", onAnalysisComp
     await extractText(file);
   }
 
-  async function analyzeText(text: string, filename: string) {
-    const response = await fetch("/api/analyze", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text,
-        language: language === "HI" ? "hi" : "en",
-        filename,
-      }),
-    });
-
-    if (!response.ok) {
-      const apiError = await readApiError(response, "api_failure");
-      throw new Error(apiError.message);
-    }
-
-    return response.json().catch(() => ({}));
-  }
-
-  async function bulkUpload(files: File[]) {
-    const accepted = files.filter(isAccepted).slice(0, 10);
-    if (accepted.length === 0) {
-      setError("unsupported_file_type");
-      setErrorMessage("");
-      return;
-    }
-
-    if (files.length > 10) {
-      setError("rate_limit_hit");
-      setErrorMessage("Team bulk upload accepts up to 10 documents at a time. The first 10 were queued.");
-    } else {
-      setError("");
-      setErrorMessage("");
-    }
-
-    setSelectedFile(null);
-    setExtractedText("");
-    setAnalysisResult(null);
-    setCurrentAnalysisId("");
-    setBulkResults([]);
-    setLoadingStage("analysing");
-
-    const results: Array<{ name: string; status: "done" | "failed"; message: string }> = [];
-
-    for (let index = 0; index < accepted.length; index += 1) {
-      const file = accepted[index];
-      setBulkProgress(`Analysing ${index + 1} of ${accepted.length}: ${file.name}`);
-      try {
-        const text = await extractFileText(file);
-        await analyzeText(text, file.name);
-        results.push({ name: file.name, status: "done", message: "Analysed" });
-        onAnalysisComplete?.();
-      } catch (err) {
-        results.push({
-          name: file.name,
-          status: "failed",
-          message: err instanceof Error ? err.message : "Could not analyse this document.",
-        });
-      }
-      setBulkResults([...results]);
-    }
-
-    setBulkProgress("");
-    setLoadingStage("idle");
-  }
-
   function openPicker() {
     inputRef.current?.click();
   }
@@ -238,12 +168,10 @@ export default function DocumentUpload({ language, plan = "free", onAnalysisComp
         ref={inputRef}
         type="file"
         hidden
-        multiple={plan === "team"}
         accept={acceptAttr}
         onChange={async (e) => {
           const files = Array.from(e.currentTarget.files || []);
-          if (plan === "team" && files.length > 1) await bulkUpload(files);
-          else if (files[0]) await setFile(files[0]);
+          if (files[0]) await setFile(files[0]);
           if (e.target instanceof HTMLInputElement) e.target.value = "";
         }}
       />
@@ -260,8 +188,7 @@ export default function DocumentUpload({ language, plan = "free", onAnalysisComp
         onDrop={async (e) => {
           e.preventDefault();
           const files = Array.from(e.dataTransfer.files || []);
-          if (plan === "team" && files.length > 1) await bulkUpload(files);
-          else if (files[0]) await setFile(files[0]);
+          if (files[0]) await setFile(files[0]);
         }}
         aria-label="Upload area"
       >
@@ -280,7 +207,7 @@ export default function DocumentUpload({ language, plan = "free", onAnalysisComp
           Drag &amp; drop or click to browse
         </p>
         <p className="mt-1.5 text-[10px] font-bold tracking-widest text-neutral-600 uppercase">
-          {plan === "team" ? "Team bulk upload: up to 10 legal docs" : "Legal PDF, DOCX, TXT, PNG, JPG"}
+          Legal PDF, DOCX, TXT, PNG, JPG
         </p>
         
         {selectedFile && (
@@ -310,7 +237,7 @@ export default function DocumentUpload({ language, plan = "free", onAnalysisComp
           setAnalysisResult(null);
           setCurrentAnalysisId("");
           setExtractedText(
-            "This is a sample rental agreement. The tenant agrees to pay rent of ₹15,000 per month. The security deposit is ₹30,000. The notice period is 2 months."
+            "This is a sample rental agreement. The tenant agrees to pay rent of Rs. 15,000 per month. The security deposit is Rs. 30,000. The notice period is 2 months."
           );
           setSelectedFile(
             new File([""], "rental_agreement_sample.pdf", { type: "application/pdf" })
@@ -328,28 +255,6 @@ export default function DocumentUpload({ language, plan = "free", onAnalysisComp
           {loadingStage === "extracting" && "Extracting clause nodes..."}
           {loadingStage === "ready" && "Ready to run analysis"}
           {loadingStage === "analysing" && "Structuring insights..."}
-        </div>
-      )}
-
-      {bulkProgress && (
-        <div className="mt-4 w-full max-w-lg rounded-2xl border border-[#C9A84C]/20 bg-[#C9A84C]/5 px-5 py-4 text-sm font-semibold text-[#f5e2ac]">
-          {bulkProgress}
-        </div>
-      )}
-
-      {bulkResults.length > 0 && (
-        <div className="mt-5 w-full max-w-lg rounded-2xl border border-white/[0.08] bg-[#0A0A0C] p-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500">Bulk upload results</p>
-          <div className="mt-3 space-y-2">
-            {bulkResults.map((item) => (
-              <div key={item.name} className="flex items-start justify-between gap-3 rounded-xl bg-white/[0.02] px-3 py-2">
-                <p className="min-w-0 truncate text-xs font-semibold text-neutral-300">{item.name}</p>
-                <p className={item.status === "done" ? "text-xs font-bold text-emerald-400" : "text-xs font-bold text-rose-400"}>
-                  {item.message}
-                </p>
-              </div>
-            ))}
-          </div>
         </div>
       )}
 

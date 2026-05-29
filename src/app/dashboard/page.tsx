@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Playfair_Display } from "next/font/google";
 import { useEffect, useState, useRef } from "react";
@@ -75,7 +75,6 @@ function ConfidenceDot({ confidence }: { confidence: string }) {
     <span className={`inline-block size-2 shrink-0 rounded-full ${colors[confidence] || colors.MEDIUM}`} />
   );
 }
-
 function formatDate(dateString: string) {
   return new Date(dateString).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
@@ -120,7 +119,6 @@ function riskTone(score?: number) {
   if (score >= 4) return "text-amber-400";
   return "text-emerald-400";
 }
-
 function getDeviceId() {
   if (typeof window === "undefined") return "";
   const key = "lexalyze-device-id";
@@ -492,7 +490,7 @@ export default function DashboardPage() {
     setSettingsMsg(
       error
         ? { type: "error", text: toUserMessage(error.message, "api_failure") }
-        : { type: "success", text: "Reset link sent â€” check your inbox." }
+        : { type: "success", text: "Reset link sent - check your inbox." }
     );
     setTimeout(() => setSettingsMsg(null), 5000);
   }
@@ -823,7 +821,7 @@ export default function DashboardPage() {
       {linkedBanner && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md rounded-full border border-emerald-500/30 bg-emerald-500/10 px-5 py-3 text-xs font-semibold text-emerald-300 shadow-2xl backdrop-blur-xl flex items-center justify-between gap-4">
           <span>Your Google account has been linked successfully.</span>
-          <button onClick={() => setLinkedBanner(false)} className="shrink-0 text-emerald-400 hover:text-emerald-200 font-bold">âœ•</button>
+          <button onClick={() => setLinkedBanner(false)} className="shrink-0 text-emerald-400 hover:text-emerald-200 font-bold">OK</button>
         </div>
       )}
 
@@ -896,7 +894,7 @@ export default function DashboardPage() {
               </h1>
               <p className="mt-2 max-w-2xl text-xs leading-relaxed text-neutral-400 sm:text-sm">
                 {view === "history" && selectedAnalysis
-                  ? `${formatDate(selectedAnalysis.created_at)} Â· ${selectedAnalysis.result?.documentType || "Contract Document"}`
+                  ? `${formatDate(selectedAnalysis.created_at)} · ${selectedAnalysis.result?.documentType || "Contract Document"}`
                   : "Review, flag risks, create action items, and query legal agreements in seconds."}
               </p>
             </div>
@@ -954,7 +952,7 @@ export default function DashboardPage() {
                       className={`rounded-full px-4.5 py-1.5 text-xs font-bold transition-all duration-300 ${language === "HI" ? "bg-gradient-to-r from-[#C9A84C] to-[#aa8426] text-black shadow-md" : "text-neutral-400 hover:text-white"}`}
                       aria-pressed={language === "HI"}
                     >
-                      à¤¹à¤¿à¤‚à¤¦à¥€
+                      हिन्दी
                     </button>
                   </div>
                 </div>
@@ -1088,11 +1086,11 @@ export default function DashboardPage() {
           {/* Modal */}
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div
-              className="relative w-full max-w-lg rounded-2xl border border-white/[0.08] bg-[#111111] p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+              className="relative flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[#111111] p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between mb-6">
+              <div className="mb-6 flex shrink-0 items-center justify-between">
                 <h2
                   className={`${playfair.className} text-2xl font-bold text-[#C9A84C]`}
                 >
@@ -1118,7 +1116,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Tabs navigation */}
-              <div className="flex gap-2 mb-6 border-b border-white/[0.06] pb-4">
+              <div className="hide-scrollbar mb-6 flex shrink-0 gap-2 overflow-x-auto border-b border-white/[0.06] pb-4 [&>button]:shrink-0 [&>button]:whitespace-nowrap" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
                 <button
                   type="button"
                   onClick={() => switchSettingsTab("general")}
@@ -1189,6 +1187,7 @@ export default function DashboardPage() {
                 </button>
               </div>
 
+              <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto pr-1" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
               {settingsMsg && (
                 <div className={`mb-4 rounded-lg px-4 py-3 text-sm font-medium ${settingsMsg.type === "success" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border border-rose-500/20"}`}>
                   {settingsMsg.text}
@@ -1277,7 +1276,7 @@ export default function DashboardPage() {
                           onClick={() => { closeSettingsModal(); router.push("/pricing"); }}
                           className="w-full rounded-lg bg-[#C9A84C] px-4 py-2.5 text-sm font-semibold text-[#0A0A0A] transition hover:bg-[#d4b55d]"
                         >
-                          Upgrade Plan â†’
+                          Upgrade Plan
                         </button>
                         <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
                           <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">Billing History</p>
@@ -1298,7 +1297,7 @@ export default function DashboardPage() {
                 <div className="space-y-4">
                   {(() => {
                     const lastAnalysis = analyses[0];
-                    const lastDate = lastAnalysis ? new Date(lastAnalysis.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "â€”";
+                    const lastDate = lastAnalysis ? new Date(lastAnalysis.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "--";
                     return (
                       <>
                         <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
@@ -1485,7 +1484,7 @@ export default function DashboardPage() {
                       disabled={isPasswordResetLoading || passwordResetSent}
                       className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-[#C9A84C]/40 hover:bg-white/[0.04] hover:text-[#C9A84C] disabled:opacity-50"
                     >
-                      {isPasswordResetLoading ? "Sendingâ€¦" : passwordResetSent ? "âœ“ Email sent" : "Send password reset email"}
+                      {isPasswordResetLoading ? "Sending..." : passwordResetSent ? "Email sent" : "Send password reset email"}
                     </button>
                   </div>
                   <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
@@ -1515,7 +1514,7 @@ export default function DashboardPage() {
                                   {session.isCurrent ? <span className="ml-2 text-[10px] font-bold uppercase tracking-wider text-emerald-400">Current</span> : null}
                                 </p>
                                 <p className="mt-1 text-xs text-neutral-500">
-                                  {[session.browser_name, session.os_name].filter(Boolean).join(" Â· ") || "Browser details unavailable"}
+                                  {[session.browser_name, session.os_name].filter(Boolean).join(" · ") || "Browser details unavailable"}
                                 </p>
                               </div>
                               <p className="shrink-0 text-right text-[10px] font-semibold uppercase tracking-wider text-neutral-600">
@@ -1533,7 +1532,7 @@ export default function DashboardPage() {
                     disabled={isSigningOutAll}
                     className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-400 disabled:opacity-50"
                   >
-                    {isSigningOutAll ? "Signing outâ€¦" : "Sign out all devices"}
+                    {isSigningOutAll ? "Signing out..." : "Sign out all devices"}
                   </button>
                   <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
                     <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">Security Notice</p>
@@ -1558,11 +1557,12 @@ export default function DashboardPage() {
                       disabled={isDeletingHistory}
                       className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
                     >
-                      {isDeletingHistory ? "Deletingâ€¦" : "Delete all saved analyses"}
+                      {isDeletingHistory ? "Deleting..." : "Delete all saved analyses"}
                     </button>
                   </div>
                 </div>
               ) : null}
+              </div>
 
               {/* Delete Confirmation Modal */}
               {showDeleteConfirmation && (

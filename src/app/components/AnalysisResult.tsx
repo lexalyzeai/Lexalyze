@@ -226,38 +226,38 @@ function pdfCopy(language?: string | null) {
   }
 
   return {
-    reportType: "à¤•à¤¾à¤¨à¥‚à¤¨à¥€ à¤¦à¤¸à¥à¤¤à¤¾à¤µà¥‡à¤œ à¤µà¤¿à¤¶à¥à¤²à¥‡à¤·à¤£ à¤°à¤¿à¤ªà¥‹à¤°à¥à¤Ÿ",
-    generated: "à¤¤à¥ˆà¤¯à¤¾à¤° à¤•à¤¿à¤¯à¤¾ à¤—à¤¯à¤¾",
-    documentAnalysis: "à¤¦à¤¸à¥à¤¤à¤¾à¤µà¥‡à¤œ à¤µà¤¿à¤¶à¥à¤²à¥‡à¤·à¤£",
-    completed: "à¤µà¤¿à¤¶à¥à¤²à¥‡à¤·à¤£ à¤ªà¥‚à¤°à¤¾ à¤¹à¥à¤†.",
-    executiveSnapshot: "à¤®à¥à¤–à¥à¤¯ à¤à¤²à¤•",
-    documentType: "à¤¦à¤¸à¥à¤¤à¤¾à¤µà¥‡à¤œ à¤ªà¥à¤°à¤•à¤¾à¤°",
-    notSpecified: "à¤¸à¥à¤ªà¤·à¥à¤Ÿ à¤¨à¤¹à¥€à¤‚",
-    confidence: "à¤µà¤¿à¤¶à¥à¤µà¤¸à¤¨à¥€à¤¯à¤¤à¤¾",
-    riskScore: "à¤œà¥‹à¤–à¤¿à¤® à¤¸à¥à¤•à¥‹à¤°",
-    notScored: "à¤¸à¥à¤•à¥‹à¤° à¤‰à¤ªà¤²à¤¬à¥à¤§ à¤¨à¤¹à¥€à¤‚",
-    partyFavour: "à¤•à¤¿à¤¸ à¤ªà¤•à¥à¤· à¤®à¥‡à¤‚",
-    summary: "à¤¸à¤¾à¤°à¤¾à¤‚à¤¶",
-    noSummary: "à¤ªà¥‚à¤°à¤¾ à¤¸à¤¾à¤°à¤¾à¤‚à¤¶ à¤‰à¤ªà¤²à¤¬à¥à¤§ à¤¨à¤¹à¥€à¤‚ à¤¹à¥ˆ.",
-    keyItems: "à¤®à¥à¤–à¥à¤¯ à¤¸à¤‚à¤–à¥à¤¯à¤¾à¤à¤‚ à¤”à¤° à¤¤à¤¾à¤°à¥€à¤–à¥‡à¤‚",
-    riskFlags: "à¤œà¥‹à¤–à¤¿à¤® à¤¸à¤‚à¤•à¥‡à¤¤",
-    quote: "à¤‰à¤¦à¥à¤§à¤°à¤£",
-    legalContext: "à¤•à¤¾à¤¨à¥‚à¤¨à¥€ à¤¸à¤‚à¤¦à¤°à¥à¤­",
-    whatToDo: "à¤•à¥à¤¯à¤¾ à¤•à¤°à¥‡à¤‚",
-    favourableClauses: "à¤…à¤¨à¥à¤•à¥‚à¤² à¤§à¤¾à¤°à¤¾à¤à¤‚",
-    missingClauses: "à¤›à¥‚à¤Ÿà¥€ à¤¹à¥à¤ˆ à¤§à¤¾à¤°à¤¾à¤à¤‚",
-    whatToAdd: "à¤•à¥à¤¯à¤¾ à¤œà¥‹à¤¡à¤¼à¥‡à¤‚",
-    actionChecklist: "à¤•à¤¾à¤°à¥à¤¯ à¤¸à¥‚à¤šà¥€",
-    done: "[à¤ªà¥‚à¤°à¤¾]",
-    open: "[à¤¬à¤¾à¤•à¥€]",
-    negotiationTips: "à¤¬à¤¾à¤¤à¤šà¥€à¤¤ à¤¸à¥à¤à¤¾à¤µ",
-    consumerRights: "à¤‰à¤ªà¤­à¥‹à¤•à¥à¤¤à¤¾ à¤…à¤§à¤¿à¤•à¤¾à¤°",
-    stampDuty: "à¤¸à¥à¤Ÿà¤¾à¤®à¥à¤ª à¤¡à¥à¤¯à¥‚à¤Ÿà¥€ à¤”à¤° à¤ªà¤‚à¤œà¥€à¤•à¤°à¤£",
-    limitations: "à¤¸à¥€à¤®à¤¾à¤à¤‚",
-    noLimitations: "à¤•à¥‹à¤ˆ à¤µà¤¿à¤¶à¥‡à¤· à¤¸à¥€à¤®à¤¾ à¤¨à¤¹à¥€à¤‚ à¤¦à¥€ à¤—à¤ˆ.",
-    lawyerGuidance: "à¤µà¤•à¥€à¤² à¤®à¤¾à¤°à¥à¤—à¤¦à¤°à¥à¤¶à¤¨",
-    fallbackGuidance: "à¤¯à¤¹ AI à¤¸à¤¾à¤°à¤¾à¤‚à¤¶ à¤•à¥‡à¤µà¤² à¤œà¤¾à¤¨à¤•à¤¾à¤°à¥€ à¤•à¥‡ à¤²à¤¿à¤ à¤¹à¥ˆ, à¤•à¤¾à¤¨à¥‚à¤¨à¥€ à¤¸à¤²à¤¾à¤¹ à¤¨à¤¹à¥€à¤‚. à¤®à¤¹à¤¤à¥à¤µà¤ªà¥‚à¤°à¥à¤£ à¤•à¤¾à¤¨à¥‚à¤¨à¥€ à¤¯à¤¾ à¤µà¤¿à¤¤à¥à¤¤à¥€à¤¯ à¤¨à¤¿à¤°à¥à¤£à¤¯ à¤¸à¥‡ à¤ªà¤¹à¤²à¥‡ à¤¯à¥‹à¤—à¥à¤¯ à¤µà¤•à¥€à¤² à¤¸à¥‡ à¤¸à¤²à¤¾à¤¹ à¤²à¥‡à¤‚.",
-    followUps: "à¤«à¥‰à¤²à¥‹-à¤…à¤ª à¤ªà¥à¤°à¤¶à¥à¤¨",
+    reportType: "कानूनी दस्तावेज़ विश्लेषण रिपोर्ट",
+    generated: "तैयार किया गया",
+    documentAnalysis: "दस्तावेज़ विश्लेषण",
+    completed: "विश्लेषण पूरा हुआ.",
+    executiveSnapshot: "मुख्य झलक",
+    documentType: "दस्तावेज़ प्रकार",
+    notSpecified: "स्पष्ट नहीं",
+    confidence: "विश्वसनीयता",
+    riskScore: "जोखिम स्कोर",
+    notScored: "स्कोर उपलब्ध नहीं",
+    partyFavour: "किस पक्ष में",
+    summary: "सारांश",
+    noSummary: "पूरा सारांश उपलब्ध नहीं है.",
+    keyItems: "मुख्य संख्याएं और तारीखें",
+    riskFlags: "जोखिम संकेत",
+    quote: "उद्धरण",
+    legalContext: "कानूनी संदर्भ",
+    whatToDo: "क्या करें",
+    favourableClauses: "अनुकूल धाराएं",
+    missingClauses: "छूटी हुई धाराएं",
+    whatToAdd: "क्या जोड़ें",
+    actionChecklist: "कार्य सूची",
+    done: "[पूरा]",
+    open: "[बाकी]",
+    negotiationTips: "बातचीत सुझाव",
+    consumerRights: "उपभोक्ता अधिकार",
+    stampDuty: "स्टाम्प ड्यूटी और पंजीकरण",
+    limitations: "सीमाएं",
+    noLimitations: "कोई विशेष सीमा नहीं दी गई.",
+    lawyerGuidance: "वकील मार्गदर्शन",
+    fallbackGuidance: "यह AI सारांश केवल जानकारी के लिए है, कानूनी सलाह नहीं. महत्वपूर्ण कानूनी या वित्तीय निर्णय से पहले योग्य वकील से सलाह लें.",
+    followUps: "फॉलो-अप प्रश्न",
     footer: "Lexalyze AI-generated analysis. Not legal advice.",
   };
 }
@@ -500,6 +500,8 @@ export default function AnalysisResult({
   const [isDownloading, setIsDownloading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [shareMode, setShareMode] = useState<"view" | "comment" | "edit">("view");
+  const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
+  const [isDownloadMenuOpen, setIsDownloadMenuOpen] = useState(false);
 
   if (!result) {
     return (
@@ -892,16 +894,17 @@ export default function AnalysisResult({
   }
 
 
-  async function handleShare() {
+  async function handleShare(nextMode = shareMode) {
     if (!canUseOutputs) return;
     setActionError("");
+    setShareMode(nextMode);
     let url = window.location.href;
     try {
       if (analysisId) {
         const response = await fetch("/api/share", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ analysisId, mode: shareMode }),
+          body: JSON.stringify({ analysisId, mode: nextMode }),
         });
 
         if (!response.ok) {
@@ -922,6 +925,7 @@ export default function AnalysisResult({
     try {
       await navigator.clipboard.writeText(url);
       setIsCopied(true);
+      setIsShareMenuOpen(false);
       setTimeout(() => setIsCopied(false), 2000);
     } catch {
       setActionError("share_failed");
@@ -951,6 +955,7 @@ export default function AnalysisResult({
   }
 
   const favourStyles = partyFavourStyles(result.partyFavour);
+  const shareModes: Array<"view" | "comment" | "edit"> = currentPlan === "team" ? ["view", "comment", "edit"] : ["view"];
 
   return (
     <section id="analysis-result-content" className="w-full space-y-6 rounded-3xl bg-transparent text-white">
@@ -959,86 +964,105 @@ export default function AnalysisResult({
       <>
       {/* Floating Sticky action bar */}
       <div className="pointer-events-none sticky top-4 z-30 flex flex-wrap justify-end gap-2">
-        {currentPlan === "team" ? (
-          <select
-            value={shareMode}
-            onChange={(event) => setShareMode(event.target.value as "view" | "comment" | "edit")}
-            className="pointer-events-auto rounded-full border border-white/15 bg-[#121216]/95 px-3 py-2 text-xs font-bold uppercase tracking-wider text-neutral-300 shadow-2xl shadow-black/80 outline-none transition hover:border-[#C9A84C]/40"
-            aria-label="Share permissions"
+        <div className="pointer-events-auto relative">
+          <button
+            type="button"
+            onClick={() => {
+              setIsShareMenuOpen((open) => !open);
+              setIsDownloadMenuOpen(false);
+            }}
+            disabled={!canUseOutputs}
+            title={canUseOutputs ? "Share analysis" : "Upgrade to Solo to unlock sharing"}
+            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-[#121216]/95 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-neutral-400 shadow-2xl shadow-black/80 backdrop-blur transition-all duration-300 hover:border-white/40 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-white/20 disabled:hover:text-neutral-400"
+            aria-label="Share analysis"
+            aria-expanded={isShareMenuOpen}
           >
-            <option value="view">View-only</option>
-            <option value="comment">Comments</option>
-            <option value="edit">Comments + edits</option>
-          </select>
-        ) : null}
-        {/* Share button */}
-        <button
-          type="button"
-          onClick={handleShare}
-          disabled={!canUseOutputs}
-          title={canUseOutputs ? "Share analysis" : "Upgrade to Solo to unlock sharing"}
-          className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/20 bg-[#121216]/95 px-4 py-2.5 text-xs font-bold tracking-wider uppercase text-neutral-400 shadow-2xl shadow-black/80 backdrop-blur transition-all duration-300 hover:border-white/40 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-white/20 disabled:hover:text-neutral-400"
-          aria-label="Share analysis"
-        >
-          {isCopied ? (
-            <>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="size-4 text-emerald-400">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-              </svg>
-              <span className="text-emerald-400">Copied!</span>
-            </>
-          ) : (
-            <>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="size-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
-              </svg>
-              <span>Share</span>
-            </>
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={handleDownloadDOCX}
-          disabled={!canUseOutputs}
-          title={canUseOutputs ? "Download DOCX" : "Upgrade to Solo to unlock DOCX export"}
-          className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-[#C9A84C]/35 bg-[#121216]/95 px-4 py-2.5 text-xs font-bold tracking-wider uppercase text-[#C9A84C] shadow-2xl shadow-black/80 backdrop-blur transition-all duration-300 hover:border-[#C9A84C] hover:bg-[#1E1B15] active:scale-95 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[#121216]/95"
-          aria-label="Download DOCX"
-        >
-          <span>DOCX</span>
-        </button>
-        <button
-          type="button"
-          onClick={handleDownloadCSV}
-          disabled={!canExportCsv}
-          title={canExportCsv ? "Download CSV" : "Team plan unlocks CSV export"}
-          className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#121216]/95 px-4 py-2.5 text-xs font-bold tracking-wider uppercase text-neutral-400 shadow-2xl shadow-black/80 backdrop-blur transition-all duration-300 hover:border-white/30 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-white/15 disabled:hover:text-neutral-400"
-          aria-label="Download CSV"
-        >
-          <span>CSV</span>
-        </button>
-        {/* Download PDF button */}
-        <button
-          type="button"
-          onClick={handleDownloadPDF}
-          disabled={isDownloading || !canUseOutputs}
-          title={canUseOutputs ? "Download PDF" : "Upgrade to Solo to unlock export"}
-          className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-[#C9A84C]/45 bg-[#121216]/95 px-5 py-2.5 text-xs font-bold tracking-wider uppercase text-[#C9A84C] shadow-2xl shadow-black/80 backdrop-blur transition-all duration-300 hover:border-[#C9A84C] hover:bg-[#1E1B15] active:scale-95 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[#121216]/95"
-          aria-label="Download PDF"
-        >
-          {isDownloading ? (
-            <>
-              <span className="size-3.5 animate-spin rounded-full border-2 border-[#C9A84C]/30 border-t-[#C9A84C]" />
-              <span>Generating...</span>
-            </>
-          ) : (
-            <>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="size-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-              </svg>
-              <span>Download PDF</span>
-            </>
-          )}
-        </button>
+            {isCopied ? <span className="text-emerald-400">Copied!</span> : <span>Share</span>}
+          </button>
+          {isShareMenuOpen && canUseOutputs ? (
+            <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-white/10 bg-[#101014] p-2 shadow-2xl shadow-black/70">
+              <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-[0.22em] text-neutral-500">Share access</p>
+              {shareModes.map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => void handleShare(mode)}
+                  className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs font-semibold transition ${
+                    shareMode === mode ? "bg-[#C9A84C]/12 text-[#C9A84C]" : "text-neutral-300 hover:bg-white/[0.04] hover:text-white"
+                  }`}
+                >
+                  <span>{mode === "view" ? "View-only link" : mode === "comment" ? "Comments link" : "Comments + edits link"}</span>
+                  {shareMode === mode ? <span className="text-emerald-400">Active</span> : null}
+                </button>
+              ))}
+              <p className="px-3 pb-2 pt-1 text-[11px] leading-relaxed text-neutral-500">
+                Creates a share link and copies it to your clipboard.
+              </p>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="pointer-events-auto relative">
+          <button
+            type="button"
+            onClick={() => {
+              setIsDownloadMenuOpen((open) => !open);
+              setIsShareMenuOpen(false);
+            }}
+            disabled={isDownloading || !canUseOutputs}
+            title={canUseOutputs ? "Download analysis" : "Upgrade to Solo to unlock downloads"}
+            className="inline-flex items-center gap-2 rounded-full border border-[#C9A84C]/45 bg-[#121216]/95 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-[#C9A84C] shadow-2xl shadow-black/80 backdrop-blur transition-all duration-300 hover:border-[#C9A84C] hover:bg-[#1E1B15] active:scale-95 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[#121216]/95"
+            aria-label="Download analysis"
+            aria-expanded={isDownloadMenuOpen}
+          >
+            {isDownloading ? (
+              <>
+                <span className="size-3.5 animate-spin rounded-full border-2 border-[#C9A84C]/30 border-t-[#C9A84C]" />
+                <span>Generating...</span>
+              </>
+            ) : (
+              <span>Download</span>
+            )}
+          </button>
+          {isDownloadMenuOpen && canUseOutputs ? (
+            <div className="absolute right-0 top-full mt-2 w-52 rounded-2xl border border-white/10 bg-[#101014] p-2 shadow-2xl shadow-black/70">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDownloadMenuOpen(false);
+                  void handleDownloadPDF();
+                }}
+                className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs font-semibold text-neutral-300 transition hover:bg-white/[0.04] hover:text-white"
+              >
+                <span>PDF</span>
+                <span className="text-[#C9A84C]">Export</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDownloadMenuOpen(false);
+                  handleDownloadDOCX();
+                }}
+                className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs font-semibold text-neutral-300 transition hover:bg-white/[0.04] hover:text-white"
+              >
+                <span>DOCX</span>
+                <span className="text-[#C9A84C]">Export</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDownloadMenuOpen(false);
+                  handleDownloadCSV();
+                }}
+                disabled={!canExportCsv}
+                className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs font-semibold text-neutral-300 transition hover:bg-white/[0.04] hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-neutral-300"
+              >
+                <span>CSV</span>
+                <span>{canExportCsv ? "Team" : "Team only"}</span>
+              </button>
+            </div>
+          ) : null}
+        </div>
       </div>
 
       </>
@@ -1166,18 +1190,18 @@ export default function AnalysisResult({
               )}
               {flag.legalContext && (
                 <p className="mt-3.5 rounded-xl bg-white/[0.03] px-4 py-3 text-xs font-semibold text-neutral-400 border border-white/[0.05]">
-                  âš–ï¸ {flag.legalContext}
+                  Legal: {flag.legalContext}
                 </p>
               )}
               {flag.whatToDoAboutIt && (
                 <p className="mt-3.5 text-xs font-bold text-emerald-400 flex items-start gap-1.5">
-                  <span className="shrink-0">âœ“</span>
+                  <span className="shrink-0">Next:</span>
                   <span>{flag.whatToDoAboutIt}</span>
                 </p>
               )}
               {flag.confidenceReason && (
                 <p className="mt-3.5 text-[10px] font-semibold text-neutral-500 uppercase tracking-wider">
-                  CONFIDENCE: {flag.confidence} Â· {flag.confidenceReason}
+                  CONFIDENCE: {flag.confidence} · {flag.confidenceReason}
                 </p>
               )}
             </article>
@@ -1223,7 +1247,7 @@ export default function AnalysisResult({
               <p className="mt-3.5 text-xs leading-relaxed text-amber-100/90 font-medium">{item.whyItMatters}</p>
               {item.whatToAdd && (
                 <p className="mt-3.5 rounded-xl bg-white/[0.03] px-4 py-3 text-xs font-semibold text-neutral-400 border border-white/[0.05]">
-                  ðŸ’¡ {item.whatToAdd}
+                  Add: {item.whatToAdd}
                 </p>
               )}
             </article>
@@ -1294,7 +1318,7 @@ export default function AnalysisResult({
           <ul className="mt-4 space-y-3">
             {result.negotiationTips!.map((tip, i) => (
               <li key={i} className="flex gap-3 text-xs font-semibold leading-relaxed text-neutral-300">
-                <span className="mt-0.5 text-[#C9A84C] font-bold">â†’</span>
+                <span className="mt-0.5 text-[#C9A84C] font-bold">Tip</span>
                 <span>{tip}</span>
               </li>
             ))}
@@ -1338,7 +1362,7 @@ export default function AnalysisResult({
           {result.lawyerGuidance ?? "This AI summary is informational and not legal advice. Consult a qualified lawyer before making important legal or financial decisions."}
         </p>
         <p className="mt-3.5 border-t border-white/[0.05] pt-3 text-[10px] font-semibold text-neutral-500 uppercase tracking-widest">
-          Not legal advice Â· Lexalyze provides AI-generated insights only.
+          Not legal advice · Lexalyze provides AI-generated insights only.
         </p>
       </div>
 
