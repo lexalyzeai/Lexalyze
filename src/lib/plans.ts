@@ -109,7 +109,6 @@ export const PLAN_CATALOG: Record<PlanId, PlanDetails> = {
       { text: "Export PDF, DOCX & CSV" },
       { text: "Share with comments & edits" },
       { text: "3 seats + roles", sub: "+\u20b9999/seat/month for more" },
-      { text: "Shared workspace & folders" },
     ],
     cta: "Start Team trial",
   },

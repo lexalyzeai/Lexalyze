@@ -7,6 +7,7 @@ import { normalizePlan } from "@/lib/plans";
 
 const INCLUDED_TEAM_SEATS = 3;
 const ROLES = new Set(["admin", "member", "viewer"]);
+const MANAGER_ROLES = new Set(["owner", "admin"]);
 
 async function getUser() {
   const cookieStore = await cookies();
@@ -32,23 +33,105 @@ function cleanEmail(email: unknown) {
   return typeof email === "string" ? email.trim().toLowerCase() : "";
 }
 
-function cleanName(name: unknown) {
-  return typeof name === "string" ? name.trim().slice(0, 80) : "";
-}
-
-async function assertTeamUser(admin: ReturnType<typeof createSupabaseAdmin>, userId: string) {
+async function getTeamContext(
+  admin: ReturnType<typeof createSupabaseAdmin>,
+  user: { id: string; email?: string | null; user_metadata?: { full_name?: string | null } },
+) {
   const { data: profile, error } = await admin
     .from("profiles")
     .select("plan, full_name")
-    .eq("id", userId)
+    .eq("id", user.id)
     .maybeSingle();
 
   if (error) throw error;
-  if (normalizePlan(profile?.plan) !== "team") {
-    return { error: NextResponse.json({ error: "Team workspace is available on the Team plan.", code: "forbidden" }, { status: 403 }) };
+
+  if (normalizePlan(profile?.plan) === "team") {
+    const workspace = await ensureWorkspace(admin, user, profile?.full_name || user.user_metadata?.full_name);
+    const ownerMemberLookup = await admin
+      .from("team_members")
+      .select("id, user_id, email, role, status, created_at")
+      .eq("workspace_id", workspace.id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (ownerMemberLookup.error) throw ownerMemberLookup.error;
+    let member = ownerMemberLookup.data;
+
+    if (!member) {
+      const { data: createdMember, error: createMemberError } = await admin
+        .from("team_members")
+        .upsert({
+          workspace_id: workspace.id,
+          user_id: user.id,
+          email: user.email || "owner@lexalyze.local",
+          role: "owner",
+          status: "active",
+        }, { onConflict: "workspace_id,email" })
+        .select("id, user_id, email, role, status, created_at")
+        .single();
+
+      if (createMemberError) throw createMemberError;
+      member = createdMember;
+    }
+
+    return { profile, workspace, member, canManage: true };
   }
 
-  return { profile };
+  const email = cleanEmail(user.email);
+  if (!email) {
+    return { error: NextResponse.json({ error: "Team workspace is available on the Team plan or by invitation.", code: "forbidden" }, { status: 403 }) };
+  }
+
+  const memberLookup = await admin
+    .from("team_members")
+    .select("id, workspace_id, user_id, email, role, status, created_at")
+    .eq("user_id", user.id)
+    .limit(1)
+    .maybeSingle();
+
+  if (memberLookup.error) throw memberLookup.error;
+  let member = memberLookup.data;
+
+  if (!member) {
+    const invite = await admin
+      .from("team_members")
+      .select("id, workspace_id, user_id, email, role, status, created_at")
+      .eq("email", email)
+      .limit(1)
+      .maybeSingle();
+
+    if (invite.error) throw invite.error;
+    member = invite.data;
+  }
+
+  if (!member) {
+    return { error: NextResponse.json({ error: "Team workspace is available on the Team plan or by invitation.", code: "forbidden" }, { status: 403 }) };
+  }
+
+  if (member.status !== "active" || !member.user_id) {
+    const { data: activated, error: activateError } = await admin
+      .from("team_members")
+      .update({ user_id: user.id, status: "active" })
+      .eq("id", member.id)
+      .select("id, workspace_id, user_id, email, role, status, created_at")
+      .single();
+
+    if (activateError) throw activateError;
+    member = activated;
+  }
+
+  const { data: workspace, error: workspaceError } = await admin
+    .from("team_workspaces")
+    .select("*")
+    .eq("id", member.workspace_id)
+    .maybeSingle();
+
+  if (workspaceError) throw workspaceError;
+  if (!workspace) {
+    return { error: NextResponse.json({ error: FRIENDLY_ERRORS.not_found.message, code: "not_found" }, { status: 404 }) };
+  }
+
+  return { profile, workspace, member, canManage: MANAGER_ROLES.has(member.role) };
 }
 
 async function ensureWorkspace(admin: ReturnType<typeof createSupabaseAdmin>, user: { id: string; email?: string | null }, fullName?: string | null) {
@@ -69,7 +152,7 @@ async function ensureWorkspace(admin: ReturnType<typeof createSupabaseAdmin>, us
 
   if (createError) throw createError;
 
-  await admin
+  const ownerMember = await admin
     .from("team_members")
     .upsert({
       workspace_id: workspace.id,
@@ -79,26 +162,20 @@ async function ensureWorkspace(admin: ReturnType<typeof createSupabaseAdmin>, us
       status: "active",
     }, { onConflict: "workspace_id,email" });
 
+  if (ownerMember.error) throw ownerMember.error;
+
   return workspace;
 }
 
 async function workspacePayload(admin: ReturnType<typeof createSupabaseAdmin>, workspaceId: string) {
-  const [{ data: members, error: membersError }, { data: folders, error: foldersError }] = await Promise.all([
-    admin
-      .from("team_members")
-      .select("id, email, role, status, created_at")
-      .eq("workspace_id", workspaceId)
-      .order("created_at", { ascending: true }),
-    admin
-      .from("team_folders")
-      .select("id, name, created_at")
-      .eq("workspace_id", workspaceId)
-      .order("created_at", { ascending: true }),
-  ]);
+  const { data: members, error: membersError } = await admin
+    .from("team_members")
+    .select("id, email, role, status, created_at")
+    .eq("workspace_id", workspaceId)
+    .order("created_at", { ascending: true });
 
   if (membersError) throw membersError;
-  if (foldersError) throw foldersError;
-  return { members: members ?? [], folders: folders ?? [] };
+  return { members: members ?? [] };
 }
 
 export async function GET() {
@@ -109,12 +186,12 @@ export async function GET() {
 
   try {
     const admin = createSupabaseAdmin();
-    const teamCheck = await assertTeamUser(admin, user.id);
+    const teamCheck = await getTeamContext(admin, user);
     if (teamCheck.error) return teamCheck.error;
 
-    const workspace = await ensureWorkspace(admin, user, teamCheck.profile?.full_name);
+    const { workspace, member, canManage } = teamCheck;
     const payload = await workspacePayload(admin, workspace.id);
-    return NextResponse.json({ workspace, seatLimit: INCLUDED_TEAM_SEATS, ...payload });
+    return NextResponse.json({ workspace, currentMember: member, canManage, seatLimit: INCLUDED_TEAM_SEATS, ...payload });
   } catch (error) {
     console.error("Team workspace load failed:", error);
     return NextResponse.json({ error: FRIENDLY_ERRORS.load_failed.message, code: "load_failed" }, { status: 500 });
@@ -132,10 +209,14 @@ export async function POST(req: NextRequest) {
 
   try {
     const admin = createSupabaseAdmin();
-    const teamCheck = await assertTeamUser(admin, user.id);
+    const teamCheck = await getTeamContext(admin, user);
     if (teamCheck.error) return teamCheck.error;
 
-    const workspace = await ensureWorkspace(admin, user, teamCheck.profile?.full_name);
+    const { workspace, member, canManage } = teamCheck;
+
+    if (!canManage) {
+      return NextResponse.json({ error: "Only owners and admins can manage seats and roles.", code: "forbidden" }, { status: 403 });
+    }
 
     if (action === "invite") {
       const email = cleanEmail(body.email);
@@ -197,50 +278,8 @@ export async function POST(req: NextRequest) {
       if (deleteError) throw deleteError;
     }
 
-    if (action === "folder") {
-      const name = cleanName(body.name);
-      if (!name) {
-        return NextResponse.json({ error: "Folder name is required.", code: "validation" }, { status: 400 });
-      }
-
-      const { error: folderError } = await admin
-        .from("team_folders")
-        .insert({ workspace_id: workspace.id, name, created_by: user.id });
-
-      if (folderError) throw folderError;
-    }
-
-    if (action === "assignFolder") {
-      const analysisId = typeof body.analysisId === "string" ? body.analysisId : "";
-      const folderId = typeof body.folderId === "string" && body.folderId ? body.folderId : null;
-      if (!analysisId) {
-        return NextResponse.json({ error: FRIENDLY_ERRORS.validation.message, code: "validation" }, { status: 400 });
-      }
-
-      if (folderId) {
-        const { data: folder } = await admin
-          .from("team_folders")
-          .select("id")
-          .eq("workspace_id", workspace.id)
-          .eq("id", folderId)
-          .maybeSingle();
-
-        if (!folder) {
-          return NextResponse.json({ error: FRIENDLY_ERRORS.not_found.message, code: "not_found" }, { status: 404 });
-        }
-      }
-
-      const { error: assignError } = await admin
-        .from("analyses")
-        .update({ folder_id: folderId })
-        .eq("user_id", user.id)
-        .eq("id", analysisId);
-
-      if (assignError) throw assignError;
-    }
-
     const payload = await workspacePayload(admin, workspace.id);
-    return NextResponse.json({ workspace, seatLimit: INCLUDED_TEAM_SEATS, ...payload });
+    return NextResponse.json({ workspace, currentMember: member, canManage, seatLimit: INCLUDED_TEAM_SEATS, ...payload });
   } catch (error) {
     console.error("Team workspace update failed:", error);
     return NextResponse.json({ error: FRIENDLY_ERRORS.save_failed.message, code: "save_failed" }, { status: 500 });
