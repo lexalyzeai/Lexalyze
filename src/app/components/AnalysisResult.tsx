@@ -1151,7 +1151,7 @@ export default function AnalysisResult({
                 </button>
               ))}
               <p className="px-3 pb-2 pt-1 text-[11px] leading-relaxed text-neutral-500">
-                Creates a link-only share page and copies it to your clipboard.
+                Creates a link-access page and copies it to your clipboard. It is not publicly listed, but anyone with the link can open the enabled access mode.
               </p>
             </div>
           ) : null}

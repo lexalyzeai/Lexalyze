@@ -1331,6 +1331,9 @@ export default function DashboardPage() {
                           {teamMembers.length} / {teamSeatLimit} seats used. Roles control who can manage the workspace.
                           {currentTeamRole ? ` Your role: ${currentTeamRole}.` : ""}
                         </p>
+                        <p className="mt-2 text-xs leading-5 text-neutral-500">
+                          Owner and Admin can manage seats. Member and Viewer can access the workspace only.
+                        </p>
                       </div>
                       <button
                         type="button"

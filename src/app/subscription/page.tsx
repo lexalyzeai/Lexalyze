@@ -14,11 +14,17 @@ type SubscriptionState = {
   email: string;
   plan: PlanId;
   loading: boolean;
+  loadingMessage: string;
 };
 
 export default function SubscriptionPage() {
   const router = useRouter();
-  const [state, setState] = useState<SubscriptionState>({ email: "", plan: "free", loading: true });
+  const [state, setState] = useState<SubscriptionState>({
+    email: "",
+    plan: "free",
+    loading: true,
+    loadingMessage: "Checking your subscription...",
+  });
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
@@ -27,6 +33,9 @@ export default function SubscriptionPage() {
     async function loadSubscription() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
+        if (alive) {
+          setState((current) => ({ ...current, loadingMessage: "Redirecting you to sign in..." }));
+        }
         router.replace("/auth/login?returnTo=/subscription");
         return;
       }
@@ -39,12 +48,15 @@ export default function SubscriptionPage() {
 
       const plan = normalizePlan(data?.plan);
       if (plan === "free") {
+        if (alive) {
+          setState((current) => ({ ...current, loadingMessage: "Redirecting you to pricing..." }));
+        }
         router.replace("/pricing");
         return;
       }
 
       if (alive) {
-        setState({ email: session.user.email || "", plan, loading: false });
+        setState({ email: session.user.email || "", plan, loading: false, loadingMessage: "" });
       }
     }
 
@@ -68,7 +80,8 @@ export default function SubscriptionPage() {
         <div className="flex min-h-[70vh] items-center justify-center px-4">
           <div className="rounded-3xl border border-white/[0.08] bg-[#0E0E12]/85 px-8 py-7 text-center shadow-2xl shadow-black/60 backdrop-blur-xl">
             <span className="mx-auto block size-9 animate-spin rounded-full border-2 border-neutral-700 border-t-[#C9A84C]" />
-            <p className="mt-4 text-sm font-semibold text-neutral-300">Loading subscription...</p>
+            <p className="mt-4 text-sm font-semibold text-neutral-300">{state.loadingMessage}</p>
+            <p className="mt-2 text-xs text-neutral-500">This only takes a moment.</p>
           </div>
         </div>
       </main>

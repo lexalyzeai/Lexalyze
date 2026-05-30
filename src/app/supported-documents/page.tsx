@@ -80,7 +80,7 @@ export default function SupportedDocumentsPage() {
 
         <div className="mt-4 rounded-2xl border border-[#C9A84C]/20 bg-[#C9A84C]/[0.04] p-5">
           <p className="text-sm leading-7 text-neutral-400">
-            <strong className="text-[#C9A84C]">File formats accepted:</strong> PDF (.pdf) and Microsoft Word (.docx). Scanned PDFs (image-only) may produce poor results as text cannot be reliably extracted from images.
+            <strong className="text-[#C9A84C]">File formats accepted:</strong> PDF (.pdf), Word (.docx/.doc), TXT (.txt), PNG (.png), and JPG/JPEG (.jpg/.jpeg). Image files use OCR, so clear, well-lit legal document scans work best.
           </p>
         </div>
 
@@ -106,9 +106,10 @@ export default function SupportedDocumentsPage() {
         <div className="mt-12 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6">
           <h2 className={`${playfair.className} text-lg font-semibold text-white`}>Document quality tips</h2>
           <ul className="mt-4 space-y-2 text-sm leading-7 text-neutral-400">
-            <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#C9A84C]" />Use text-based PDFs (not scanned images) for best results</li>
+            <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#C9A84C]" />Use text-based PDFs, DOCX, or TXT files for the most accurate extraction</li>
+            <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#C9A84C]" />For PNG/JPG uploads, use sharp images with flat pages, good lighting, and readable text</li>
             <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#C9A84C]" />Documents up to 12,000 characters of text are processed in full; longer documents may be trimmed</li>
-            <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#C9A84C]" />English-language documents receive the most accurate analysis; Hindi support is in development</li>
+            <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#C9A84C]" />English and Hindi analysis are supported; extraction quality still depends on the uploaded file</li>
             <li className="flex items-start gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#C9A84C]" />Remove blank pages and cover sheets for cleaner extraction</li>
           </ul>
         </div>
