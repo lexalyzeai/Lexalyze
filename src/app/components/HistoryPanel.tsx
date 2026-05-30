@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import type { AnalysisResultData } from "@/app/components/AnalysisResult";
 
 type AnalysisRow = {
   id: string;
   filename: string;
   created_at: string;
   overall_confidence: string;
-  result: any;
+  result: Pick<AnalysisResultData, "oneLineSummary"> | null;
 };
 
 function ConfidenceBadge({ confidence }: { confidence: string }) {
