@@ -16,6 +16,13 @@ export function getPlanStorageLimitBytes(plan: PlanId) {
 export async function deleteAnalysesById(admin: SupabaseAdmin, userId: string, ids: string[]) {
   if (ids.length === 0) return 0;
 
+  const { error: feedbackError } = await admin
+    .from("share_feedback")
+    .delete()
+    .in("analysis_id", ids);
+
+  if (feedbackError) throw feedbackError;
+
   const { error: followupError } = await admin
     .from("followups")
     .delete()

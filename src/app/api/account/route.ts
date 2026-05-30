@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { FRIENDLY_ERRORS } from "@/lib/error-handling";
+import { deleteAnalysesById } from "@/lib/plan-maintenance";
 
 async function getUser() {
   const cookieStore = await cookies();
@@ -45,27 +46,7 @@ export async function DELETE() {
 
     const ids = (rows || []).map((row) => row.id);
 
-    if (ids.length > 0) {
-      const { error: followupError } = await admin
-        .from("followups")
-        .delete()
-        .in("analysis_id", ids);
-
-      if (followupError) {
-        console.error("Account followup delete failed:", followupError);
-        return NextResponse.json({ error: FRIENDLY_ERRORS.delete_failed.message, code: "delete_failed" }, { status: 500 });
-      }
-    }
-
-    const { error: analysisError } = await admin
-      .from("analyses")
-      .delete()
-      .eq("user_id", user.id);
-
-    if (analysisError) {
-      console.error("Account analysis delete failed:", analysisError);
-      return NextResponse.json({ error: FRIENDLY_ERRORS.delete_failed.message, code: "delete_failed" }, { status: 500 });
-    }
+    await deleteAnalysesById(admin, user.id, ids);
 
     await admin.from("profiles").delete().eq("id", user.id);
 
@@ -76,7 +57,8 @@ export async function DELETE() {
     }
 
     return NextResponse.json({ deleted: true });
-  } catch {
+  } catch (error) {
+    console.error("Account delete failed:", error);
     return NextResponse.json(
       { error: FRIENDLY_ERRORS.delete_failed.message, code: "delete_failed" },
       { status: 500 }

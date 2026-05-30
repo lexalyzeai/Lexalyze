@@ -237,10 +237,8 @@ export default function DashboardPage() {
         registerCurrentSession();
       }
     });
-    cleanupPlanRetention().finally(() => {
-      fetchHistory();
-      fetchProfileUsage();
-    });
+    fetchHistory();
+    fetchProfileUsage();
     // Session registration should run once when the dashboard mounts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -358,43 +356,40 @@ export default function DashboardPage() {
       const response = await fetch("/api/retention", { method: "POST", cache: "no-store" });
       if (!response.ok && response.status !== 401) {
         console.error("Plan retention cleanup failed", await response.text().catch(() => ""));
+        return false;
       }
+      return true;
     } catch (error) {
       console.error("Plan retention cleanup failed", error);
+      return false;
     }
   }
   async function fetchHistory() {
+    setHistoryLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       setHistoryLoading(false);
       return;
     }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("plan")
-      .eq("id", session.user.id)
-      .maybeSingle();
-
-    const historyDays = PLAN_CATALOG[normalizePlan(profile?.plan)].historyDays;
-    let query = supabase
+    const cleanupOk = await cleanupPlanRetention();
+    const { data, error } = await supabase
       .from("analyses")
       .select("*")
       .eq("user_id", session.user.id)
       .order("created_at", { ascending: false });
 
-    if (historyDays !== null) {
-      const cutoff = new Date();
-      cutoff.setUTCDate(cutoff.getUTCDate() - historyDays);
-      query = query.gte("created_at", cutoff.toISOString());
-    }
-
-    const { data, error } = await query;
     if (error) {
       console.error("History load failed:", error.message || error);
       setDashboardMsg({ type: "error", text: toUserMessage(error.message, "load_failed") });
+    } else if (!cleanupOk) {
+      setDashboardMsg({ type: "error", text: "Older history could not be cleaned up yet. Refresh and try again before uploading more documents." });
     }
     setAnalyses(data || []);
+    if (selectedAnalysisId && !(data || []).some((analysis) => analysis.id === selectedAnalysisId)) {
+      setSelectedAnalysisId(null);
+      setSelectedFollowUps([]);
+    }
     setHistoryLoading(false);
   }
 
@@ -551,6 +546,7 @@ export default function DashboardPage() {
     }
 
     setAnalyses((prev) => prev.filter((a) => a.id !== id));
+    setPinnedAnalysisIds((prev) => prev.filter((pinnedId) => pinnedId !== id));
     window.localStorage.removeItem(`lexalyze-checklist:${id}`);
     if (selectedAnalysisId === id) {
       setSelectedAnalysisId(null);
@@ -770,7 +766,7 @@ export default function DashboardPage() {
                 {openDropdownId === analysis.id && (
                   <div
                     data-dropdown-menu="true"
-                    className="absolute right-0 top-full z-50 mt-1 w-36 rounded-xl border border-white/[0.08] bg-[#0E0E12] shadow-2xl"
+                    className="absolute right-9 top-1/2 z-50 w-44 -translate-y-1/2 rounded-xl border border-white/[0.08] bg-[#0E0E12] shadow-2xl"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <button
