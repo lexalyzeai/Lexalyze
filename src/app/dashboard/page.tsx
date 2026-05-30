@@ -58,6 +58,42 @@ type TeamMember = {
   created_at?: string | null;
 };
 
+const DASHBOARD_TIMEOUT_MS = 8000;
+const authLoadError = "Your account details are taking too long to load. This is a Supabase connection delay, not the page itself. Refresh or try again in a moment.";
+const historyLoadError = "History is taking too long to load. Refresh or try again in a moment.";
+
+function withTimeout<T>(promise: PromiseLike<T>, message: string, timeoutMs = DASHBOARD_TIMEOUT_MS) {
+  return new Promise<T>((resolve, reject) => {
+    const timeout = window.setTimeout(() => reject(new Error(message)), timeoutMs);
+    promise.then(
+      (value) => {
+        window.clearTimeout(timeout);
+        resolve(value);
+      },
+      (error) => {
+        window.clearTimeout(timeout);
+        reject(error);
+      }
+    );
+  });
+}
+
+function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, message = "Request timed out. Please try again.") {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), DASHBOARD_TIMEOUT_MS);
+  return fetch(input, { ...init, signal: controller.signal }).finally(() => window.clearTimeout(timeout)).catch((error) => {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error(message);
+    }
+    throw error;
+  });
+}
+
+async function getSessionSafely() {
+  const { data: { session } } = await withTimeout(supabase.auth.getSession(), authLoadError, 6000);
+  return session;
+}
+
 function ConfidenceDot({ confidence }: { confidence: string }) {
   const colors: Record<string, string> = {
     HIGH: "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]",
@@ -225,12 +261,18 @@ export default function DashboardPage() {
   }, [settingsMsg]);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setEmail(session?.user?.email || "");
-      if (session) {
-        registerCurrentSession();
-      }
-    });
+    getSessionSafely()
+      .then((session) => {
+        setEmail(session?.user?.email || "");
+        if (session) {
+          registerCurrentSession();
+        }
+      })
+      .catch((error) => {
+        console.error("Session load failed:", error);
+        setEmail("Unable to load");
+        setDashboardMsg({ type: "error", text: authLoadError });
+      });
     fetchHistory();
     fetchProfileUsage();
     fetchTeamWorkspace(true);
@@ -262,28 +304,40 @@ export default function DashboardPage() {
 
   async function loadFollowUps(analysisId: string) {
     setFollowUpsLoading(true);
-    const [followUpsResponse, analysisResponse] = await Promise.all([
-      supabase
-      .from('followups')
-      .select('question, answer')
-      .eq('analysis_id', analysisId)
-        .order('created_at', { ascending: true }),
-      supabase
-        .from('analyses')
-        .select('*')
-        .eq('id', analysisId)
-        .single(),
-    ]);
+    try {
+      const [followUpsResponse, analysisResponse] = await Promise.all([
+        withTimeout(
+          supabase
+          .from('followups')
+          .select('question, answer')
+          .eq('analysis_id', analysisId)
+            .order('created_at', { ascending: true }),
+          "Follow-up messages are taking too long to load. Please try again."
+        ),
+        withTimeout(
+          supabase
+            .from('analyses')
+            .select('*')
+            .eq('id', analysisId)
+            .single(),
+          "This analysis is taking too long to load. Please try again."
+        ),
+      ]);
 
-    setSelectedFollowUps(followUpsResponse.data || []);
-    if (analysisResponse.data) {
-      setAnalyses((prev) =>
-        prev.map((analysis) =>
-          analysis.id === analysisId ? analysisResponse.data as AnalysisRow : analysis
-        )
-      );
+      setSelectedFollowUps(followUpsResponse.data || []);
+      if (analysisResponse.data) {
+        setAnalyses((prev) =>
+          prev.map((analysis) =>
+            analysis.id === analysisId ? analysisResponse.data as AnalysisRow : analysis
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Analysis detail load failed:", error);
+      setDashboardMsg({ type: "error", text: error instanceof Error ? error.message : "This analysis could not be loaded. Please try again." });
+    } finally {
+      setFollowUpsLoading(false);
     }
-    setFollowUpsLoading(false);
   }
 
   async function handleChecklistChange(analysisId: string, newState: boolean[]) {
@@ -347,8 +401,10 @@ export default function DashboardPage() {
   };
 
   async function cleanupPlanRetention() {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), DASHBOARD_TIMEOUT_MS);
     try {
-      const response = await fetch("/api/retention", { method: "POST", cache: "no-store" });
+      const response = await fetch("/api/retention", { method: "POST", cache: "no-store", signal: controller.signal });
       if (!response.ok && response.status !== 401) {
         console.error("Plan retention cleanup failed", await response.text().catch(() => ""));
         return false;
@@ -357,60 +413,79 @@ export default function DashboardPage() {
     } catch (error) {
       console.error("Plan retention cleanup failed", error);
       return false;
+    } finally {
+      window.clearTimeout(timeout);
     }
   }
   async function fetchHistory() {
     setHistoryLoading(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    try {
+      const session = await getSessionSafely();
+      if (!session) {
+        setAnalyses([]);
+        return;
+      }
+
+      const cleanupOk = await cleanupPlanRetention();
+      const { data, error } = await withTimeout(
+        supabase
+          .from("analyses")
+          .select("*")
+          .eq("user_id", session.user.id)
+          .order("created_at", { ascending: false }),
+        historyLoadError
+      );
+
+      if (error) {
+        console.error("History load failed:", error.message || error);
+        setDashboardMsg({ type: "error", text: toUserMessage(error.message, "load_failed") });
+      } else if (!cleanupOk) {
+        setDashboardMsg({ type: "error", text: "Older history could not be cleaned up yet. Refresh and try again before uploading more documents." });
+      }
+      setAnalyses(data || []);
+      if (selectedAnalysisId && !(data || []).some((analysis) => analysis.id === selectedAnalysisId)) {
+        setSelectedAnalysisId(null);
+        setSelectedFollowUps([]);
+      }
+    } catch (error) {
+      console.error("History load failed:", error);
+      setDashboardMsg({ type: "error", text: error instanceof Error ? error.message : historyLoadError });
+    } finally {
       setHistoryLoading(false);
-      return;
     }
-
-    const cleanupOk = await cleanupPlanRetention();
-    const { data, error } = await supabase
-      .from("analyses")
-      .select("*")
-      .eq("user_id", session.user.id)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("History load failed:", error.message || error);
-      setDashboardMsg({ type: "error", text: toUserMessage(error.message, "load_failed") });
-    } else if (!cleanupOk) {
-      setDashboardMsg({ type: "error", text: "Older history could not be cleaned up yet. Refresh and try again before uploading more documents." });
-    }
-    setAnalyses(data || []);
-    if (selectedAnalysisId && !(data || []).some((analysis) => analysis.id === selectedAnalysisId)) {
-      setSelectedAnalysisId(null);
-      setSelectedFollowUps([]);
-    }
-    setHistoryLoading(false);
   }
 
   async function fetchProfileUsage() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    try {
+      const session = await getSessionSafely();
+      if (!session) return;
 
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("plan, usage_month, monthly_analyses_used")
-      .eq("id", session.user.id)
-      .maybeSingle();
+      const { data, error } = await withTimeout(
+        supabase
+          .from("profiles")
+          .select("plan, usage_month, monthly_analyses_used")
+          .eq("id", session.user.id)
+          .maybeSingle(),
+        "Plan and usage details are taking too long to load. Refresh to try again."
+      );
 
-    if (error) {
-      console.error("Profile usage load failed:", error.message || error);
-      setDashboardMsg({ type: "error", text: "Plan and usage details could not be loaded. Refresh to try again." });
-      return;
+      if (error) {
+        console.error("Profile usage load failed:", error.message || error);
+        setDashboardMsg({ type: "error", text: "Plan and usage details could not be loaded. Refresh to try again." });
+        return;
+      }
+
+      setProfileUsage(data || { plan: "free", usage_month: currentUsageMonth(), monthly_analyses_used: 0 });
+    } catch (error) {
+      console.error("Profile usage load failed:", error);
+      setDashboardMsg({ type: "error", text: error instanceof Error ? error.message : "Plan and usage details could not be loaded. Refresh to try again." });
     }
-
-    setProfileUsage(data || { plan: "free", usage_month: currentUsageMonth(), monthly_analyses_used: 0 });
   }
 
   async function fetchActiveSessions(currentDeviceId = getDeviceId()) {
     setSessionsLoading(true);
     try {
-      const response = await fetch("/api/sessions", { cache: "no-store" });
+      const response = await fetchWithTimeout("/api/sessions", { cache: "no-store" }, "Active sessions are taking too long to load. Please try again.");
       if (!response.ok) {
         const apiError = await readApiError(response, "load_failed");
         setSettingsMsg({ type: "error", text: apiError.message });
@@ -433,18 +508,22 @@ export default function DashboardPage() {
   async function registerCurrentSession() {
     const deviceId = getDeviceId();
     const device = detectDevice();
-    const response = await fetch("/api/sessions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ deviceId, ...device }),
-    });
+    try {
+      const response = await fetchWithTimeout("/api/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deviceId, ...device }),
+      }, "Current session registration took too long.");
 
-    if (!response.ok) {
-      console.error("Could not register active session", await response.text().catch(() => ""));
-      return;
+      if (!response.ok) {
+        console.error("Could not register active session", await response.text().catch(() => ""));
+        return;
+      }
+
+      await fetchActiveSessions(deviceId);
+    } catch (error) {
+      console.error("Could not register active session", error);
     }
-
-    await fetchActiveSessions(deviceId);
   }
 
   function clearLocalSessionState() {
@@ -458,13 +537,20 @@ export default function DashboardPage() {
   async function handleSignOut() {
     if (isSigningOut) return;
     setIsSigningOut(true);
-    await fetch("/api/sessions", {
+    await fetchWithTimeout("/api/sessions", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ deviceId: getDeviceId() }),
-    }).catch(() => null);
-    const { error } = await supabase.auth.signOut({ scope: "local" });
-    if (error) {
+    }, "Sign out is taking too long. Continuing locally.").catch(() => null);
+    try {
+      const { error } = await withTimeout(supabase.auth.signOut({ scope: "local" }), "Sign out is taking too long. Please try again.", 6000);
+      if (error) {
+        setDashboardMsg({ type: "error", text: "Sign out failed. Please try again." });
+        setIsSigningOut(false);
+        return;
+      }
+    } catch (error) {
+      console.error("Sign out failed:", error);
       setDashboardMsg({ type: "error", text: "Sign out failed. Please try again." });
       setIsSigningOut(false);
       return;
@@ -495,15 +581,22 @@ export default function DashboardPage() {
     setIsSigningOutAll(true);
     setSettingsMsg(null);
 
-    const response = await fetch("/api/sessions", { method: "DELETE" });
-    if (!response.ok) {
-      const apiError = await readApiError(response, "api_failure");
-      setSettingsMsg({ type: "error", text: apiError.message });
+    try {
+      const response = await fetchWithTimeout("/api/sessions", { method: "DELETE" }, "Sign out from all devices is taking too long. Please try again.");
+      if (!response.ok) {
+        const apiError = await readApiError(response, "api_failure");
+        setSettingsMsg({ type: "error", text: apiError.message });
+        setIsSigningOutAll(false);
+        return;
+      }
+    } catch (error) {
+      console.error("Sign out from all devices failed:", error);
+      setSettingsMsg({ type: "error", text: error instanceof Error ? error.message : "Sign out from all devices failed. Please try again." });
       setIsSigningOutAll(false);
       return;
     }
 
-    await supabase.auth.signOut({ scope: "global" }).catch(() => null);
+    await withTimeout(supabase.auth.signOut({ scope: "global" }), "Sign out from all devices is taking too long. Please try again.", 6000).catch(() => null);
     clearLocalSessionState();
     router.replace("/auth/login");
     router.refresh();
@@ -599,7 +692,7 @@ export default function DashboardPage() {
   async function fetchTeamWorkspace(silent = false) {
     setTeamLoading(true);
     try {
-      const response = await fetch("/api/team", { cache: "no-store" });
+      const response = await fetchWithTimeout("/api/team", { cache: "no-store" }, "Team settings are taking too long to load. Please try again.");
       if (!response.ok) {
         const apiError = await readApiError(response, "load_failed");
         if (!silent) setSettingsMsg({ type: "error", text: apiError.message });
@@ -623,11 +716,11 @@ export default function DashboardPage() {
     setTeamLoading(true);
     setSettingsMsg(null);
     try {
-      const response = await fetch("/api/team", {
+      const response = await fetchWithTimeout("/api/team", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, ...payload }),
-      });
+      }, "Team changes are taking too long to save. Please try again.");
 
       if (!response.ok) {
         const apiError = await readApiError(response, "save_failed");
@@ -668,7 +761,7 @@ export default function DashboardPage() {
             router.push("/dashboard");
             setIsMobileNavOpen(false);
           }}
-          className="group flex w-full items-center justify-between rounded-full bg-gradient-to-r from-[#C9A84C] to-[#aa8426] px-5 py-3.5 text-left text-xs font-bold tracking-wider text-[#0A0A0A] shadow-[0_4px_20px_rgba(201,168,76,0.15)] transition-all duration-300 hover:scale-[1.02] hover:from-[#d4b55d] hover:shadow-[0_6px_25px_rgba(201,168,76,0.25)] active:scale-[0.98]"
+          className="group flex w-full items-center justify-between rounded-full bg-gradient-to-r from-[#E3C35B] via-[#C9A84C] to-[#A9822C] px-5 py-3.5 text-left text-xs font-bold tracking-wider text-[#0A0A0A] shadow-[0_4px_20px_rgba(201,168,76,0.18)] transition-all duration-300 hover:scale-[1.02] hover:from-[#f0d36c] hover:via-[#d4b55d] hover:to-[#b89542] hover:shadow-[0_6px_25px_rgba(201,168,76,0.28)] active:scale-[0.98]"
         >
           <span>NEW REVIEW</span>
           <span className="flex size-6 items-center justify-center rounded-full bg-black/10 text-sm leading-none font-bold transition group-hover:bg-black/15">+</span>

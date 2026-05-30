@@ -67,7 +67,7 @@ export default function Navbar() {
 
             <Link
               href="/auth/signup"
-              className="rounded-full bg-gradient-to-r from-[#C9A84C] to-[#aa8426] px-4 py-2 text-xs font-bold tracking-wide text-[#0A0A0A] shadow-[0_4px_20px_rgba(201,168,76,0.15)] transition-all duration-300 hover:scale-[1.02] hover:from-[#d4b55d] hover:to-[#b89542] hover:shadow-[0_6px_25px_rgba(201,168,76,0.25)] active:scale-[0.98] sm:px-5 sm:text-sm"
+              className="rounded-full bg-gradient-to-r from-[#E3C35B] via-[#C9A84C] to-[#A9822C] px-4 py-2 text-xs font-bold tracking-wide text-[#0A0A0A] shadow-[0_4px_20px_rgba(201,168,76,0.18)] transition-all duration-300 hover:scale-[1.02] hover:from-[#f0d36c] hover:via-[#d4b55d] hover:to-[#b89542] hover:shadow-[0_6px_25px_rgba(201,168,76,0.28)] active:scale-[0.98] sm:px-5 sm:text-sm"
             >
               Get started
             </Link>
@@ -126,7 +126,7 @@ export default function Navbar() {
             <Link
               href="/auth/signup"
               onClick={() => setMobileOpen(false)}
-              className="w-full rounded-full bg-gradient-to-r from-[#C9A84C] to-[#aa8426] py-2.5 text-center text-sm font-bold tracking-wide text-[#0A0A0A] transition hover:from-[#d4b55d] hover:to-[#b89542]"
+              className="w-full rounded-full bg-gradient-to-r from-[#E3C35B] via-[#C9A84C] to-[#A9822C] py-2.5 text-center text-sm font-bold tracking-wide text-[#0A0A0A] shadow-[0_4px_20px_rgba(201,168,76,0.18)] transition hover:from-[#f0d36c] hover:via-[#d4b55d] hover:to-[#b89542]"
             >
               Get started
             </Link>
