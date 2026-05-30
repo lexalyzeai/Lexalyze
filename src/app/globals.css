@@ -1,5 +1,17 @@
 @import "tailwindcss";
 
+@keyframes loadingBar {
+  0% {
+    transform: translateX(-120%);
+  }
+  50% {
+    transform: translateX(160%);
+  }
+  100% {
+    transform: translateX(360%);
+  }
+}
+
 /* Hide all scrollbars while keeping scrolling functional */
 ::-webkit-scrollbar {
   display: none;

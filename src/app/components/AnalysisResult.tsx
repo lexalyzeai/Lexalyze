@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { Playfair_Display } from "next/font/google";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import ErrorMessage, { ErrorType, mapBackendError } from "@/app/components/ErrorMessage";
 import { normalizePlan, type PlanId } from "@/lib/plans";
 import { readApiError } from "@/lib/error-handling";
@@ -440,18 +440,127 @@ function createZip(files: Array<{ name: string; content: string }>) {
 }
 
 function buildDocxBlob(result: AnalysisResultData, checklist: boolean[]) {
-  const paragraph = (text: string, style?: string) => `
-    <w:p>${style ? `<w:pPr><w:pStyle w:val="${style}"/></w:pPr>` : ""}<w:r><w:t xml:space="preserve">${escapeXml(text)}</w:t></w:r></w:p>`;
-  const rows = analysisRows(result, checklist);
+  const runFonts = '<w:rFonts w:ascii="Aptos" w:hAnsi="Aptos" w:eastAsia="Noto Sans Devanagari" w:cs="Noto Sans Devanagari"/>';
+  const textRuns = (text: string) => String(text || "")
+    .split("\n")
+    .map((line, index) => `${index > 0 ? "<w:br/>" : ""}<w:t xml:space="preserve">${escapeXml(line)}</w:t>`)
+    .join("");
+  const paragraph = (
+    text: string,
+    options: {
+      bold?: boolean;
+      color?: string;
+      size?: number;
+      align?: "left" | "center" | "right";
+      before?: number;
+      after?: number;
+      shade?: string;
+      border?: string;
+    } = {}
+  ) => `
+    <w:p>
+      <w:pPr>
+        ${options.align ? `<w:jc w:val="${options.align}"/>` : ""}
+        <w:spacing w:before="${options.before ?? 0}" w:after="${options.after ?? 180}" w:line="300" w:lineRule="auto"/>
+        ${options.shade ? `<w:shd w:fill="${options.shade}"/>` : ""}
+        ${options.border ? `<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="${options.border}"/></w:pBdr>` : ""}
+      </w:pPr>
+      <w:r>
+        <w:rPr>
+          ${runFonts}
+          ${options.bold ? "<w:b/><w:bCs/>" : ""}
+          <w:color w:val="${options.color ?? "202020"}"/>
+          <w:sz w:val="${options.size ?? 22}"/><w:szCs w:val="${options.size ?? 22}"/>
+        </w:rPr>
+        ${textRuns(text)}
+      </w:r>
+    </w:p>`;
+  const cell = (content: string, shade = "FFFFFF", color = "202020", bold = false) => `
+    <w:tc>
+      <w:tcPr>
+        <w:tcW w:w="2600" w:type="dxa"/>
+        <w:shd w:fill="${shade}"/>
+        <w:tcBorders>
+          <w:top w:val="single" w:sz="6" w:color="E9E1CB"/>
+          <w:left w:val="single" w:sz="6" w:color="E9E1CB"/>
+          <w:bottom w:val="single" w:sz="6" w:color="E9E1CB"/>
+          <w:right w:val="single" w:sz="6" w:color="E9E1CB"/>
+        </w:tcBorders>
+      </w:tcPr>
+      ${paragraph(content, { color, bold, size: bold ? 20 : 19, after: 80 })}
+    </w:tc>`;
+  const table = (rows: string[][]) => `
+    <w:tbl>
+      <w:tblPr><w:tblW w:w="10000" w:type="dxa"/><w:tblLook w:firstRow="1" w:noHBand="0" w:noVBand="1"/></w:tblPr>
+      ${rows.map((row) => `<w:tr>${row.map((item, index) => cell(item, index % 2 === 0 ? "FBF8EF" : "FFFFFF", index % 2 === 0 ? "8A6419" : "202020", index % 2 === 0)).join("")}</w:tr>`).join("")}
+    </w:tbl>`;
+  const sectionTitle = (text: string, color = "A88426") => paragraph(text.toUpperCase(), { bold: true, color, size: 22, before: 260, after: 100 });
+  const card = (title: string, body: string, meta = "", color = "A88426") => [
+    paragraph(title, { bold: true, color: "202020", size: 23, before: 80, after: 80, shade: "FCFAF4", border: color }),
+    meta ? paragraph(meta.toUpperCase(), { bold: true, color, size: 16, after: 60 }) : "",
+    body ? paragraph(body, { color: "595959", size: 19, after: 120 }) : "",
+  ].join("");
+
+  const facts = [
+    ["Document type", result.documentType || "Not specified"],
+    ["Confidence", result.overallConfidence || "Not specified"],
+    ["Risk score", result.riskScore !== undefined ? `${result.riskScore}/10` : "Not scored"],
+    ["Party favour", result.partyFavour ? result.partyFavour.replace(/_/g, " ") : "Not specified"],
+  ];
+
   const body = [
-    paragraph("LEXALYZE", "Title"),
-    paragraph(result.documentTitle || "Document analysis", "Heading1"),
-    ...rows.flatMap(([category, title, detail, meta]) => [
-      paragraph(category, "Heading2"),
-      paragraph(title),
-      detail ? paragraph(detail) : "",
-      meta ? paragraph(meta) : "",
-    ]),
+    paragraph("LEXALYZE", { bold: true, color: "8A6419", size: 34, after: 40 }),
+    paragraph("Document intelligence report", { color: "777777", size: 17, after: 260 }),
+    paragraph(result.documentTitle || "Document analysis", { bold: true, color: "111111", size: 34, after: 180 }),
+    paragraph(result.oneLineSummary || result.fullSummary || "Analysis completed.", { color: "202020", size: 22, shade: "FBF8EF", border: "C9A84C", before: 80, after: 240 }),
+    sectionTitle("Executive snapshot"),
+    table(facts),
+    result.overallConfidenceReason ? card("Confidence note", result.overallConfidenceReason, "", "A88426") : "",
+    result.riskScoreReason ? card("Risk note", result.riskScoreReason, "", "B45309") : "",
+    sectionTitle("Summary"),
+    paragraph(result.fullSummary || "No full summary provided.", { size: 21, after: 180 }),
+    [...(result.keyNumbers ?? []), ...(result.keyDeadlines ?? [])].length > 0 ? sectionTitle("Key numbers and dates") : "",
+    ...(result.keyNumbers ?? []).map((item) => card("Key number", item, "", "A88426")),
+    ...(result.keyDeadlines ?? []).map((item) => card("Key deadline", item, "", "A88426")),
+    ...(result.redFlags ?? []).length > 0 ? sectionTitle("Risk flags", "B91C1C") : "",
+    ...(result.redFlags ?? []).map((flag, index) => card(
+      `${index + 1}. ${flag.title}`,
+      [flag.explanation, flag.exactQuote ? `Quote: "${flag.exactQuote}"` : "", flag.legalContext ? `Legal context: ${flag.legalContext}` : "", flag.whatToDoAboutIt ? `What to do: ${flag.whatToDoAboutIt}` : ""].filter(Boolean).join("\n"),
+      `${flag.severity} risk | ${flag.confidence} confidence`,
+      flag.severity === "HIGH" ? "B91C1C" : flag.severity === "MEDIUM" ? "B45309" : "047857"
+    )),
+    ...(result.positivePoints ?? []).length > 0 ? sectionTitle("Favourable clauses", "047857") : "",
+    ...(result.positivePoints ?? []).map((point, index) => card(
+      `${index + 1}. ${point.title}`,
+      [point.explanation, point.exactQuote ? `Quote: "${point.exactQuote}"` : ""].filter(Boolean).join("\n"),
+      `${point.confidence} confidence`,
+      "047857"
+    )),
+    ...(result.missingClauses ?? []).length > 0 ? sectionTitle("Missing clauses", "B45309") : "",
+    ...(result.missingClauses ?? []).map((item, index) => card(
+      `${index + 1}. ${item.clause}`,
+      [item.whyItMatters, item.whatToAdd ? `What to add: ${item.whatToAdd}` : ""].filter(Boolean).join("\n"),
+      `${item.riskIfAbsent} risk if absent`,
+      item.riskIfAbsent === "HIGH" ? "B91C1C" : item.riskIfAbsent === "MEDIUM" ? "B45309" : "047857"
+    )),
+    ...(result.actionItems ?? []).length > 0 ? sectionTitle("Action checklist") : "",
+    ...(result.actionItems ?? []).map((item, index) => card(
+      `${checklist[index] ? "[Done]" : "[Open]"} ${item.action}`,
+      item.reason,
+      item.priority,
+      checklist[index] ? "047857" : "A88426"
+    )),
+    ...(result.negotiationTips ?? []).length > 0 ? sectionTitle("Negotiation tips") : "",
+    ...(result.negotiationTips ?? []).map((tip) => card("Negotiation tip", tip, "", "A88426")),
+    result.consumerRightsNote ? sectionTitle("Consumer rights", "1D4ED8") : "",
+    result.consumerRightsNote ? paragraph(result.consumerRightsNote, { size: 21, after: 180 }) : "",
+    result.stampDutyNote ? sectionTitle("Stamp duty and registration", "B45309") : "",
+    result.stampDutyNote ? paragraph(result.stampDutyNote, { size: 21, after: 180 }) : "",
+    sectionTitle("Limitations", "B45309"),
+    ...(result.cannotDetermineList?.length ? result.cannotDetermineList : ["No specific limitations were provided."]).map((item) => card("Limitation", item, "", "B45309")),
+    sectionTitle("Lawyer guidance"),
+    paragraph(result.lawyerGuidance || "This AI summary is informational and not legal advice. Consult a qualified lawyer before making important legal or financial decisions.", { size: 20, after: 180 }),
+    paragraph("Lexalyze AI-generated analysis. Not legal advice.", { color: "777777", size: 16, before: 260, after: 0 }),
   ].join("");
 
   const files = [
@@ -465,7 +574,7 @@ function buildDocxBlob(result: AnalysisResultData, checklist: boolean[]) {
     },
     {
       name: "word/document.xml",
-      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr></w:body></w:document>`,
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1080" w:right="1080" w:bottom="1080" w:left="1080"/></w:sectPr></w:body></w:document>`,
     },
   ];
 
@@ -502,6 +611,21 @@ export default function AnalysisResult({
   const [shareMode, setShareMode] = useState<"view" | "comment" | "edit">("view");
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
   const [isDownloadMenuOpen, setIsDownloadMenuOpen] = useState(false);
+  const actionMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isShareMenuOpen && !isDownloadMenuOpen) return;
+
+    function closeOnOutsideClick(event: PointerEvent) {
+      const target = event.target;
+      if (target instanceof Node && actionMenuRef.current?.contains(target)) return;
+      setIsShareMenuOpen(false);
+      setIsDownloadMenuOpen(false);
+    }
+
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    return () => document.removeEventListener("pointerdown", closeOnOutsideClick);
+  }, [isShareMenuOpen, isDownloadMenuOpen]);
 
   if (!result) {
     return (
@@ -919,6 +1043,7 @@ export default function AnalysisResult({
 
       if (navigator.share) {
         await navigator.share({ title: result?.documentTitle || "Lexalyze Analysis", url });
+        setIsShareMenuOpen(false);
         return;
       }
     } catch { /* fallback to clipboard */ }
@@ -963,7 +1088,7 @@ export default function AnalysisResult({
       {!readOnlyPublic && (
       <>
       {/* Floating Sticky action bar */}
-      <div className="pointer-events-none sticky top-4 z-30 flex flex-wrap justify-end gap-2">
+      <div ref={actionMenuRef} className="pointer-events-none sticky top-4 z-30 flex flex-wrap justify-end gap-2">
         <div className="pointer-events-auto relative">
           <button
             type="button"
