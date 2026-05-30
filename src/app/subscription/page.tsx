@@ -57,7 +57,7 @@ export default function SubscriptionPage() {
   const planDetails = PLAN_CATALOG[state.plan];
 
   function paymentGatewayNotice(action: string) {
-    setNotice(`${action} will connect to the payment gateway billing portal. Completed subscription payments are non-refundable.`);
+    setNotice(`${action} will connect to the payment gateway billing portal. Paid plans renew monthly until cancelled, and completed payments are non-refundable.`);
     window.setTimeout(() => setNotice(""), 6000);
   }
 
@@ -84,6 +84,7 @@ export default function SubscriptionPage() {
           <h1 className={`${playfair.className} mt-4 text-4xl font-bold sm:text-5xl`}>Manage your plan</h1>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-neutral-400">
             This page is ready for a billing portal. Once payments are connected, these actions can open checkout, invoices, plan changes, and cancellation flows.
+            Paid plans renew monthly until cancelled.
           </p>
         </div>
 
@@ -126,7 +127,7 @@ export default function SubscriptionPage() {
             </div>
 
             <div className="mt-6 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm leading-6 text-amber-100">
-              Payments and renewals are non-refundable once completed. Plan changes will follow the billing gateway policy when connected.
+              Paid plans renew automatically every month until cancelled. Payments and renewals are non-refundable once completed. Plan changes will follow the billing gateway policy when connected.
             </div>
           </div>
 

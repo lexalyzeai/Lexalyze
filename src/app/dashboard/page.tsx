@@ -597,8 +597,12 @@ export default function DashboardPage() {
   }
 
   function handleManageSubscription() {
+    if (plan === "free") {
+      setSettingsMsg({ type: "error", text: "You need an active subscription before you can manage billing." });
+      return;
+    }
     closeSettingsModal();
-    router.push(plan === "free" ? "/pricing" : "/subscription");
+    router.push("/subscription");
   }
 
   async function fetchTeamWorkspace() {
@@ -1292,7 +1296,9 @@ export default function DashboardPage() {
                         <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
                           <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">Billing History</p>
                           <p className="text-sm text-neutral-400">No invoices yet</p>
-                          <p className="mt-2 text-xs leading-5 text-neutral-500">When payments are connected, completed subscription payments will be non-refundable.</p>
+                          <p className="mt-2 text-xs leading-5 text-neutral-500">
+                            Paid plans renew automatically every month until cancelled. Completed subscription payments are non-refundable.
+                          </p>
                         </div>
                         <button
                           type="button"

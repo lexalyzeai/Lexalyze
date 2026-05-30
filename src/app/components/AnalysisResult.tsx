@@ -1048,7 +1048,14 @@ export default function AnalysisResult({
         setIsShareMenuOpen(false);
         return;
       }
-    } catch { /* fallback to clipboard */ }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setIsShareMenuOpen(false);
+        setSharingMode(null);
+        return;
+      }
+      /* fallback to clipboard */
+    }
     try {
       await navigator.clipboard.writeText(url);
       setIsCopied(true);
