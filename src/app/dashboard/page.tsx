@@ -187,6 +187,7 @@ export default function DashboardPage() {
   const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const settingsMessageRef = useRef<HTMLDivElement | null>(null);
   const [dashboardMsg, setDashboardMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [teamFolders, setTeamFolders] = useState<TeamFolder[]>([]);
@@ -223,6 +224,11 @@ export default function DashboardPage() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (!settingsMsg) return;
+    settingsMessageRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [settingsMsg]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -588,6 +594,11 @@ export default function DashboardPage() {
     if (tab === "team" && plan === "team") {
       fetchTeamWorkspace();
     }
+  }
+
+  function handleManageSubscription() {
+    closeSettingsModal();
+    router.push(plan === "free" ? "/pricing" : "/subscription");
   }
 
   async function fetchTeamWorkspace() {
@@ -1189,7 +1200,7 @@ export default function DashboardPage() {
 
               <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto pr-1" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
               {settingsMsg && (
-                <div className={`mb-4 rounded-lg px-4 py-3 text-sm font-medium ${settingsMsg.type === "success" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border border-rose-500/20"}`}>
+                <div ref={settingsMessageRef} className={`mb-4 rounded-lg px-4 py-3 text-sm font-medium ${settingsMsg.type === "success" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border border-rose-500/20"}`}>
                   {settingsMsg.text}
                 </div>
               )}
@@ -1281,10 +1292,11 @@ export default function DashboardPage() {
                         <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
                           <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-2">Billing History</p>
                           <p className="text-sm text-neutral-400">No invoices yet</p>
+                          <p className="mt-2 text-xs leading-5 text-neutral-500">When payments are connected, completed subscription payments will be non-refundable.</p>
                         </div>
                         <button
                           type="button"
-                          onClick={() => setSettingsMsg({ type: "success", text: "Subscription management will unlock when payments are connected." })}
+                          onClick={handleManageSubscription}
                           className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-[#C9A84C]/40 hover:bg-white/[0.04] hover:text-[#C9A84C]"
                         >
                           Manage Subscription

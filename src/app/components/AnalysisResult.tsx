@@ -608,6 +608,7 @@ export default function AnalysisResult({
   );
   const [isDownloading, setIsDownloading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [sharingMode, setSharingMode] = useState<"view" | "comment" | "edit" | null>(null);
   const [shareMode, setShareMode] = useState<"view" | "comment" | "edit">("view");
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
   const [isDownloadMenuOpen, setIsDownloadMenuOpen] = useState(false);
@@ -1021,6 +1022,7 @@ export default function AnalysisResult({
   async function handleShare(nextMode = shareMode) {
     if (!canUseOutputs) return;
     setActionError("");
+    setSharingMode(nextMode);
     setShareMode(nextMode);
     let url = window.location.href;
     try {
@@ -1054,6 +1056,8 @@ export default function AnalysisResult({
       setTimeout(() => setIsCopied(false), 2000);
     } catch {
       setActionError("share_failed");
+    } finally {
+      setSharingMode(null);
     }
   }
 
@@ -1096,13 +1100,18 @@ export default function AnalysisResult({
               setIsShareMenuOpen((open) => !open);
               setIsDownloadMenuOpen(false);
             }}
-            disabled={!canUseOutputs}
+            disabled={!canUseOutputs || sharingMode !== null}
             title={canUseOutputs ? "Share analysis" : "Upgrade to Solo to unlock sharing"}
             className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-[#121216]/95 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-neutral-400 shadow-2xl shadow-black/80 backdrop-blur transition-all duration-300 hover:border-white/40 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-white/20 disabled:hover:text-neutral-400"
             aria-label="Share analysis"
             aria-expanded={isShareMenuOpen}
           >
-            {isCopied ? <span className="text-emerald-400">Copied!</span> : <span>Share</span>}
+            {sharingMode ? (
+              <>
+                <span className="size-3.5 animate-spin rounded-full border-2 border-neutral-600 border-t-[#C9A84C]" />
+                <span>Sharing...</span>
+              </>
+            ) : isCopied ? <span className="text-emerald-400">Copied!</span> : <span>Share</span>}
           </button>
           {isShareMenuOpen && canUseOutputs ? (
             <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-white/10 bg-[#101014] p-2 shadow-2xl shadow-black/70">
@@ -1111,17 +1120,25 @@ export default function AnalysisResult({
                 <button
                   key={mode}
                   type="button"
+                  disabled={sharingMode !== null}
                   onClick={() => void handleShare(mode)}
                   className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs font-semibold transition ${
                     shareMode === mode ? "bg-[#C9A84C]/12 text-[#C9A84C]" : "text-neutral-300 hover:bg-white/[0.04] hover:text-white"
-                  }`}
+                  } disabled:cursor-wait disabled:opacity-70`}
                 >
                   <span>{mode === "view" ? "View-only link" : mode === "comment" ? "Comments link" : "Comments + edits link"}</span>
-                  {shareMode === mode ? <span className="text-emerald-400">Active</span> : null}
+                  {sharingMode === mode ? (
+                    <span className="inline-flex items-center gap-1 text-[#C9A84C]">
+                      <span className="size-3 animate-spin rounded-full border-2 border-[#C9A84C]/25 border-t-[#C9A84C]" />
+                      Creating
+                    </span>
+                  ) : shareMode === mode ? (
+                    <span className="text-emerald-400">Active</span>
+                  ) : null}
                 </button>
               ))}
               <p className="px-3 pb-2 pt-1 text-[11px] leading-relaxed text-neutral-500">
-                Creates a share link and copies it to your clipboard.
+                Creates a link-only share page and copies it to your clipboard.
               </p>
             </div>
           ) : null}

@@ -130,7 +130,7 @@ export default function PricingPage() {
   const [notice, setNotice] = useState("");
 
   const showPaymentNotice = () => {
-    setNotice("Payments are not connected yet. Email lexalyze.ai@gmail.com for early access.");
+    setNotice("Payments are not connected yet. Email lexalyze.ai@gmail.com for early access. Completed subscription payments will be non-refundable.");
     window.setTimeout(() => setNotice(""), 5000);
   };
 
@@ -145,6 +145,9 @@ export default function PricingPage() {
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-neutral-400">
             Full analysis stays available on every tier. Upgrade only when you need more volume, longer history, exports, sharing, or team workflows.
+          </p>
+          <p className="mx-auto mt-3 max-w-2xl text-xs font-semibold uppercase tracking-[0.16em] text-amber-300/80">
+            Paid subscription payments are non-refundable once completed.
           </p>
           {notice ? (
             <div className="mx-auto mt-5 max-w-xl rounded-xl border border-sky-400/25 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100">
@@ -162,6 +165,9 @@ export default function PricingPage() {
         <div className="mt-14 border-t border-white/[0.06] pt-10 text-center">
           <p className="text-sm text-neutral-500">
             All plans include full AI analysis. <span className="text-neutral-400">Not legal advice.</span>
+          </p>
+          <p className="mt-2 text-xs text-neutral-600">
+            Paid plan purchases and renewals are non-refundable after successful payment.
           </p>
           <p className="mt-3 text-sm text-neutral-500">
             Questions?{" "}
