@@ -146,9 +146,6 @@ export default function PricingPage() {
           <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-neutral-400">
             Full analysis stays available on every tier. Upgrade only when you need more volume, longer history, exports, sharing, or team workflows.
           </p>
-          <p className="mx-auto mt-3 max-w-2xl text-xs font-semibold uppercase tracking-[0.16em] text-amber-300/80">
-            Paid plans renew monthly until cancelled. Completed payments are non-refundable.
-          </p>
           {notice ? (
             <div className="mx-auto mt-5 max-w-xl rounded-xl border border-sky-400/25 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100">
               {notice}

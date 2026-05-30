@@ -1044,12 +1044,18 @@ export default function AnalysisResult({
       }
 
       if (navigator.share) {
-        await navigator.share({ title: result?.documentTitle || "Lexalyze Analysis", url });
         setIsShareMenuOpen(false);
+        setSharingMode(null);
+        await navigator.share({ title: result?.documentTitle || "Lexalyze Analysis", url });
         return;
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {
+        setIsShareMenuOpen(false);
+        setSharingMode(null);
+        return;
+      }
+      if (err && typeof err === "object" && "name" in err && err.name === "AbortError") {
         setIsShareMenuOpen(false);
         setSharingMode(null);
         return;
