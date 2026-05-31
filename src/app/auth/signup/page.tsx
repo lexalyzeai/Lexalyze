@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Suspense, type FormEvent, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { getAuthRedirectUrl } from "@/lib/site-url";
 import ErrorMessage from "@/app/components/ErrorMessage";
 
 const playfair = Playfair_Display({ subsets: ["latin"], weight: ["600", "700"] });
@@ -119,7 +120,7 @@ function SignupForm() {
 
   useEffect(() => {
     if (searchParams.get("error") === "account_exists") {
-      const timer = setTimeout(() => setErrorMessage("An account with this email already exists."), 0);
+      const timer = setTimeout(() => setErrorMessage("An account with this email already exists. Please sign in instead."), 0);
       return () => clearTimeout(timer);
     }
   }, [searchParams]);
@@ -246,7 +247,7 @@ function SignupForm() {
   
         options: {
           redirectTo:
-            `${window.location.origin}/auth/callback?flow=signup`,
+            getAuthRedirectUrl("/auth/callback?flow=signup"),
   
           queryParams: {
             access_type: "offline",

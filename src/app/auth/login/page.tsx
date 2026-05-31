@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useState, useEffect, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
+import { getAuthRedirectUrl } from "@/lib/site-url";
 import ErrorMessage from "@/app/components/ErrorMessage";
 
 const playfair = Playfair_Display({ subsets: ["latin"], weight: ["600", "700"] });
@@ -178,6 +179,9 @@ function LoginForm() {
       }
       if (error === 'account_exists') {
         setFormError('An account with this email already exists. Try signing in with your password or the method you originally used.')
+      }
+      if (error === 'no_account') {
+        setFormError('No account exists for this Google email. Please sign up first.')
       }
       if (error === 'auth_failed') {
         setFormError('Authentication failed. Please try again.')
@@ -362,7 +366,7 @@ function LoginForm() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?returnTo=${returnTo}`,
+        redirectTo: getAuthRedirectUrl(`/auth/callback?flow=login&returnTo=${encodeURIComponent(returnTo)}`),
       },
     });
     if (error) {
@@ -409,7 +413,7 @@ function LoginForm() {
     }
 
     const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
-      redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
+      redirectTo: getAuthRedirectUrl("/auth/callback?next=/auth/reset-password"),
     });
     setForgotLoading(false);
 
@@ -426,7 +430,7 @@ function LoginForm() {
     if (resendCooldown > 0) return;
     setForgotLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
-      redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
+      redirectTo: getAuthRedirectUrl("/auth/callback?next=/auth/reset-password"),
     });
     setForgotLoading(false);
     if (error) {

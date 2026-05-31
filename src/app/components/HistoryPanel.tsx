@@ -13,6 +13,24 @@ type AnalysisRow = {
   result: Pick<AnalysisResultData, "oneLineSummary"> | null;
 };
 
+const HISTORY_TIMEOUT_MS = 8000;
+
+function withTimeout<T>(promise: PromiseLike<T>, message: string) {
+  return new Promise<T>((resolve, reject) => {
+    const timeout = window.setTimeout(() => reject(new Error(message)), HISTORY_TIMEOUT_MS);
+    promise.then(
+      (value) => {
+        window.clearTimeout(timeout);
+        resolve(value);
+      },
+      (error) => {
+        window.clearTimeout(timeout);
+        reject(error);
+      }
+    );
+  });
+}
+
 function ConfidenceBadge({ confidence }: { confidence: string }) {
   const styles: Record<string, string> = {
     HIGH: "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30",
@@ -37,21 +55,35 @@ function formatDate(dateString: string) {
 export default function HistoryPanel() {
   const [analyses, setAnalyses] = useState<AnalysisRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const router = useRouter();
 
   useEffect(() => {
     async function fetchHistory() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      try {
+        const { data: { session } } = await withTimeout(supabase.auth.getSession(), "Your session is taking too long to load.");
+        if (!session) {
+          setAnalyses([]);
+          return;
+        }
 
-      const { data } = await supabase
-        .from("analyses")
-        .select("id, filename, created_at, overall_confidence, result")
-        .eq("user_id", session.user.id)
-        .order("created_at", { ascending: false });
+        const { data, error: historyError } = await withTimeout(
+          supabase
+            .from("analyses")
+            .select("id, filename, created_at, overall_confidence, result")
+            .eq("user_id", session.user.id)
+            .order("created_at", { ascending: false }),
+          "History is taking too long to load."
+        );
 
-      setAnalyses(data || []);
-      setLoading(false);
+        if (historyError) throw historyError;
+        setAnalyses(data || []);
+      } catch (historyError) {
+        console.error("History load failed:", historyError);
+        setError(historyError instanceof Error ? historyError.message : "History could not be loaded. Please try again.");
+      } finally {
+        setLoading(false);
+      }
     }
     fetchHistory();
   }, []);
@@ -61,6 +93,14 @@ export default function HistoryPanel() {
       <div className="flex items-center gap-2 text-sm text-neutral-400 py-10">
         <span className="size-3 animate-spin rounded-full border-2 border-neutral-600 border-t-[#C9A84C]" />
         Loading history...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-rose-500/25 bg-rose-500/10 p-6 text-sm text-rose-100">
+        {error} Refresh the page to retry.
       </div>
     );
   }
