@@ -120,7 +120,7 @@ function SignupForm() {
 
   useEffect(() => {
     if (searchParams.get("error") === "account_exists") {
-      const timer = setTimeout(() => setErrorMessage("An account with this email already exists."), 0);
+      const timer = setTimeout(() => setErrorMessage("An account with this email already exists. Please sign in instead."), 0);
       return () => clearTimeout(timer);
     }
   }, [searchParams]);

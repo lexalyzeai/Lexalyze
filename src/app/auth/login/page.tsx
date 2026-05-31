@@ -180,6 +180,9 @@ function LoginForm() {
       if (error === 'account_exists') {
         setFormError('An account with this email already exists. Try signing in with your password or the method you originally used.')
       }
+      if (error === 'no_account') {
+        setFormError('No account exists for this Google email. Please sign up first.')
+      }
       if (error === 'auth_failed') {
         setFormError('Authentication failed. Please try again.')
       }
@@ -363,7 +366,7 @@ function LoginForm() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: getAuthRedirectUrl(`/auth/callback?returnTo=${encodeURIComponent(returnTo)}`),
+        redirectTo: getAuthRedirectUrl(`/auth/callback?flow=login&returnTo=${encodeURIComponent(returnTo)}`),
       },
     });
     if (error) {

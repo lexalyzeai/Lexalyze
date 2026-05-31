@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { createSupabaseAdmin } from '@/lib/supabase-admin'
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
@@ -59,15 +60,12 @@ export async function GET(request: NextRequest) {
 
       const now = Date.now()
 
-      const isNewUser = now - createdAt < 10000
-
-      // Block Google signup if email account already exists
-      if (
-        flow === 'signup' &&
+      const isNewGoogleOnlyUser =
+        providers.length === 1 &&
         providers.includes('google') &&
-        providers.includes('email') &&
-        !isNewUser
-      ) {
+        now - createdAt < 120000
+
+      if (flow === 'signup' && !isNewGoogleOnlyUser) {
         await supabase.auth.signOut()
 
         return NextResponse.redirect(
@@ -76,7 +74,25 @@ export async function GET(request: NextRequest) {
             request.url
           )
         )
-      } 
+      }
+
+      if (flow === 'login' && isNewGoogleOnlyUser) {
+        try {
+          const admin = createSupabaseAdmin()
+          await admin.auth.admin.deleteUser(data.user.id)
+        } catch (deleteError) {
+          console.error('Could not delete blocked OAuth signup:', deleteError)
+        }
+
+        await supabase.auth.signOut()
+
+        return NextResponse.redirect(
+          new URL(
+            '/auth/login?error=no_account',
+            request.url
+          )
+        )
+      }
     }
 
     if (next !== '/dashboard') {
