@@ -7,6 +7,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { currentUsageMonth, normalizePlan, PLAN_CATALOG, PLAN_LIMITS } from "@/lib/plans";
 import { readApiError, toUserMessage } from "@/lib/error-handling";
+import { getAuthRedirectUrl } from "@/lib/site-url";
 import DocumentUpload from "../components/DocumentUpload";
 import AnalysisResult, { type AnalysisResultData } from "../components/AnalysisResult";
 import ErrorMessage from "../components/ErrorMessage";
@@ -565,7 +566,7 @@ export default function DashboardPage() {
     setIsPasswordResetLoading(true);
     setSettingsMsg(null);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
+      redirectTo: getAuthRedirectUrl("/auth/reset-password"),
     });
     setIsPasswordResetLoading(false);
     setPasswordResetSent(!error);

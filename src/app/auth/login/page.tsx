@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useState, useEffect, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
+import { getAuthRedirectUrl } from "@/lib/site-url";
 import ErrorMessage from "@/app/components/ErrorMessage";
 
 const playfair = Playfair_Display({ subsets: ["latin"], weight: ["600", "700"] });
@@ -362,7 +363,7 @@ function LoginForm() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?returnTo=${returnTo}`,
+        redirectTo: getAuthRedirectUrl(`/auth/callback?returnTo=${encodeURIComponent(returnTo)}`),
       },
     });
     if (error) {
@@ -409,7 +410,7 @@ function LoginForm() {
     }
 
     const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
-      redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
+      redirectTo: getAuthRedirectUrl("/auth/callback?next=/auth/reset-password"),
     });
     setForgotLoading(false);
 
@@ -426,7 +427,7 @@ function LoginForm() {
     if (resendCooldown > 0) return;
     setForgotLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
-      redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
+      redirectTo: getAuthRedirectUrl("/auth/callback?next=/auth/reset-password"),
     });
     setForgotLoading(false);
     if (error) {
