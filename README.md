@@ -28,7 +28,9 @@ Cloudflare Workers Build settings:
 
 ```text
 Build command: npm run cloudflare:build
-Production deploy command: npm run cloudflare:deploy
+Deploy command: npx wrangler deploy
+Non-production branch deploy command: npx wrangler versions upload
+Path: leave blank for the repository root
 Node.js version: 20+
 ```
 
