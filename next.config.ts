@@ -1,11 +1,20 @@
-import { withSentryConfig } from '@sentry/nextjs'
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+import { withSentryConfig } from "@sentry/nextjs";
+
+initOpenNextCloudflareForDev();
+
+const productionSiteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  process.env.NEXT_PUBLIC_CLOUDFLARE_URL ||
+  process.env.CF_PAGES_URL ||
+  "https://lexalyze.pages.dev";
 
 const nextConfig = {
   env: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || "https://lexalyze-one.vercel.app",
-    NEXT_PUBLIC_VERCEL_URL: process.env.NEXT_PUBLIC_VERCEL_URL,
+    NEXT_PUBLIC_SITE_URL: productionSiteUrl,
+    NEXT_PUBLIC_CLOUDFLARE_URL: process.env.NEXT_PUBLIC_CLOUDFLARE_URL,
   },
 }
 
@@ -33,12 +42,6 @@ export default withSentryConfig(nextConfig, {
   // tunnelRoute: "/monitoring",
 
   webpack: {
-    // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
-    // See the following for more information:
-    // https://docs.sentry.io/product/crons/
-    // https://vercel.com/docs/cron-jobs
-    automaticVercelMonitors: true,
-
     // Tree-shaking options for reducing bundle size
     treeshake: {
       // Automatically tree-shake Sentry logger statements to reduce bundle size
