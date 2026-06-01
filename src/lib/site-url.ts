@@ -1,4 +1,4 @@
-const FALLBACK_SITE_URL = "https://lexalyze-one.vercel.app";
+const FALLBACK_SITE_URL = "https://lexalyze.pages.dev";
 
 function normalizeUrl(url?: string | null) {
   if (!url) return "";
@@ -10,8 +10,8 @@ export function getSiteUrl() {
   const configuredUrl = normalizeUrl(process.env.NEXT_PUBLIC_SITE_URL);
   if (configuredUrl) return configuredUrl;
 
-  const vercelUrl = normalizeUrl(process.env.NEXT_PUBLIC_VERCEL_URL);
-  if (vercelUrl) return vercelUrl;
+  const cloudflareUrl = normalizeUrl(process.env.NEXT_PUBLIC_CLOUDFLARE_URL);
+  if (cloudflareUrl) return cloudflareUrl;
 
   if (typeof window !== "undefined") {
     const browserOrigin = normalizeUrl(window.location.origin);
