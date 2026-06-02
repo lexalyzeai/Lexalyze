@@ -5,6 +5,8 @@ import AnalysisResult from '@/app/components/AnalysisResult'
 import { Playfair_Display } from 'next/font/google'
 import Link from 'next/link'
 import { normalizePlan } from '@/lib/plans'
+import { createSupabaseAdmin } from '@/lib/supabase-admin'
+import { getAnalysisAccess } from '@/lib/team-workspace'
 
 const playfair = Playfair_Display({ subsets: ['latin'], weight: ['600', '700'] })
 
@@ -34,22 +36,25 @@ export default async function AnalysisPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
-  const { data: analysis } = await supabase
+  const admin = createSupabaseAdmin()
+  const access = await getAnalysisAccess(admin, user, id)
+  if (!access) redirect('/dashboard')
+
+  const { data: analysis } = await admin
     .from('analyses')
     .select('*')
     .eq('id', id)
-    .eq('user_id', user.id)
     .single()
 
   if (!analysis) redirect('/dashboard')
 
-  const { data: followUps } = await supabase
+  const { data: followUps } = await admin
     .from('followups')
     .select('question, answer')
     .eq('analysis_id', id)
     .order('created_at', { ascending: true })
 
-  const { data: profile } = await supabase
+  const { data: profile } = await admin
     .from('profiles')
     .select('plan')
     .eq('id', user.id)
@@ -78,7 +83,7 @@ export default async function AnalysisPage({
           <AnalysisResult
             result={analysis.result}
             analysisId={id}
-            plan={normalizePlan(profile?.plan)}
+            plan={analysis.workspace_id ? 'team' : normalizePlan(profile?.plan)}
             language={analysis.language || 'en'}
             savedChecklist={analysis.checklist_state || analysis.result?.checkbox || []}
             savedFollowUps={followUps || []}

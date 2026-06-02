@@ -6,6 +6,7 @@ import { AnalysisResult } from '@/types/analysis'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 import { currentUsageMonth, normalizePlan, PLAN_LIMITS, usageMonthRange } from '@/lib/plans'
 import { FRIENDLY_ERRORS } from '@/lib/error-handling'
+import { getAnalysisAccess } from '@/lib/team-workspace'
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
@@ -35,25 +36,35 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: FRIENDLY_ERRORS.validation.message, code: 'validation' }, { status: 400 })
   }
 
-  const { data: analysis } = await supabase
+  const admin = createSupabaseAdmin()
+  const access = await getAnalysisAccess(admin, user, analysisId)
+
+  if (!access) {
+    return NextResponse.json({ error: FRIENDLY_ERRORS.not_found.message, code: 'not_found' }, { status: 404 })
+  }
+
+  if (!access.canWrite) {
+    return NextResponse.json({ error: 'Viewers can read team analyses but cannot ask follow-up questions.', code: 'forbidden' }, { status: 403 })
+  }
+
+  const { data: analysis } = await admin
     .from('analyses')
     .select('result, document_text')
     .eq('id', analysisId)
-    .eq('user_id', user.id)
     .single()
 
   if (!analysis) {
     return NextResponse.json({ error: FRIENDLY_ERRORS.not_found.message, code: 'not_found' }, { status: 404 })
   }
 
-  const admin = createSupabaseAdmin()
   const { data: profile } = await admin
     .from('profiles')
     .select('plan')
     .eq('id', user.id)
     .maybeSingle()
 
-  const plan = normalizePlan(profile?.plan)
+  const isTeamAnalysis = Boolean(access.analysis.workspace_id)
+  const plan = isTeamAnalysis ? 'team' : normalizePlan(profile?.plan)
   const followUpLimit = PLAN_LIMITS[plan].monthlyFollowUps
 
   if (followUpLimit !== null) {
@@ -61,6 +72,7 @@ export async function POST(req: NextRequest) {
       .from('analyses')
       .select('id')
       .eq('user_id', user.id)
+      .is('workspace_id', null)
 
     if (analysesError) {
       console.error('Follow-up monthly usage lookup failed:', analysesError)
@@ -146,7 +158,7 @@ USER QUESTION: ${question}`
       return NextResponse.json({ error: FRIENDLY_ERRORS.api_failure.message, code: 'api_failure' }, { status: 500 })
     }
 
-    await supabase
+    await admin
       .from('followups')
       .insert({ analysis_id: analysisId, question, answer })
 

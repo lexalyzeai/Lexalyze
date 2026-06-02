@@ -23,6 +23,7 @@ type AnalysisRow = {
   id: string;
   filename: string;
   created_at: string;
+  workspace_id?: string | null;
   language?: string | null;
   result: (AnalysisResultData & { checkbox?: boolean[]; checklistState?: boolean[] }) | null;
   checkbox?: boolean[] | null;
@@ -57,6 +58,11 @@ type TeamMember = {
   role: "owner" | "admin" | "member" | "viewer";
   status: "active" | "invited";
   created_at?: string | null;
+};
+
+type TeamWorkspace = {
+  id: string;
+  name: string;
 };
 
 const DASHBOARD_TIMEOUT_MS = 8000;
@@ -227,6 +233,8 @@ export default function DashboardPage() {
   const [teamLoading, setTeamLoading] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"admin" | "member" | "viewer">("member");
+  const [activeWorkspace, setActiveWorkspace] = useState<"personal" | "team">("personal");
+  const [teamWorkspace, setTeamWorkspace] = useState<TeamWorkspace | null>(null);
 
   const selectedAnalysis = analyses.find((a) => a.id === selectedAnalysisId) || null;
   const totalActionItems = analyses.reduce((sum, analysis) => sum + (analysis.result?.actionItems?.length ?? 0), 0);
@@ -234,11 +242,14 @@ export default function DashboardPage() {
   const highRiskCount = analyses.filter((analysis) => (analysis.result?.riskScore ?? 0) >= 7).length;
   const selectedCompletion = selectedAnalysis ? completionFor(selectedAnalysis) : null;
   const plan = normalizePlan(profileUsage?.plan);
-  const monthlyLimit = PLAN_LIMITS[plan].monthlyDocuments;
+  const canOpenTeamSettings = plan === "team" || hasTeamWorkspace;
+  const isTeamActive = activeWorkspace === "team" && Boolean(teamWorkspace);
+  const activeWorkspaceId = isTeamActive ? teamWorkspace?.id ?? null : null;
+  const effectivePlan = isTeamActive ? "team" : plan;
+  const monthlyLimit = PLAN_LIMITS[effectivePlan].monthlyDocuments;
   const docsThisMonth = profileUsage?.usage_month === currentUsageMonth() ? profileUsage?.monthly_analyses_used ?? 0 : 0;
   const remainingDocs = monthlyLimit === null ? null : Math.max(0, monthlyLimit - docsThisMonth);
-  const currentPlanDetails = PLAN_CATALOG[plan];
-  const canOpenTeamSettings = plan === "team" || hasTeamWorkspace;
+  const currentPlanDetails = PLAN_CATALOG[effectivePlan];
 
   const sortedAnalyses = [
     ...analyses.filter((analysis) => pinnedAnalysisIds.includes(analysis.id)),
@@ -252,6 +263,15 @@ export default function DashboardPage() {
         : [...prev, analysisId]
     );
   };
+
+  function switchWorkspace(nextWorkspace: "personal" | "team") {
+    if (nextWorkspace === "team" && !teamWorkspace) return;
+    setActiveWorkspace(nextWorkspace);
+    setSelectedAnalysisId(null);
+    setSelectedFollowUps([]);
+    setView("new");
+    setOpenDropdownId(null);
+  }
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -291,6 +311,15 @@ export default function DashboardPage() {
       return () => clearTimeout(timer);
     }
   }, [searchParams, router]);
+
+  useEffect(() => {
+    if (activeWorkspace === "team" && !teamWorkspace) return;
+    void Promise.resolve().then(() => {
+      fetchHistory(activeWorkspace === "team" ? teamWorkspace?.id ?? null : null);
+    });
+    // Fetch history when the active workspace changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeWorkspace, teamWorkspace?.id]);
 
   useEffect(() => {
     document.body.style.overflow = isMobileNavOpen ? 'hidden' : '';
@@ -401,7 +430,8 @@ export default function DashboardPage() {
     }
   };
 
-  async function cleanupPlanRetention() {
+  async function cleanupPlanRetention(workspaceId?: string | null) {
+    if (workspaceId) return true;
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), DASHBOARD_TIMEOUT_MS);
     try {
@@ -418,7 +448,7 @@ export default function DashboardPage() {
       window.clearTimeout(timeout);
     }
   }
-  async function fetchHistory() {
+  async function fetchHistory(workspaceId = activeWorkspaceId) {
     setHistoryLoading(true);
     try {
       const session = await getSessionSafely();
@@ -427,24 +457,24 @@ export default function DashboardPage() {
         return;
       }
 
-      const cleanupOk = await cleanupPlanRetention();
-      const { data, error } = await withTimeout(
-        supabase
-          .from("analyses")
-          .select("*")
-          .eq("user_id", session.user.id)
-          .order("created_at", { ascending: false }),
+      const cleanupOk = await cleanupPlanRetention(workspaceId);
+      const response = await fetchWithTimeout(
+        `/api/history${workspaceId ? `?workspaceId=${encodeURIComponent(workspaceId)}` : ""}`,
+        { cache: "no-store" },
         historyLoadError
       );
 
-      if (error) {
-        console.error("History load failed:", error.message || error);
-        setDashboardMsg({ type: "error", text: toUserMessage(error.message, "load_failed") });
+      if (!response.ok) {
+        const apiError = await readApiError(response, "load_failed");
+        console.error("History load failed:", apiError.message);
+        setDashboardMsg({ type: "error", text: apiError.message });
       } else if (!cleanupOk) {
         setDashboardMsg({ type: "error", text: "Older history could not be cleaned up yet. Refresh and try again before uploading more documents." });
       }
-      setAnalyses(data || []);
-      if (selectedAnalysisId && !(data || []).some((analysis) => analysis.id === selectedAnalysisId)) {
+      const payload = await response.json().catch(() => ({ analyses: [] }));
+      const nextAnalyses = Array.isArray(payload.analyses) ? payload.analyses : [];
+      setAnalyses(nextAnalyses);
+      if (selectedAnalysisId && !nextAnalyses.some((analysis: AnalysisRow) => analysis.id === selectedAnalysisId)) {
         setSelectedAnalysisId(null);
         setSelectedFollowUps([]);
       }
@@ -607,7 +637,7 @@ export default function DashboardPage() {
     setIsDeletingHistory(true);
     setSettingsMsg(null);
 
-    const response = await fetch("/api/history", { method: "DELETE" });
+    const response = await fetch(`/api/history${activeWorkspaceId ? `?workspaceId=${encodeURIComponent(activeWorkspaceId)}` : ""}`, { method: "DELETE" });
     if (!response.ok) {
       const data = await readApiError(response, "delete_failed");
       setSettingsMsg({ type: "error", text: data.message });
@@ -698,6 +728,8 @@ export default function DashboardPage() {
         const apiError = await readApiError(response, "load_failed");
         if (!silent) setSettingsMsg({ type: "error", text: apiError.message });
         setHasTeamWorkspace(false);
+        setTeamWorkspace(null);
+        setActiveWorkspace("personal");
         setCanManageTeam(false);
         setCurrentTeamRole("");
         return;
@@ -706,6 +738,7 @@ export default function DashboardPage() {
       setTeamMembers(Array.isArray(data.members) ? data.members : []);
       setTeamSeatLimit(Number(data.seatLimit || 3));
       setHasTeamWorkspace(true);
+      setTeamWorkspace(data.workspace?.id ? { id: data.workspace.id, name: data.workspace.name || "Team workspace" } : null);
       setCanManageTeam(Boolean(data.canManage));
       setCurrentTeamRole(data.currentMember?.role || "");
     } finally {
@@ -733,6 +766,7 @@ export default function DashboardPage() {
       setTeamMembers(Array.isArray(data.members) ? data.members : []);
       setTeamSeatLimit(Number(data.seatLimit || 3));
       setHasTeamWorkspace(true);
+      setTeamWorkspace(data.workspace?.id ? { id: data.workspace.id, name: data.workspace.name || "Team workspace" } : null);
       setCanManageTeam(Boolean(data.canManage));
       setCurrentTeamRole(data.currentMember?.role || "");
       return true;
@@ -767,10 +801,39 @@ export default function DashboardPage() {
           <span>NEW REVIEW</span>
           <span className="flex size-6 items-center justify-center rounded-full bg-black/10 text-sm leading-none font-bold transition group-hover:bg-black/15">+</span>
         </button>
+
+        {hasTeamWorkspace && teamWorkspace ? (
+          <div className="mt-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-1">
+            <button
+              type="button"
+              onClick={() => switchWorkspace("personal")}
+              className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider transition ${
+                activeWorkspace === "personal"
+                  ? "bg-[#C9A84C]/12 text-[#C9A84C]"
+                  : "text-neutral-500 hover:bg-white/[0.04] hover:text-neutral-200"
+              }`}
+            >
+              <span>Personal</span>
+              <span className="text-[10px] normal-case tracking-normal">{plan === "team" ? "Team plan" : PLAN_CATALOG[plan].name}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => switchWorkspace("team")}
+              className={`mt-1 flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider transition ${
+                activeWorkspace === "team"
+                  ? "bg-[#C9A84C]/12 text-[#C9A84C]"
+                  : "text-neutral-500 hover:bg-white/[0.04] hover:text-neutral-200"
+              }`}
+            >
+              <span className="min-w-0 truncate">Team</span>
+              <span className="max-w-[120px] truncate text-[10px] normal-case tracking-normal">{teamWorkspace.name}</span>
+            </button>
+          </div>
+        ) : null}
       </div>
 
       <div className="flex items-center justify-between px-5 pb-3">
-        <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-neutral-500">History</p>
+        <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-neutral-500">{isTeamActive ? "Team history" : "History"}</p>
         <span className="rounded-full border border-white/[0.08] bg-white/[0.02] px-2.5 py-0.5 text-[10px] font-semibold text-neutral-400">{analyses.length}</span>
       </div>
 
@@ -1050,9 +1113,10 @@ export default function DashboardPage() {
                 <DocumentUpload
                   key={selectedAnalysisId ?? "new"}
                   language={language}
-                  plan={plan}
+                  plan={effectivePlan}
+                  workspaceId={activeWorkspaceId}
                   onAnalysisComplete={() => {
-                    fetchHistory();
+                    fetchHistory(activeWorkspaceId);
                     fetchProfileUsage();
                   }}
                 />
@@ -1151,7 +1215,7 @@ export default function DashboardPage() {
                   key={selectedAnalysis.id}
                   result={selectedAnalysis.result}
                   analysisId={selectedAnalysis.id}
-                  plan={plan}
+                  plan={effectivePlan}
                   language={selectedAnalysis.language || language.toLowerCase()}
                   savedFollowUps={selectedFollowUps}
                   savedChecklist={getSavedChecklist(selectedAnalysis)}
