@@ -3,6 +3,22 @@ import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 
+const GOOGLE_SIGNUP_MARKER = 'lexalyze_google_signup_completed_at'
+const GOOGLE_SIGNUP_FRESHNESS_MS = 60000
+
+function getProviders(user: { app_metadata?: { providers?: unknown } }) {
+  const providers = user.app_metadata?.providers
+  return Array.isArray(providers)
+    ? providers.filter((provider): provider is string => typeof provider === 'string')
+    : []
+}
+
+function getCreatedAtMs(value?: string) {
+  if (!value) return 0
+  const timestamp = new Date(value).getTime()
+  return Number.isFinite(timestamp) ? timestamp : 0
+}
+
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
@@ -51,32 +67,62 @@ export async function GET(request: NextRequest) {
     }
 
     if (data.user) {
-      const providers =
-        data.user.app_metadata?.providers || []
-
-      const createdAt = new Date(
-        data.user.created_at
-      ).getTime()
-
+      const providers = getProviders(data.user)
+      const createdAt = getCreatedAtMs(data.user.created_at)
       const now = Date.now()
+      const hasCompletedGoogleSignup = Boolean(
+        data.user.app_metadata?.[GOOGLE_SIGNUP_MARKER]
+      )
 
-      const isNewGoogleOnlyUser =
+      const isGoogleOnlyUser =
         providers.length === 1 &&
-        providers.includes('google') &&
-        now - createdAt < 120000
+        providers.includes('google')
+      const isFreshGoogleUser =
+        isGoogleOnlyUser &&
+        now - createdAt < GOOGLE_SIGNUP_FRESHNESS_MS
+      const isAllowedNewGoogleSignup =
+        isFreshGoogleUser && !hasCompletedGoogleSignup
 
-      if (flow === 'signup' && !isNewGoogleOnlyUser) {
-        await supabase.auth.signOut()
+      if (flow === 'signup') {
+        if (!isAllowedNewGoogleSignup) {
+          await supabase.auth.signOut()
 
-        return NextResponse.redirect(
-          new URL(
-            '/auth/signup?error=account_exists',
-            request.url
+          return NextResponse.redirect(
+            new URL(
+              '/auth/signup?error=account_exists',
+              request.url
+            )
           )
-        )
+        }
+
+        try {
+          const admin = createSupabaseAdmin()
+          const { error: markerError } = await admin.auth.admin.updateUserById(data.user.id, {
+            app_metadata: {
+              ...data.user.app_metadata,
+              [GOOGLE_SIGNUP_MARKER]: new Date().toISOString(),
+            },
+          })
+
+          if (markerError) {
+            throw markerError
+          }
+        } catch (metadataError) {
+          console.error('Could not mark completed Google signup:', metadataError)
+
+          await supabase.auth.signOut()
+
+          return NextResponse.redirect(
+            new URL('/auth/signup?error=auth_failed', request.url)
+          )
+        }
       }
 
-      if (flow === 'login' && isNewGoogleOnlyUser) {
+      if (
+        flow === 'login' &&
+        isFreshGoogleUser &&
+        !hasCompletedGoogleSignup
+      ) {
         try {
           const admin = createSupabaseAdmin()
           await admin.auth.admin.deleteUser(data.user.id)

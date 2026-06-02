@@ -119,8 +119,15 @@ function SignupForm() {
   const errorRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (searchParams.get("error") === "account_exists") {
-      const timer = setTimeout(() => setErrorMessage("An account with this email already exists. Please sign in instead."), 0);
+    const error = searchParams.get("error");
+    if (error === "account_exists" || error === "auth_failed") {
+      const timer = setTimeout(() => {
+        setErrorMessage(
+          error === "account_exists"
+            ? "An account with this email already exists. Please sign in instead."
+            : "Google sign-up could not be completed safely. Please try again."
+        );
+      }, 0);
       return () => clearTimeout(timer);
     }
   }, [searchParams]);
