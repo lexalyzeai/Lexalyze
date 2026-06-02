@@ -1,4 +1,4 @@
-const FALLBACK_SITE_URL = "https://lexalyze.pages.dev";
+const FALLBACK_SITE_URL = "https://app.lexalyzeai.workers.dev";
 
 function normalizeUrl(url?: string | null) {
   if (!url) return "";

@@ -363,14 +363,45 @@ function LoginForm() {
     setIsGoogleLoading(true);
     const fallbackTimer = window.setTimeout(() => setIsGoogleLoading(false), 10000);
     const returnTo = searchParams.get('returnTo') || '/dashboard'
+
+    const normalizedEmail = normalizeEmail(email);
+    if (normalizedEmail && EMAIL_RE.test(normalizedEmail)) {
+      try {
+        const account = await lookupAccount(normalizedEmail);
+        if (!account.exists) {
+          window.clearTimeout(fallbackTimer);
+          setFormError("No account exists for that email. Please sign up with Google first.");
+          setIsGoogleLoading(false);
+          return;
+        }
+        if (!account.providers.includes("google")) {
+          window.clearTimeout(fallbackTimer);
+          setFormError("This email is not linked to Google sign-in. Sign in with your password instead.");
+          setIsGoogleLoading(false);
+          return;
+        }
+      } catch (error) {
+        window.clearTimeout(fallbackTimer);
+        setFormError(error instanceof Error ? error.message : "Could not check this account right now. Please try again.");
+        setIsGoogleLoading(false);
+        return;
+      }
+    }
+
+    sessionStorage.setItem("lexalyze_oauth_pending", "login");
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: getAuthRedirectUrl(`/auth/callback?flow=login&returnTo=${encodeURIComponent(returnTo)}`),
+        queryParams: {
+          prompt: "select_account",
+        },
       },
     });
     if (error) {
       window.clearTimeout(fallbackTimer);
+      sessionStorage.removeItem("lexalyze_oauth_pending");
       setFormError("Google sign-in failed. Please try again.");
       setIsGoogleLoading(false);
     }
@@ -544,7 +575,7 @@ function LoginForm() {
               {isGoogleLoading ? (
                 <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               ) : <GoogleIcon />}
-              {isGoogleLoading ? "Redirecting..." : "Continue with Google"}
+              {isGoogleLoading ? "Redirecting..." : "Sign in with Google"}
             </button>
 
             <p className="mt-3 text-center text-[10px] tracking-wide text-neutral-600">

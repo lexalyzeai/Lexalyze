@@ -240,6 +240,30 @@ function SignupForm() {
     setErrorMessage("");
     setIsGoogleLoading(true);
     const fallbackTimer = window.setTimeout(() => setIsGoogleLoading(false), 10000);
+
+    const normalizedEmail = normalizeEmail(email);
+    if (normalizedEmail && EMAIL_RE.test(normalizedEmail)) {
+      try {
+        const account = await lookupAccount(normalizedEmail);
+        if (account.exists) {
+          window.clearTimeout(fallbackTimer);
+          setErrorMessage(
+            account.providers.includes("google")
+              ? "An account with this Google email already exists. Please sign in with Google instead."
+              : "An account with this email already exists. Please sign in instead."
+          );
+          setIsGoogleLoading(false);
+          return;
+        }
+      } catch (error) {
+        window.clearTimeout(fallbackTimer);
+        setErrorMessage(error instanceof Error ? error.message : "Could not check this account right now. Please try again.");
+        setIsGoogleLoading(false);
+        return;
+      }
+    }
+
+    sessionStorage.setItem("lexalyze_oauth_pending", "signup");
   
     const { error } =
       await supabase.auth.signInWithOAuth({
@@ -258,6 +282,7 @@ function SignupForm() {
   
     if (error) {
       window.clearTimeout(fallbackTimer);
+      sessionStorage.removeItem("lexalyze_oauth_pending");
       setErrorMessage(
         "Google sign-in failed. Please try again."
       );
@@ -299,7 +324,7 @@ function SignupForm() {
           {isGoogleLoading ? (
             <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
           ) : <GoogleIcon />}
-          {isGoogleLoading ? "Redirecting..." : "Continue with Google"}
+          {isGoogleLoading ? "Redirecting..." : "Sign up with Google"}
         </button>
 
         <p className="mt-3 text-center text-[10px] tracking-wide text-neutral-600">

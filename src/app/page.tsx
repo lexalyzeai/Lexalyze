@@ -2,12 +2,14 @@
 
 import { Playfair_Display } from "next/font/google";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Navbar from "./components/Navbar";
 import AnalysisLoadingOverlay from "./components/AnalysisLoadingOverlay";
 import AnalysisResult from "@/app/components/AnalysisResult";
 import ErrorMessage, { type ErrorTone, type ErrorType } from "./components/ErrorMessage";
 import { readApiError } from "@/lib/error-handling";
+import { supabase } from "@/lib/supabase";
 import type { AnalysisResult as AiAnalysisResult } from "@/types/analysis";
 
 const playfair = Playfair_Display({
@@ -116,6 +118,7 @@ const ANALYSIS_ERROR_COPY: Partial<Record<AnalysisErrorType, AnalysisErrorConten
 };
 
 export default function HomePage() {
+  const router = useRouter();
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [analysisErrorType, setAnalysisErrorType] = useState<AnalysisErrorType | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AiAnalysisResult | null>(null);
@@ -125,6 +128,23 @@ export default function HomePage() {
   const [openFaqIndex, setOpenFaqIndex] = useState<number>(0);
 
   const sampleText = useMemo(() => SAMPLE_RENTAL_DOCUMENT, []);
+
+  useEffect(() => {
+    if (sessionStorage.getItem("lexalyze_oauth_pending") === null) return;
+
+    let cancelled = false;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled || !session) return;
+      sessionStorage.removeItem("lexalyze_oauth_pending");
+      router.replace("/dashboard");
+    }).catch(() => {
+      sessionStorage.removeItem("lexalyze_oauth_pending");
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   async function runSampleAnalysis() {
     if (isAnalysing) return;
