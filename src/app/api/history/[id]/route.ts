@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { FRIENDLY_ERRORS } from "@/lib/error-handling";
 import { deleteAnalysesById } from "@/lib/plan-maintenance";
+import { getAnalysisAccess } from "@/lib/team-workspace";
 
 async function getUser() {
   const cookieStore = await cookies();
@@ -39,18 +40,17 @@ export async function DELETE(
   try {
     const admin = createSupabaseAdmin();
 
-    const { data: analysis, error: fetchError } = await admin
-      .from("analyses")
-      .select("id")
-      .eq("id", id)
-      .eq("user_id", user.id)
-      .single();
+    const access = await getAnalysisAccess(admin, user, id);
 
-    if (fetchError || !analysis) {
+    if (!access) {
       return NextResponse.json({ error: FRIENDLY_ERRORS.not_found.message, code: "not_found" }, { status: 404 });
     }
 
-    await deleteAnalysesById(admin, user.id, [id]);
+    if (!access.canWrite) {
+      return NextResponse.json({ error: "Viewers can read team analyses but cannot delete them.", code: "forbidden" }, { status: 403 });
+    }
+
+    await deleteAnalysesById(admin, user.id, [id], access.analysis.workspace_id || null);
 
     return NextResponse.json({ deleted: id });
   } catch (error) {

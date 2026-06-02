@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { FRIENDLY_ERRORS } from "@/lib/error-handling";
 import { normalizePlan } from "@/lib/plans";
+import { getAnalysisAccess } from "@/lib/team-workspace";
 
 async function getUser() {
   const cookieStore = await cookies();
@@ -49,7 +50,15 @@ export async function POST(req: NextRequest) {
       .eq("id", user.id)
       .maybeSingle();
 
-    const plan = normalizePlan(profile?.plan);
+    const access = await getAnalysisAccess(admin, user, analysisId);
+    if (!access) {
+      return NextResponse.json({ error: FRIENDLY_ERRORS.not_found.message, code: "not_found" }, { status: 404 });
+    }
+    if (!access.canWrite) {
+      return NextResponse.json({ error: "Viewers can read team analyses but cannot create share links.", code: "forbidden" }, { status: 403 });
+    }
+
+    const plan = access.analysis.workspace_id ? "team" : normalizePlan(profile?.plan);
     if (plan === "free") {
       return NextResponse.json({ error: "Sharing is available on Solo and Team plans.", code: "forbidden" }, { status: 403 });
     }
@@ -59,7 +68,6 @@ export async function POST(req: NextRequest) {
       .from("analyses")
       .select("id, share_token, share_enabled, share_mode")
       .eq("id", analysisId)
-      .eq("user_id", user.id)
       .maybeSingle();
 
     if (fetchError) throw fetchError;
@@ -76,7 +84,6 @@ export async function POST(req: NextRequest) {
       .from("analyses")
       .update({ share_enabled: true, share_token: token, share_mode: shareMode, share_created_at: new Date().toISOString() })
       .eq("id", analysisId)
-      .eq("user_id", user.id)
       .select("share_token")
       .single();
 

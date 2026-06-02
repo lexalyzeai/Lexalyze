@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { FRIENDLY_ERRORS } from "@/lib/error-handling";
+import { getAnalysisAccess } from "@/lib/team-workspace";
 
 function cleanText(value: unknown, max = 1200) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -41,22 +42,16 @@ export async function GET(req: NextRequest) {
 
   try {
     const admin = createSupabaseAdmin();
-    const { data: analysis, error: analysisError } = await admin
-      .from("analyses")
-      .select("id")
-      .eq("id", analysisId)
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const access = await getAnalysisAccess(admin, user, analysisId);
 
-    if (analysisError) throw analysisError;
-    if (!analysis) {
+    if (!access) {
       return NextResponse.json({ error: FRIENDLY_ERRORS.not_found.message, code: "not_found" }, { status: 404 });
     }
 
     const { data, error } = await admin
       .from("share_feedback")
       .select("id, kind, author_name, body, suggested_text, created_at")
-      .eq("analysis_id", analysis.id)
+      .eq("analysis_id", access.analysis.id)
       .order("created_at", { ascending: false });
 
     if (error) throw error;

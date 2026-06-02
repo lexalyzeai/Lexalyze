@@ -36,10 +36,11 @@ function sleep(ms: number) {
 type DocumentUploadProps = {
   language: "EN" | "HI";
   plan?: PlanId;
+  workspaceId?: string | null;
   onAnalysisComplete?: () => void;
 };
 
-export default function DocumentUpload({ language, plan = "free", onAnalysisComplete }: DocumentUploadProps) {
+export default function DocumentUpload({ language, plan = "free", workspaceId = null, onAnalysisComplete }: DocumentUploadProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -136,6 +137,7 @@ export default function DocumentUpload({ language, plan = "free", onAnalysisComp
           text: extractedText,
           language: language === "HI" ? "hi" : "en",
           filename: selectedFile?.name || "document.txt",
+          workspaceId,
         }),
       });
 

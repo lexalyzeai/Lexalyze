@@ -2,6 +2,8 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { FRIENDLY_ERRORS } from '@/lib/error-handling'
+import { createSupabaseAdmin } from '@/lib/supabase-admin'
+import { getAnalysisAccess } from '@/lib/team-workspace'
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
@@ -31,11 +33,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: FRIENDLY_ERRORS.validation.message, code: 'validation' }, { status: 400 })
   }
 
-  const { data: analysis, error: fetchError } = await supabase
+  const admin = createSupabaseAdmin()
+  const access = await getAnalysisAccess(admin, user, analysisId)
+
+  if (!access) {
+    return NextResponse.json({ error: FRIENDLY_ERRORS.not_found.message, code: 'not_found' }, { status: 404 })
+  }
+
+  if (!access.canWrite) {
+    return NextResponse.json({ error: 'Viewers can read team analyses but cannot edit checklist progress.', code: 'forbidden' }, { status: 403 })
+  }
+
+  const { data: analysis, error: fetchError } = await admin
     .from('analyses')
     .select('id, result')
     .eq('id', analysisId)
-    .eq('user_id', user.id)
     .single()
 
   if (fetchError || !analysis) {
@@ -48,11 +60,10 @@ export async function POST(req: NextRequest) {
     checklistState: checklist,
   }
 
-  const { error: resultError } = await supabase
+  const { error: resultError } = await admin
     .from('analyses')
     .update({ result: nextResult, checklist_state: checklist })
     .eq('id', analysisId)
-    .eq('user_id', user.id)
 
   if (resultError) {
     console.error('Checklist save failed:', resultError)
