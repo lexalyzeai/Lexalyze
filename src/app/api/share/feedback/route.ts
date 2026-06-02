@@ -1,9 +1,70 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { FRIENDLY_ERRORS } from "@/lib/error-handling";
 
 function cleanText(value: unknown, max = 1200) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
+}
+
+async function getUser() {
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll(); },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  return supabase.auth.getUser();
+}
+
+export async function GET(req: NextRequest) {
+  const { data: { user } } = await getUser();
+  if (!user) {
+    return NextResponse.json({ error: FRIENDLY_ERRORS.unauthorized.message, code: "unauthorized" }, { status: 401 });
+  }
+
+  const analysisId = req.nextUrl.searchParams.get("analysisId") || "";
+  if (!analysisId) {
+    return NextResponse.json({ error: FRIENDLY_ERRORS.validation.message, code: "validation" }, { status: 400 });
+  }
+
+  try {
+    const admin = createSupabaseAdmin();
+    const { data: analysis, error: analysisError } = await admin
+      .from("analyses")
+      .select("id")
+      .eq("id", analysisId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (analysisError) throw analysisError;
+    if (!analysis) {
+      return NextResponse.json({ error: FRIENDLY_ERRORS.not_found.message, code: "not_found" }, { status: 404 });
+    }
+
+    const { data, error } = await admin
+      .from("share_feedback")
+      .select("id, kind, author_name, body, suggested_text, created_at")
+      .eq("analysis_id", analysis.id)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return NextResponse.json({ feedback: data || [] });
+  } catch (error) {
+    console.error("Owner feedback lookup failed:", error);
+    return NextResponse.json({ error: FRIENDLY_ERRORS.load_failed.message, code: "load_failed" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
