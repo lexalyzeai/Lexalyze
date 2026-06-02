@@ -128,6 +128,15 @@ type FollowUpEntry = {
   answer: string;
 };
 
+type SharedFeedbackEntry = {
+  id: string;
+  kind: "comment" | "edit";
+  author_name: string;
+  body: string;
+  suggested_text?: string | null;
+  created_at: string;
+};
+
 const EMPTY_FOLLOW_UPS: FollowUpEntry[] = [];
 const EMPTY_CHECKLIST: boolean[] = [];
 const CHECKLIST_STORAGE_PREFIX = "lexalyze-checklist:";
@@ -612,7 +621,51 @@ export default function AnalysisResult({
   const [shareMode, setShareMode] = useState<"view" | "comment" | "edit">("view");
   const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
   const [isDownloadMenuOpen, setIsDownloadMenuOpen] = useState(false);
+  const [ownerFeedback, setOwnerFeedback] = useState<SharedFeedbackEntry[]>([]);
+  const [ownerFeedbackLoading, setOwnerFeedbackLoading] = useState(false);
+  const [ownerFeedbackError, setOwnerFeedbackError] = useState("");
   const actionMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!analysisId || readOnlyPublic) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void Promise.resolve().then(async () => {
+      if (cancelled) return;
+      setOwnerFeedbackLoading(true);
+      setOwnerFeedbackError("");
+
+      try {
+        const response = await fetch(`/api/share/feedback?analysisId=${encodeURIComponent(analysisId)}`, {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          const apiError = await readApiError(response, "load_failed");
+          throw new Error(apiError.message);
+        }
+
+        const data = await response.json();
+        if (!cancelled) {
+          setOwnerFeedback(Array.isArray(data.feedback) ? data.feedback : []);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Shared feedback load failed:", error);
+          setOwnerFeedbackError(error instanceof Error ? error.message : "Shared feedback could not be loaded.");
+        }
+      } finally {
+        if (!cancelled) setOwnerFeedbackLoading(false);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [analysisId, readOnlyPublic]);
 
   useEffect(() => {
     if (!isShareMenuOpen && !isDownloadMenuOpen) return;
@@ -1229,6 +1282,69 @@ export default function AnalysisResult({
           className="mx-auto max-w-2xl"
           onDismiss={() => setActionError("")}
         />
+      )}
+
+      {!readOnlyPublic && (ownerFeedbackLoading || ownerFeedbackError || ownerFeedback.length > 0) && (
+        <div className="rounded-3xl border border-[#C9A84C]/20 bg-[#0E0E12]/85 p-6 shadow-lg backdrop-blur-xl">
+          <div className="flex flex-col gap-2 border-b border-white/[0.06] pb-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#C9A84C]">Shared Review Inbox</p>
+              <h2 className="mt-2 text-lg font-semibold text-white">Comments and edit suggestions</h2>
+              <p className="mt-1 text-xs leading-relaxed text-neutral-500">
+                Feedback posted by people who opened your shared link appears here.
+              </p>
+            </div>
+            {ownerFeedback.length > 0 && (
+              <span className="w-fit rounded-full border border-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+                {ownerFeedback.length} item{ownerFeedback.length === 1 ? "" : "s"}
+              </span>
+            )}
+          </div>
+
+          {ownerFeedbackLoading ? (
+            <div className="mt-5 flex items-center gap-2.5 text-xs font-semibold text-neutral-400">
+              <span className="size-3.5 animate-spin rounded-full border-2 border-neutral-600 border-t-[#C9A84C]" />
+              Loading shared feedback...
+            </div>
+          ) : ownerFeedbackError ? (
+            <p className="mt-5 rounded-2xl border border-rose-500/20 bg-rose-500/5 px-4 py-3 text-sm text-rose-200">
+              {ownerFeedbackError}
+            </p>
+          ) : (
+            <div className="mt-5 space-y-3">
+              {ownerFeedback.map((item) => (
+                <article key={item.id} className="rounded-2xl border border-white/[0.06] bg-[#08080C] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold text-white">{item.author_name || "Reviewer"}</p>
+                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-neutral-600">
+                        {new Date(item.created_at).toLocaleString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                      item.kind === "edit"
+                        ? "border border-[#C9A84C]/25 bg-[#C9A84C]/10 text-[#C9A84C]"
+                        : "bg-white/[0.04] text-neutral-400"
+                    }`}>
+                      {item.kind === "edit" ? "Edit suggestion" : "Comment"}
+                    </span>
+                  </div>
+                  <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-neutral-300">{item.body}</p>
+                  {item.suggested_text ? (
+                    <p className="mt-3 rounded-xl border border-[#C9A84C]/20 bg-[#C9A84C]/5 px-4 py-3 text-sm leading-6 text-[#f5e2ac]">
+                      {item.suggested_text}
+                    </p>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Document header Card */}
