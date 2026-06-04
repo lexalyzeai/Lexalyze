@@ -4,10 +4,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { FRIENDLY_ERRORS } from "@/lib/error-handling";
 import { normalizePlan } from "@/lib/plans";
+import { getActiveTeamWorkspace, TEAM_MANAGER_ROLES } from "@/lib/team-workspace";
 
 const INCLUDED_TEAM_SEATS = 3;
 const ROLES = new Set(["admin", "member", "viewer"]);
-const MANAGER_ROLES = new Set(["owner", "admin"]);
+const TEAM_LOCKED_MESSAGE = "Team workspace is available only while the workspace owner is on the Team plan.";
 
 async function getUser() {
   const cookieStore = await cookies();
@@ -120,18 +121,23 @@ async function getTeamContext(
     member = activated;
   }
 
-  const { data: workspace, error: workspaceError } = await admin
+  const { data: workspaceLookup, error: workspaceError } = await admin
     .from("team_workspaces")
     .select("*")
     .eq("id", member.workspace_id)
     .maybeSingle();
 
   if (workspaceError) throw workspaceError;
-  if (!workspace) {
+  if (!workspaceLookup) {
     return { error: NextResponse.json({ error: FRIENDLY_ERRORS.not_found.message, code: "not_found" }, { status: 404 }) };
   }
 
-  return { profile, workspace, member, canManage: MANAGER_ROLES.has(member.role) };
+  const workspace = await getActiveTeamWorkspace(admin, workspaceLookup.id);
+  if (!workspace) {
+    return { error: NextResponse.json({ error: TEAM_LOCKED_MESSAGE, code: "forbidden" }, { status: 403 }) };
+  }
+
+  return { profile, workspace, member, canManage: TEAM_MANAGER_ROLES.has(member.role) };
 }
 
 async function ensureWorkspace(admin: ReturnType<typeof createSupabaseAdmin>, user: { id: string; email?: string | null }, fullName?: string | null) {
