@@ -1,4 +1,5 @@
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
+import { normalizePlan } from "@/lib/plans";
 
 type SupabaseAdmin = ReturnType<typeof createSupabaseAdmin>;
 
@@ -20,11 +21,38 @@ function cleanEmail(email?: string | null) {
   return typeof email === "string" ? email.trim().toLowerCase() : "";
 }
 
+export async function getActiveTeamWorkspace(
+  admin: SupabaseAdmin,
+  workspaceId: string
+) {
+  const { data: workspace, error: workspaceError } = await admin
+    .from("team_workspaces")
+    .select("id, owner_id, name, created_at")
+    .eq("id", workspaceId)
+    .maybeSingle();
+
+  if (workspaceError) throw workspaceError;
+  if (!workspace) return null;
+
+  const { data: ownerProfile, error: profileError } = await admin
+    .from("profiles")
+    .select("plan")
+    .eq("id", workspace.owner_id)
+    .maybeSingle();
+
+  if (profileError) throw profileError;
+
+  return normalizePlan(ownerProfile?.plan) === "team" ? workspace : null;
+}
+
 export async function getWorkspaceMembership(
   admin: SupabaseAdmin,
   user: { id: string; email?: string | null },
   workspaceId: string
 ) {
+  const activeWorkspace = await getActiveTeamWorkspace(admin, workspaceId);
+  if (!activeWorkspace) return null;
+
   const email = cleanEmail(user.email);
 
   const byUser = await admin
