@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Suspense, type FormEvent, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { getAuthRedirectUrl } from "@/lib/site-url";
+import { trackEvent } from "@/lib/analytics";
 import ErrorMessage from "@/app/components/ErrorMessage";
 
 const playfair = Playfair_Display({ subsets: ["latin"], weight: ["600", "700"] });
@@ -184,6 +185,7 @@ function SignupForm() {
     setIsLoading(true);
 
     const normalizedEmail = normalizeEmail(email);
+    trackEvent("signup_started", { method: "email" });
     let account: AccountLookup;
     try {
       account = await lookupAccount(normalizedEmail);
@@ -239,6 +241,7 @@ function SignupForm() {
       }
     }
     
+    trackEvent("signup_completed", { method: "email" });
     router.push("/dashboard")
     router.refresh()
   }
@@ -246,6 +249,7 @@ function SignupForm() {
   async function handleGoogle() {
     setErrorMessage("");
     setIsGoogleLoading(true);
+    trackEvent("signup_started", { method: "google" });
     const fallbackTimer = window.setTimeout(() => setIsGoogleLoading(false), 10000);
 
     const normalizedEmail = normalizeEmail(email);

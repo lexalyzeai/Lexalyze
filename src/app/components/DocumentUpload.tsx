@@ -5,6 +5,7 @@ import AnalysisResult, { type AnalysisResultData } from "@/app/components/Analys
 import ErrorMessage, { ErrorType, mapBackendError } from "@/app/components/ErrorMessage";
 import type { PlanId } from "@/lib/plans";
 import { readApiError } from "@/lib/error-handling";
+import { trackEvent } from "@/lib/analytics";
 
 const ACCEPTED_MIME_TYPES = new Set([
   "application/pdf",
@@ -109,11 +110,17 @@ export default function DocumentUpload({ language, plan = "free", workspaceId = 
       setSelectedFile(null);
       setError("unsupported_file_type");
       setErrorMessage("");
+      trackEvent("document_upload_failed", { reason: "unsupported_file_type", fileType: file.type || "unknown" });
       return;
     }
     setError("");
     setErrorMessage("");
     setSelectedFile(file);
+    trackEvent("document_upload_selected", {
+      fileType: file.type || "unknown",
+      fileSize: file.size,
+      workspace: workspaceId ? "team" : "personal",
+    });
     await extractText(file);
   }
 
@@ -146,6 +153,7 @@ export default function DocumentUpload({ language, plan = "free", workspaceId = 
         setError(apiError.code);
         setErrorMessage(apiError.message);
         setLoadingStage("idle");
+        trackEvent("analysis_failed", { reason: apiError.code, workspace: workspaceId ? "team" : "personal" });
         return;
       }
 
@@ -153,6 +161,10 @@ export default function DocumentUpload({ language, plan = "free", workspaceId = 
 
       setAnalysisResult(data.result);
       setCurrentAnalysisId(data.analysisId || "");
+      trackEvent("analysis_completed", {
+        workspace: workspaceId ? "team" : "personal",
+        plan,
+      });
       onAnalysisComplete?.();
       setLoadingStage("idle");
     } catch (err) {
@@ -160,6 +172,7 @@ export default function DocumentUpload({ language, plan = "free", workspaceId = 
       const mappedError = mapBackendError(errorMessage) || "api_failure";
       setError(mappedError);
       setErrorMessage(errorMessage);
+      trackEvent("analysis_failed", { reason: mappedError, workspace: workspaceId ? "team" : "personal" });
       setLoadingStage("idle");
     }
   }

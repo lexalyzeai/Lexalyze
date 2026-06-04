@@ -10,6 +10,7 @@ import AnalysisResult from "@/app/components/AnalysisResult";
 import ErrorMessage, { type ErrorTone, type ErrorType } from "./components/ErrorMessage";
 import { readApiError } from "@/lib/error-handling";
 import { supabase } from "@/lib/supabase";
+import { trackEvent } from "@/lib/analytics";
 import type { AnalysisResult as AiAnalysisResult } from "@/types/analysis";
 
 const playfair = Playfair_Display({
@@ -130,6 +131,10 @@ export default function HomePage() {
   const sampleText = useMemo(() => SAMPLE_RENTAL_DOCUMENT, []);
 
   useEffect(() => {
+    trackEvent("landing_page_viewed");
+  }, []);
+
+  useEffect(() => {
     if (sessionStorage.getItem("lexalyze_oauth_pending") === null) return;
 
     let cancelled = false;
@@ -150,6 +155,7 @@ export default function HomePage() {
     if (isAnalysing) return;
   
     setIsAnalysing(true);
+    trackEvent("demo_analysis_started");
     setAnalysisErrorType(null);
     setAnalysisResult(null);
     setStepMessage(ANALYSIS_STEPS[0]);
@@ -176,6 +182,7 @@ export default function HomePage() {
       if (!response.ok) {
         const apiError = await readApiError(response, response.status === 429 ? "rate_limit_hit" : "api_failure");
         setAnalysisErrorType(apiError.code);
+        trackEvent("demo_analysis_failed", { reason: apiError.code });
         return;
       }
   
@@ -183,12 +190,15 @@ export default function HomePage() {
   
       if (!data?.result) {
         setAnalysisErrorType("parse_error");
+        trackEvent("demo_analysis_failed", { reason: "parse_error" });
         return;
       }
   
       setAnalysisResult(data.result as AiAnalysisResult);
+      trackEvent("demo_analysis_completed");
     } catch {
       setAnalysisErrorType("network_error");
+      trackEvent("demo_analysis_failed", { reason: "network_error" });
     } finally {
       clearInterval(stepTimer);
       setIsAnalysing(false);
