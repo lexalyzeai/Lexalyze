@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Playfair_Display } from "next/font/google";
 import Link from "next/link";
 import Navbar from "@/app/components/Navbar";
-import { PLAN_CATALOG, type PlanDetails, type PlanFeature } from "@/lib/plans";
+import { PLAN_CATALOG, type PlanDetails, type PlanFeature, type PlanId } from "@/lib/plans";
+import { trackEvent } from "@/lib/analytics";
 
 const playfair = Playfair_Display({ subsets: ["latin"], weight: ["600", "700"] });
 
@@ -60,7 +61,7 @@ function FeatureGroup({ title, features }: { title: string; features: PlanFeatur
   );
 }
 
-function PlanCard({ plan, onPaymentNotice }: { plan: PlanDetails; onPaymentNotice: () => void }) {
+function PlanCard({ plan, onPaymentNotice }: { plan: PlanDetails; onPaymentNotice: (plan: PlanId) => void }) {
   const isStarter = plan.id === "free";
   const isTeam = plan.id === "team";
 
@@ -112,7 +113,7 @@ function PlanCard({ plan, onPaymentNotice }: { plan: PlanDetails; onPaymentNotic
       ) : (
         <button
           type="button"
-          onClick={onPaymentNotice}
+          onClick={() => onPaymentNotice(plan.id)}
           className={`mt-8 block w-full rounded-xl py-3 text-center text-sm font-bold transition ${
             plan.highlighted
               ? "bg-gradient-to-r from-[#C9A84C] to-[#aa8426] text-[#0A0A0A] hover:from-[#d4b55d] hover:to-[#b89542]"
@@ -127,11 +128,51 @@ function PlanCard({ plan, onPaymentNotice }: { plan: PlanDetails; onPaymentNotic
 }
 
 export default function PricingPage() {
-  const [notice, setNotice] = useState("");
+  const [noticePlan, setNoticePlan] = useState<"solo" | "team" | "">("");
+  const [leadEmail, setLeadEmail] = useState("");
+  const [leadStatus, setLeadStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
-  const showPaymentNotice = () => {
-    setNotice("Payments are not connected yet. Email lexalyze.ai@gmail.com for early access. Paid plans renew monthly until cancelled, and completed payments are non-refundable.");
-    window.setTimeout(() => setNotice(""), 5000);
+  async function saveUpgradeInterest(plan: "solo" | "team", email = "") {
+    const response = await fetch("/api/upgrade-interest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan, email }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Could not save upgrade interest.");
+    }
+  }
+
+  const showPaymentNotice = (plan: PlanId) => {
+    if (plan === "free") return;
+    setNoticePlan(plan);
+    setLeadStatus("idle");
+    trackEvent("upgrade_clicked", { plan });
+    void saveUpgradeInterest(plan).catch((error) => {
+      console.error("Upgrade interest click tracking failed:", error);
+    });
+  };
+
+  async function submitLeadEmail() {
+    if (!noticePlan || leadStatus === "saving") return;
+    setLeadStatus("saving");
+
+    try {
+      await saveUpgradeInterest(noticePlan, leadEmail);
+      trackEvent("upgrade_email_submitted", { plan: noticePlan });
+      setLeadStatus("saved");
+      setLeadEmail("");
+    } catch (error) {
+      console.error("Upgrade lead email save failed:", error);
+      setLeadStatus("error");
+    }
+  }
+
+  function closeNotice() {
+    setNoticePlan("");
+    setLeadEmail("");
+    setLeadStatus("idle");
   };
 
   return (
@@ -146,9 +187,51 @@ export default function PricingPage() {
           <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-neutral-400">
             Full analysis stays available on every tier. Upgrade only when you need more volume, longer history, exports, sharing, or team workflows.
           </p>
-          {notice ? (
-            <div className="mx-auto mt-5 max-w-xl rounded-xl border border-sky-400/25 bg-sky-400/10 px-4 py-3 text-sm font-medium text-sky-100">
-              {notice}
+          {noticePlan ? (
+            <div className="mx-auto mt-5 max-w-xl rounded-2xl border border-[#C9A84C]/25 bg-[#10100E] p-4 text-left shadow-[0_18px_60px_rgba(0,0,0,0.35)]">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-white">
+                    Pro is currently unavailable. Leave your email if you&apos;d like access.
+                  </p>
+                  <p className="mt-1 text-xs text-neutral-500">
+                    Your click has been recorded for {PLAN_CATALOG[noticePlan].name} interest.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeNotice}
+                  className="rounded-full px-2 text-lg leading-none text-neutral-500 transition hover:text-white"
+                  aria-label="Close upgrade interest message"
+                >
+                  x
+                </button>
+              </div>
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <input
+                  type="email"
+                  value={leadEmail}
+                  onChange={(event) => {
+                    setLeadEmail(event.target.value);
+                    if (leadStatus !== "idle") setLeadStatus("idle");
+                  }}
+                  placeholder="you@example.com"
+                  className="min-w-0 flex-1 rounded-xl border border-white/[0.08] bg-[#08080C] px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-600 focus:border-[#C9A84C]/55"
+                />
+                <button
+                  type="button"
+                  onClick={submitLeadEmail}
+                  disabled={!leadEmail.trim() || leadStatus === "saving"}
+                  className="rounded-xl bg-gradient-to-r from-[#C9A84C] to-[#aa8426] px-5 py-3 text-sm font-bold text-black transition hover:from-[#d4b55d] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {leadStatus === "saving" ? "Saving..." : "Notify me"}
+                </button>
+              </div>
+              {leadStatus === "saved" ? (
+                <p className="mt-3 text-xs font-semibold text-emerald-400">Saved. We&apos;ll contact you when access opens.</p>
+              ) : leadStatus === "error" ? (
+                <p className="mt-3 text-xs font-semibold text-rose-400">Could not save email. Please try again.</p>
+              ) : null}
             </div>
           ) : null}
         </div>

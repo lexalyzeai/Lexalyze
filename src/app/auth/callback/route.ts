@@ -19,6 +19,22 @@ function getCreatedAtMs(value?: string) {
   return Number.isFinite(timestamp) ? timestamp : 0
 }
 
+async function recordSignupCompleted(userId: string, method: 'google' | 'email') {
+  try {
+    const admin = createSupabaseAdmin()
+    await admin
+      .from('analytics_events')
+      .insert({
+        event: 'signup_completed',
+        properties: { method, path: '/auth/callback' },
+        user_id: userId,
+        source: 'server',
+      })
+  } catch (error) {
+    console.error('Signup analytics failed:', error)
+  }
+}
+
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
@@ -107,6 +123,8 @@ export async function GET(request: NextRequest) {
           if (markerError) {
             throw markerError
           }
+
+          await recordSignupCompleted(data.user.id, 'google')
         } catch (metadataError) {
           console.error('Could not mark completed Google signup:', metadataError)
 
