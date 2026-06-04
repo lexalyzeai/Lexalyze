@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Playfair_Display } from "next/font/google";
 import Link from "next/link";
 import Navbar from "@/app/components/Navbar";
@@ -131,6 +131,7 @@ export default function PricingPage() {
   const [noticePlan, setNoticePlan] = useState<"solo" | "team" | "">("");
   const [leadEmail, setLeadEmail] = useState("");
   const [leadStatus, setLeadStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const noticeRef = useRef<HTMLDivElement | null>(null);
 
   async function saveUpgradeInterest(plan: "solo" | "team", email = "") {
     const response = await fetch("/api/upgrade-interest", {
@@ -146,13 +147,21 @@ export default function PricingPage() {
 
   const showPaymentNotice = (plan: PlanId) => {
     if (plan === "free") return;
-    setNoticePlan(plan);
-    setLeadStatus("idle");
     trackEvent("upgrade_clicked", { plan });
     void saveUpgradeInterest(plan).catch((error) => {
       console.error("Upgrade interest click tracking failed:", error);
     });
+    setNoticePlan(plan);
+    setLeadStatus("idle");
+    window.setTimeout(() => {
+      noticeRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 0);
   };
+
+  useEffect(() => {
+    if (!noticePlan) return;
+    noticeRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [noticePlan]);
 
   async function submitLeadEmail() {
     if (!noticePlan || leadStatus === "saving") return;
@@ -188,11 +197,11 @@ export default function PricingPage() {
             Full analysis stays available on every tier. Upgrade only when you need more volume, longer history, exports, sharing, or team workflows.
           </p>
           {noticePlan ? (
-            <div className="mx-auto mt-5 max-w-xl rounded-2xl border border-[#C9A84C]/25 bg-[#10100E] p-4 text-left shadow-[0_18px_60px_rgba(0,0,0,0.35)]">
+            <div ref={noticeRef} className="mx-auto mt-5 max-w-xl rounded-2xl border border-[#C9A84C]/25 bg-[#10100E] p-4 text-left shadow-[0_18px_60px_rgba(0,0,0,0.35)]">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-semibold text-white">
-                    Pro is currently unavailable. Leave your email if you&apos;d like access.
+                    This plan is currently unavailable. Leave your email if you&apos;d like access.
                   </p>
                   <p className="mt-1 text-xs text-neutral-500">
                     Your click has been recorded for {PLAN_CATALOG[noticePlan].name} interest.
