@@ -3,10 +3,11 @@
 import { Playfair_Display } from "next/font/google";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import Navbar from "./components/Navbar";
 import AnalysisLoadingOverlay from "./components/AnalysisLoadingOverlay";
 import AnalysisResult from "@/app/components/AnalysisResult";
-import ErrorMessage, { type ErrorTone } from "./components/ErrorMessage";
-import { SYSTEM_PROMPT } from "@/lib/prompt";
+import ErrorMessage, { type ErrorTone, type ErrorType } from "./components/ErrorMessage";
+import { readApiError } from "@/lib/error-handling";
 import type { AnalysisResult as AiAnalysisResult } from "@/types/analysis";
 
 const playfair = Playfair_Display({
@@ -82,7 +83,7 @@ const FAQ_ITEMS = [
   },
 ] as const;
 
-type AnalysisErrorType = "api-failure" | "rate-limit" | "parse-error";
+type AnalysisErrorType = ErrorType;
 
 type AnalysisErrorContent = {
   title: string;
@@ -91,31 +92,28 @@ type AnalysisErrorContent = {
   tone: ErrorTone;
 };
 
-const ANALYSIS_ERROR_COPY: Record<AnalysisErrorType, AnalysisErrorContent> = {
-  "api-failure": {
+const ANALYSIS_ERROR_COPY: Partial<Record<AnalysisErrorType, AnalysisErrorContent>> = {
+  api_failure: {
     title: "Something went wrong",
     message: "We couldn't process your document right now. Please try again.",
     tone: "red",
   },
-  "rate-limit": {
-    title: "Daily limit reached",
-    message: "You've reached today's free analysis limit. Please try again tomorrow.",
+  rate_limit_hit: {
+    title: "Monthly limit reached",
+    message: "You've reached the Starter monthly analysis limit. Upgrade or wait for the next monthly reset.",
     tone: "blue",
   },
-  "parse-error": {
+  parse_error: {
     title: "Document could not be analysed",
     message: "This file may be corrupted or formatted in a way we can't read yet.",
     tone: "red",
   },
+  non_legal_document: {
+    title: "Legal document required",
+    message: "Only legal documents can be analysed. Upload a contract, agreement, notice, deed, policy, court filing, or similar legal document.",
+    tone: "amber",
+  },
 };
-
-function normalizeGroqJson(raw: string): string {
-  return raw
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/```$/i, "")
-    .trim();
-}
 
 export default function HomePage() {
   const [isAnalysing, setIsAnalysing] = useState(false);
@@ -156,25 +154,21 @@ export default function HomePage() {
       });
   
       if (!response.ok) {
-        if (response.status === 429) {
-          setAnalysisErrorType("rate-limit");
-          return;
-        }
-  
-        setAnalysisErrorType("api-failure");
+        const apiError = await readApiError(response, response.status === 429 ? "rate_limit_hit" : "api_failure");
+        setAnalysisErrorType(apiError.code);
         return;
       }
   
       const data = await response.json();
   
       if (!data?.result) {
-        setAnalysisErrorType("parse-error");
+        setAnalysisErrorType("parse_error");
         return;
       }
   
       setAnalysisResult(data.result as AiAnalysisResult);
     } catch {
-      setAnalysisErrorType("api-failure");
+      setAnalysisErrorType("network_error");
     } finally {
       clearInterval(stepTimer);
       setIsAnalysing(false);
@@ -182,7 +176,8 @@ export default function HomePage() {
   }
 
   return (
-    <main className="relative bg-[#050505] text-white">
+    <main className="relative bg-[#050505] text-white selection:bg-[#C9A84C]/30 selection:text-white">
+      <Navbar />
       <div className="pointer-events-none fixed inset-0 -z-10">
         <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -255,7 +250,7 @@ export default function HomePage() {
 
           <div className="hero-fade-up-delay-2 mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
             <Link
-              href="/auth/login"
+              href="/auth/signup"
               className="w-full rounded-lg bg-[#C9A84C] px-6 py-3 text-sm font-semibold text-[#0A0A0A] transition duration-200 hover:-translate-y-0.5 hover:bg-[#d4b55d] active:bg-[#b89542] sm:w-auto"
             >
               Start analyzing
@@ -277,7 +272,7 @@ export default function HomePage() {
           </div>
 
           <p className="hero-fade-up-delay-3 mt-8 text-xs tracking-wide text-neutral-500 sm:text-sm">
-            Every finding cited to source · Not legal advice · Deleted after analysis
+            Every finding cited to source · Not legal advice · Saved only to your account
           </p>
         </div>
       </section>
@@ -327,10 +322,11 @@ export default function HomePage() {
               </button>
               {analysisErrorType ? (
                 <ErrorMessage
-                  title={ANALYSIS_ERROR_COPY[analysisErrorType].title}
-                  message={ANALYSIS_ERROR_COPY[analysisErrorType].message}
-                  hint={ANALYSIS_ERROR_COPY[analysisErrorType].hint}
-                  tone={ANALYSIS_ERROR_COPY[analysisErrorType].tone}
+                  title={ANALYSIS_ERROR_COPY[analysisErrorType]?.title}
+                  message={ANALYSIS_ERROR_COPY[analysisErrorType]?.message}
+                  hint={ANALYSIS_ERROR_COPY[analysisErrorType]?.hint}
+                  tone={ANALYSIS_ERROR_COPY[analysisErrorType]?.tone}
+                  errorType={analysisErrorType}
                   className="w-full max-w-xl"
                   onDismiss={() => setAnalysisErrorType(null)}
                 />
@@ -346,6 +342,7 @@ export default function HomePage() {
   result={{
     ...analysisResult,
   }}
+  language="en"
 />
             </div>
           ) : null}
@@ -515,10 +512,9 @@ export default function HomePage() {
               <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#C9A84C]/35 bg-[#C9A84C]/10 text-lg text-[#C9A84C]">
                 🗑️
               </span>
-              <h3 className="mt-4 text-lg font-semibold text-white">Deleted after analysis</h3>
+              <h3 className="mt-4 text-lg font-semibold text-white">Controlled saved history</h3>
               <p className="mt-2 text-sm leading-7 text-neutral-400">
-                Documents are removed after processing and are not permanently stored,
-                helping minimize long-term data retention risk.
+                Analyses are saved to your account for review, and you can delete individual items or your full history from Settings.
               </p>
             </article>
 
@@ -627,10 +623,11 @@ export default function HomePage() {
                 Company
               </h3>
               <ul className="mt-4 space-y-3 text-sm text-neutral-400">
-                <li><a href="#" className="footer-link">About</a></li>
-                <li><a href="#" className="footer-link">Contact</a></li>
-                <li><a href="#" className="footer-link">Privacy Policy</a></li>
-                <li><a href="#" className="footer-link">Terms of Service</a></li>
+                <li><Link href="/pricing" className="footer-link">Pricing</Link></li>
+                <li><Link href="/about" className="footer-link">About</Link></li>
+                <li><Link href="/contact" className="footer-link">Contact</Link></li>
+                <li><Link href="/privacy" className="footer-link">Privacy Policy</Link></li>
+                <li><Link href="/terms" className="footer-link">Terms of Service</Link></li>
               </ul>
             </div>
 
@@ -639,10 +636,10 @@ export default function HomePage() {
                 Resources
               </h3>
               <ul className="mt-4 space-y-3 text-sm text-neutral-400">
-                <li><a href="#" className="footer-link">Supported documents</a></li>
-                <li><a href="#" className="footer-link">Trust &amp; Safety</a></li>
-                <li><a href="#" className="footer-link">Help Center</a></li>
-                <li><a href="#" className="footer-link">Status</a></li>
+                <li><Link href="/supported-documents" className="footer-link">Supported documents</Link></li>
+                <li><Link href="/trust-safety" className="footer-link">Trust &amp; Safety</Link></li>
+                <li><Link href="/help" className="footer-link">Help Center</Link></li>
+                <li><Link href="/status" className="footer-link">Status</Link></li>
               </ul>
             </div>
           </div>

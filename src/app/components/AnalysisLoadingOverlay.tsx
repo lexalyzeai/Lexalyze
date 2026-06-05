@@ -27,9 +27,11 @@ export default function AnalysisLoadingOverlay({
 
   useEffect(() => {
     if (!isVisible) {
-      setStepIndex(0);
-      setShowStep(true);
-      return;
+      const resetTimer = setTimeout(() => {
+        setStepIndex(0);
+        setShowStep(true);
+      }, 0);
+      return () => clearTimeout(resetTimer);
     }
 
     let fadeTimer: ReturnType<typeof setTimeout> | undefined;

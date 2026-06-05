@@ -2,14 +2,95 @@ import { extractText } from 'unpdf'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { FRIENDLY_ERRORS } from '@/lib/error-handling'
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
-const MAX_TEXT_LENGTH = 50000
-const ALLOWED_TYPES = ['application/pdf', 'text/plain', 'image/png', 'image/jpeg']
-const FREE_LIMIT = 10
+const MAX_FILE_SIZE = 10 * 1024 * 1024
+const MAX_TEXT_LENGTH = 12000
+const ALLOWED_TYPES = [
+  'application/pdf',
+  'text/plain',
+  'image/png',
+  'image/jpeg',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/msword',
+]
+
+async function extractImageText(buffer: Buffer, mimeType: string) {
+  const geminiKey =
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+    process.env.GOOGLE_API_KEY
+
+  if (geminiKey) {
+    const { GoogleGenerativeAI } = await import('@google/generative-ai')
+    const genAI = new GoogleGenerativeAI(geminiKey)
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    const result = await model.generateContent([
+      {
+        text: 'Extract all readable text from this legal document image. Preserve clauses, dates, parties, amounts, and signatures where readable. Return only extracted text.',
+      },
+      {
+        inlineData: {
+          data: buffer.toString('base64'),
+          mimeType,
+        },
+      },
+    ])
+
+    return result.response.text().trim()
+  }
+
+  const groqKey = process.env.GROQ_API_KEY
+  if (!groqKey) {
+    throw new Error('image_ocr_unconfigured')
+  }
+
+  const base64 = buffer.toString('base64')
+  if (base64.length > 4_000_000) {
+    throw new Error('image_ocr_too_large')
+  }
+
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${groqKey}`,
+    },
+    body: JSON.stringify({
+      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: 'Extract all readable text from this legal document image. Preserve clauses, dates, parties, amounts, and signatures where readable. Return only extracted text.',
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:${mimeType};base64,${base64}`,
+              },
+            },
+          ],
+        },
+      ],
+      temperature: 0,
+      max_tokens: 2500,
+    }),
+  })
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}))
+    console.error('Groq image OCR error:', errorBody)
+    throw new Error('image_ocr_failed')
+  }
+
+  const data = await response.json()
+  return String(data.choices?.[0]?.message?.content ?? '').trim()
+}
 
 export async function POST(req: NextRequest) {
-  // Auth check
   const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,40 +109,31 @@ export async function POST(req: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: FRIENDLY_ERRORS.unauthorized.message, code: 'unauthorized' }, { status: 401 })
   }
 
-  // Rate limit check
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('analyses_used')
-    .eq('id', user.id)
-    .single()
-
-  if (profile && profile.analyses_used >= FREE_LIMIT) {
-    return NextResponse.json(
-      { error: 'Daily limit reached. Try again tomorrow.' },
-      { status: 429 }
-    )
+  const formData = await req.formData().catch(() => null)
+  if (!formData) {
+    return NextResponse.json({ error: FRIENDLY_ERRORS.validation.message, code: 'validation' }, { status: 400 })
   }
-
-  // Get file from form data
-  const formData = await req.formData()
   const file = formData.get('file') as File | null
 
   if (!file) {
-    return NextResponse.json({ error: 'No file uploaded.' }, { status: 400 })
+    return NextResponse.json({ error: FRIENDLY_ERRORS.validation.message, code: 'validation' }, { status: 400 })
   }
 
-  // File size check
   if (file.size > MAX_FILE_SIZE) {
-    return NextResponse.json({ error: 'File too large. Maximum size is 10MB.' }, { status: 400 })
+    return NextResponse.json({ error: FRIENDLY_ERRORS.file_too_large.message, code: 'file_too_large' }, { status: 400 })
   }
 
-  // File type check
-  if (!ALLOWED_TYPES.includes(file.type)) {
+  const isDocx = file.name.toLowerCase().endsWith('.docx') || file.name.toLowerCase().endsWith('.doc')
+  const effectiveType = isDocx
+    ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    : file.type
+
+  if (!ALLOWED_TYPES.includes(effectiveType)) {
     return NextResponse.json(
-      { error: 'Unsupported file type. Please upload a PDF, TXT, PNG, or JPG.' },
+      { error: FRIENDLY_ERRORS.unsupported_file_type.message, code: 'unsupported_file_type' },
       { status: 400 }
     )
   }
@@ -70,55 +142,60 @@ export async function POST(req: NextRequest) {
     let text = ''
     const buffer = Buffer.from(await file.arrayBuffer())
 
-    if (file.type === 'application/pdf') {
+    if (effectiveType === 'application/pdf') {
       const { text: pdfText } = await extractText(new Uint8Array(buffer))
       text = pdfText.join('\n')
-    } else if (file.type === 'text/plain') {
+    } else if (effectiveType === 'text/plain') {
       text = buffer.toString('utf-8')
-    } else if (file.type === 'image/png' || file.type === 'image/jpeg') {
-      text = buffer.toString('base64')
+    } else if (effectiveType === 'image/png' || effectiveType === 'image/jpeg') {
+      text = await extractImageText(buffer, effectiveType)
+    } else if (
+      effectiveType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      effectiveType === 'application/msword'
+    ) {
+      const mammoth = await import('mammoth')
+      const result = await mammoth.extractRawText({ buffer })
+      text = result.value
     }
 
     if (!text || text.trim().length === 0) {
       return NextResponse.json(
-        { error: 'Could not extract text from this file.' },
+        { error: FRIENDLY_ERRORS.no_text_extracted.message, code: 'no_text_extracted' },
         { status: 400 }
       )
     }
 
-    // Trim to 50,000 characters
-    // Strip HTML and script tags
-text = text.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-text = text.replace(/<[^>]+>/g, '')
-text = text.trim()
-// Trim to 50,000 characters
-text = text.slice(0, MAX_TEXT_LENGTH) 
+    text = text.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    text = text.replace(/<[^>]+>/g, '')
+    text = text.trim()
+    text = text.slice(0, MAX_TEXT_LENGTH)
 
     return NextResponse.json({ text })
 
   } catch (err) {
-    const error =
-      err instanceof Error
-        ? { message: err.message, stack: err.stack }
-        : { message: String(err) }
-
-    console.error('[/api/extract-text] Extraction error', {
-      userId: user.id,
-      fileName: file.name,
-      fileType: file.type,
-      fileSize: file.size,
-      error,
-    })
-
-    // Temporary: surface real error message to help debugging.
-    const clientMessage =
-      error.message || 'Could not read this file. It may be corrupted.'
+    const error = err instanceof Error ? err.message : String(err)
+    console.error('[/api/extract-text] Extraction error', { userId: user.id, fileName: file.name, error })
+    if (error === 'image_ocr_unconfigured') {
+      return NextResponse.json(
+        { error: 'Image text extraction is not configured yet. Upload a PDF, DOCX, or TXT file, or add a Gemini or Groq key to enable PNG/JPG OCR.', code: 'no_text_extracted' },
+        { status: 400 }
+      )
+    }
+    if (error === 'image_ocr_too_large') {
+      return NextResponse.json(
+        { error: 'This image is too large for OCR. Upload a smaller JPG/PNG, or use a PDF, DOCX, or TXT file.', code: 'file_too_large' },
+        { status: 400 }
+      )
+    }
+    if (error === 'image_ocr_failed') {
+      return NextResponse.json(
+        { error: 'We could not read text from this image. Upload a clearer JPG/PNG, or use a PDF, DOCX, or TXT file.', code: 'no_text_extracted' },
+        { status: 400 }
+      )
+    }
 
     return NextResponse.json(
-      {
-        error: 'Could not read this file. It may be corrupted.',
-        debugError: clientMessage,
-      },
+      { error: FRIENDLY_ERRORS.parse_error.message, code: 'parse_error' },
       { status: 400 }
     )
   }

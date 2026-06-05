@@ -1,12 +1,14 @@
 'use client'
 
 export default function DashboardError({
-  error,
+  error: _error,
   reset,
 }: {
   error: Error
   reset: () => void
 }) {
+  void _error
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#0A0A0A]">
       <div className="rounded-xl border border-white/10 bg-[#121212] p-8 text-center max-w-md w-full">
