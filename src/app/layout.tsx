@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import AuthRecovery from "@/app/components/AuthRecovery";
-import RouteLoadingIndicator from "@/app/components/RouteLoadingIndicator";
+import { PostHogProvider } from "./providers";
 
 export const metadata: Metadata = {
   title: "Lexalyze",
@@ -16,9 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        <AuthRecovery />
-        <RouteLoadingIndicator />
-        {children}
+        <PostHogProvider>{children}</PostHogProvider>
       </body>
     </html>
   );
