@@ -44,7 +44,7 @@ export default function BrandMark({ href, size = "md", subtitle, className = "" 
         aria-hidden="true"
         width={80}
         height={80}
-        className={`${sizes.logo} shrink-0 rounded-full object-contain shadow-[0_0_18px_rgba(201,168,76,0.18)]`}
+        className={`${sizes.logo} shrink-0 object-contain drop-shadow-[0_0_14px_rgba(201,168,76,0.2)]`}
       />
       <span className="min-w-0">
         <span className={`${playfair.className} block font-bold leading-none text-[#C9A84C] ${sizes.word}`}>
