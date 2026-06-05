@@ -18,17 +18,17 @@ type BrandMarkProps = {
 
 const sizeClasses = {
   sm: {
-    logo: "size-8",
+    logo: "size-9",
     word: "text-lg tracking-[0.14em] sm:text-xl",
     gap: "gap-2.5",
   },
   md: {
-    logo: "size-10",
+    logo: "size-11",
     word: "text-[1.35rem] tracking-[0.16em]",
     gap: "gap-3",
   },
   lg: {
-    logo: "size-16 sm:size-20",
+    logo: "size-20 sm:size-24",
     word: "text-4xl tracking-[0.16em] sm:text-5xl",
     gap: "gap-4",
   },

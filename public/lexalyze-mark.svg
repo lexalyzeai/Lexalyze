@@ -2,11 +2,6 @@
   <title id="title">Lexalyze mark</title>
   <desc id="desc">Gold Lexalyze monogram with legal document lines inside a circular orbit.</desc>
   <defs>
-    <radialGradient id="blackField" cx="51%" cy="43%" r="74%">
-      <stop offset="0%" stop-color="#15120b"/>
-      <stop offset="55%" stop-color="#080807"/>
-      <stop offset="100%" stop-color="#030303"/>
-    </radialGradient>
     <linearGradient id="gold" x1="270" y1="200" x2="945" y2="960" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#fff0a2"/>
       <stop offset="17%" stop-color="#f4d868"/>
@@ -29,8 +24,6 @@
       </feMerge>
     </filter>
   </defs>
-
-  <rect width="1280" height="1280" fill="url(#blackField)"/>
 
   <g filter="url(#goldGlow)">
     <circle cx="640" cy="635" r="374" fill="none" stroke="url(#gold)" stroke-width="20"/>
