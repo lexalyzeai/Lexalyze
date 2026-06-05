@@ -8,9 +8,9 @@ export const metadata: Metadata = {
   description: "Lexalyze",
   icons: {
     icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/lexalyze-tab-icon.svg", type: "image/svg+xml" },
     ],
-    shortcut: "/favicon.svg",
+    shortcut: "/lexalyze-tab-icon.svg",
     apple: "/lexalyze-mark.svg",
   },
 };

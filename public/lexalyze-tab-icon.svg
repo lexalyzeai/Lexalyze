@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 1280" role="img" aria-labelledby="title desc">
+  <title id="title">Lexalyze mark</title>
+  <desc id="desc">Gold Lexalyze monogram with legal document lines inside a circular orbit.</desc>
+  <defs>
+    <linearGradient id="gold" x1="270" y1="200" x2="945" y2="960" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fff0a2"/>
+      <stop offset="17%" stop-color="#f4d868"/>
+      <stop offset="40%" stop-color="#cfa23b"/>
+      <stop offset="62%" stop-color="#a87928"/>
+      <stop offset="82%" stop-color="#e3c358"/>
+      <stop offset="100%" stop-color="#fff0a0"/>
+    </linearGradient>
+    <linearGradient id="lineGold" x1="430" y1="430" x2="940" y2="670" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffe985"/>
+      <stop offset="62%" stop-color="#c99732"/>
+      <stop offset="100%" stop-color="#fff2a6"/>
+    </linearGradient>
+    <filter id="goldGlow" x="-14%" y="-14%" width="128%" height="128%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0.9 0 1 0 0 0.63 0 0 1 0 0.16 0 0 0 0.35 0"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <g filter="url(#goldGlow)">
+    <circle cx="640" cy="635" r="374" fill="none" stroke="url(#gold)" stroke-width="20"/>
+    <circle cx="340" cy="372" r="51" fill="url(#gold)"/>
+
+    <text
+      x="421"
+      y="826"
+      fill="url(#gold)"
+      font-family="Georgia, 'Times New Roman', serif"
+      font-size="560"
+      font-weight="700"
+      letter-spacing="-28"
+    >L</text>
+
+    <path d="M640 500h248c18 0 22 8 10 20l-19 18H640c-9 0-15-7-15-18v-5c0-9 6-15 15-15z" fill="url(#lineGold)"/>
+    <path d="M640 565h216c18 0 22 8 10 20l-19 18H640c-9 0-15-7-15-18v-5c0-9 6-15 15-15z" fill="url(#lineGold)"/>
+    <path d="M640 630h159c18 0 22 8 10 20l-19 18H640c-9 0-15-7-15-18v-5c0-9 6-15 15-15z" fill="url(#lineGold)"/>
+  </g>
+</svg>
