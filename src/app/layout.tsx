@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
-import "./globals.css";
-<<<<<<< HEAD
-<<<<<<< HEAD
-import { PostHogProvider } from "./providers";
-=======
 import AuthRecovery from "@/app/components/AuthRecovery";
 import RouteLoadingIndicator from "@/app/components/RouteLoadingIndicator";
->>>>>>> 53772b6ce5a9cca4f21f76537401a6c5a2bdd372
-=======
 import { PostHogProvider } from "./providers";
->>>>>>> 926f14bca9dd33198453464db69d6563ca21092a
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Lexalyze",
   description: "Lexalyze",
+  icons: {
+    icon: [
+      { url: "/lexalyze-tab-icon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/lexalyze-tab-icon.svg",
+    apple: "/lexalyze-mark.svg",
+  },
 };
 
 export default function RootLayout({
@@ -24,17 +24,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-<<<<<<< HEAD
-<<<<<<< HEAD
-        <PostHogProvider>{children}</PostHogProvider>
-=======
-        <AuthRecovery />
-        <RouteLoadingIndicator />
-        {children}
->>>>>>> 53772b6ce5a9cca4f21f76537401a6c5a2bdd372
-=======
-        <PostHogProvider>{children}</PostHogProvider>
->>>>>>> 926f14bca9dd33198453464db69d6563ca21092a
+        <PostHogProvider>
+          <AuthRecovery />
+          <RouteLoadingIndicator />
+          {children}
+        </PostHogProvider>
       </body>
     </html>
   );
