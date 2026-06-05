@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Lexalyze favicon</title>
+  <desc id="desc">Lexalyze gold monogram favicon.</desc>
+  <defs>
+    <radialGradient id="blackField" cx="51%" cy="43%" r="74%">
+      <stop offset="0%" stop-color="#15120b"/>
+      <stop offset="55%" stop-color="#080807"/>
+      <stop offset="100%" stop-color="#030303"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="98" y1="72" x2="404" y2="424" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fff0a2"/>
+      <stop offset="18%" stop-color="#f4d868"/>
+      <stop offset="42%" stop-color="#cfa23b"/>
+      <stop offset="64%" stop-color="#a87928"/>
+      <stop offset="84%" stop-color="#e3c358"/>
+      <stop offset="100%" stop-color="#fff0a0"/>
+    </linearGradient>
+    <linearGradient id="lineGold" x1="240" y1="198" x2="402" y2="292" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffe985"/>
+      <stop offset="62%" stop-color="#c99732"/>
+      <stop offset="100%" stop-color="#fff2a6"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="82" fill="url(#blackField)"/>
+  <circle cx="256" cy="258" r="178" fill="none" stroke="url(#gold)" stroke-width="20"/>
+  <circle cx="113" cy="133" r="27" fill="url(#gold)"/>
+  <text
+    x="150"
+    y="343"
+    fill="url(#gold)"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="270"
+    font-weight="700"
+    letter-spacing="-14"
+  >L</text>
+  <path d="M258 205h112c9 0 11 4 5 10l-10 9H258c-5 0-8-4-8-9v-3c0-5 3-7 8-7z" fill="url(#lineGold)"/>
+  <path d="M258 239h99c9 0 11 4 5 10l-10 9h-94c-5 0-8-4-8-9v-3c0-5 3-7 8-7z" fill="url(#lineGold)"/>
+  <path d="M258 273h72c9 0 11 4 5 10l-10 9h-67c-5 0-8-4-8-9v-3c0-5 3-7 8-7z" fill="url(#lineGold)"/>
+</svg>
