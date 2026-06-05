@@ -2,11 +2,6 @@
   <title id="title">Lexalyze favicon</title>
   <desc id="desc">Lexalyze gold monogram favicon.</desc>
   <defs>
-    <radialGradient id="blackField" cx="51%" cy="43%" r="74%">
-      <stop offset="0%" stop-color="#15120b"/>
-      <stop offset="55%" stop-color="#080807"/>
-      <stop offset="100%" stop-color="#030303"/>
-    </radialGradient>
     <linearGradient id="gold" x1="98" y1="72" x2="404" y2="424" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#fff0a2"/>
       <stop offset="18%" stop-color="#f4d868"/>
@@ -21,7 +16,6 @@
       <stop offset="100%" stop-color="#fff2a6"/>
     </linearGradient>
   </defs>
-  <rect width="512" height="512" rx="82" fill="url(#blackField)"/>
   <circle cx="256" cy="258" r="178" fill="none" stroke="url(#gold)" stroke-width="20"/>
   <circle cx="113" cy="133" r="27" fill="url(#gold)"/>
   <text
