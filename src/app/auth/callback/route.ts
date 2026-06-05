@@ -6,6 +6,34 @@ import { createSupabaseAdmin } from '@/lib/supabase-admin'
 const GOOGLE_SIGNUP_MARKER = 'lexalyze_google_signup_completed_at'
 const GOOGLE_SIGNUP_FRESHNESS_MS = 60000
 
+async function forwardToPostHog(
+  event: string,
+  distinctId: string,
+  properties: Record<string, unknown>
+) {
+  const apiKey = process.env.POSTHOG_API_KEY || process.env.NEXT_PUBLIC_POSTHOG_KEY
+  if (!apiKey || !distinctId) return
+
+  const host = process.env.POSTHOG_HOST || process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com'
+
+  try {
+    await fetch(`${host.replace(/\/$/, '')}/capture/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        api_key: apiKey,
+        event,
+        properties: {
+          distinct_id: distinctId,
+          ...properties,
+        },
+      }),
+    })
+  } catch (error) {
+    console.error('PostHog auth capture failed:', error)
+  }
+}
+
 function getProviders(user: { app_metadata?: { providers?: unknown } }) {
   const providers = user.app_metadata?.providers
   return Array.isArray(providers)
@@ -19,19 +47,21 @@ function getCreatedAtMs(value?: string) {
   return Number.isFinite(timestamp) ? timestamp : 0
 }
 
-async function recordSignupCompleted(userId: string, method: 'google' | 'email') {
+async function recordAuthEvent(userId: string, event: 'signup' | 'login', method: 'google' | 'email') {
   try {
     const admin = createSupabaseAdmin()
     await admin
       .from('analytics_events')
       .insert({
-        event: 'signup_completed',
+        event,
         properties: { method, path: '/auth/callback' },
         user_id: userId,
         source: 'server',
       })
+
+    await forwardToPostHog(event, userId, { method, path: '/auth/callback' })
   } catch (error) {
-    console.error('Signup analytics failed:', error)
+    console.error('Auth analytics failed:', error)
   }
 }
 
@@ -124,7 +154,7 @@ export async function GET(request: NextRequest) {
             throw markerError
           }
 
-          await recordSignupCompleted(data.user.id, 'google')
+          await recordAuthEvent(data.user.id, 'signup', 'google')
         } catch (metadataError) {
           console.error('Could not mark completed Google signup:', metadataError)
 
@@ -156,6 +186,10 @@ export async function GET(request: NextRequest) {
             request.url
           )
         )
+      }
+
+      if (flow === 'login') {
+        await recordAuthEvent(data.user.id, 'login', 'google')
       }
     }
 

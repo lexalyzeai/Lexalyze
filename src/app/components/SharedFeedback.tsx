@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import ErrorMessage, { type ErrorType } from "@/app/components/ErrorMessage";
 import { readApiError } from "@/lib/error-handling";
+import { trackEvent } from "@/lib/analytics";
 
 type SharedFeedbackEntry = {
   id: string;
@@ -64,6 +65,7 @@ export default function SharedFeedback({ token, mode = "view", initialFeedback =
         setFeedback((current) => [data.feedback, ...current]);
         setBody("");
         setSuggestedText("");
+        trackEvent("feedback_submitted", { kind, mode });
       }
     } finally {
       setLoading(false);
