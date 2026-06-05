@@ -92,6 +92,12 @@ export default function DocumentUpload({ language, plan = "free", workspaceId = 
 
       const text = await extractFileText(file);
       setExtractedText(text);
+      trackEvent("document_uploaded", {
+        fileType: file.type || "unknown",
+        fileSize: file.size,
+        workspace: workspaceId ? "team" : "personal",
+        plan,
+      });
       setLoadingStage("ready");
       await sleep(700);
       setLoadingStage("idle");
@@ -110,17 +116,11 @@ export default function DocumentUpload({ language, plan = "free", workspaceId = 
       setSelectedFile(null);
       setError("unsupported_file_type");
       setErrorMessage("");
-      trackEvent("document_upload_failed", { reason: "unsupported_file_type", fileType: file.type || "unknown" });
       return;
     }
     setError("");
     setErrorMessage("");
     setSelectedFile(file);
-    trackEvent("document_upload_selected", {
-      fileType: file.type || "unknown",
-      fileSize: file.size,
-      workspace: workspaceId ? "team" : "personal",
-    });
     await extractText(file);
   }
 

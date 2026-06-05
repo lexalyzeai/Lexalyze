@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { FRIENDLY_ERRORS } from "@/lib/error-handling";
+import { isLaunchAnalyticsEvent } from "@/lib/analytics-events";
 
 function cleanText(value: unknown, max = 120) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -21,7 +22,7 @@ async function forwardToPostHog(
   const apiKey = process.env.POSTHOG_API_KEY || process.env.NEXT_PUBLIC_POSTHOG_KEY;
   if (!apiKey || !distinctId) return;
 
-  const host = process.env.POSTHOG_HOST || process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://app.posthog.com";
+  const host = process.env.POSTHOG_HOST || process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com";
 
   try {
     await fetch(`${host.replace(/\/$/, "")}/capture/`, {
@@ -67,6 +68,10 @@ export async function POST(req: NextRequest) {
 
   if (!event) {
     return NextResponse.json({ error: FRIENDLY_ERRORS.validation.message, code: "validation" }, { status: 400 });
+  }
+
+  if (!isLaunchAnalyticsEvent(event)) {
+    return NextResponse.json({ ok: true, ignored: true });
   }
 
   try {

@@ -186,7 +186,6 @@ function SignupForm() {
     setIsLoading(true);
 
     const normalizedEmail = normalizeEmail(email);
-    trackEvent("signup_started", { method: "email" });
     let account: AccountLookup;
     try {
       account = await lookupAccount(normalizedEmail);
@@ -242,7 +241,7 @@ function SignupForm() {
       }
     }
     
-    trackEvent("signup_completed", { method: "email" });
+    trackEvent("signup", { method: "email" });
     router.push("/dashboard")
     router.refresh()
   }
@@ -250,7 +249,6 @@ function SignupForm() {
   async function handleGoogle() {
     setErrorMessage("");
     setIsGoogleLoading(true);
-    trackEvent("signup_started", { method: "google" });
     const fallbackTimer = window.setTimeout(() => setIsGoogleLoading(false), 10000);
 
     const normalizedEmail = normalizeEmail(email);

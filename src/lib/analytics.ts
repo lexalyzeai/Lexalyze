@@ -1,5 +1,7 @@
 "use client";
 
+import { isLaunchAnalyticsEvent } from "@/lib/analytics-events";
+
 type AnalyticsProperties = Record<string, unknown>;
 
 declare global {
@@ -25,6 +27,7 @@ function anonymousId() {
 
 export function trackEvent(event: string, properties: AnalyticsProperties = {}) {
   if (typeof window === "undefined") return;
+  if (!isLaunchAnalyticsEvent(event)) return;
 
   const payload = {
     event,

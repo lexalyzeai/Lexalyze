@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { getAuthRedirectUrl } from "@/lib/site-url";
 import ErrorMessage from "@/app/components/ErrorMessage";
 import BrandMark from "@/app/components/BrandMark";
+import { trackEvent } from "@/lib/analytics";
 
 const playfair = Playfair_Display({ subsets: ["latin"], weight: ["600", "700"] });
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -352,6 +353,7 @@ function LoginForm() {
     // Clear password-attempt lockout on any successful password sign-in.
     setLockedUntil(null);
     clearLockout(normalizedEmail);
+    trackEvent("login", { method: "email" });
 
     // Feature 2 — return URL
     const returnTo = searchParams.get('returnTo') || '/dashboard'
