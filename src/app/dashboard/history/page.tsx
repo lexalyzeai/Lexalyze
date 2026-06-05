@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import type { AnalysisResultData } from '@/app/components/AnalysisResult'
 
 export default async function HistoryPage() {
   const cookieStore = await cookies()
@@ -46,7 +47,7 @@ export default async function HistoryPage() {
       ) : (
         <div className="space-y-3">
           {analyses.map((analysis) => {
-            const result = analysis.result as any
+            const result = analysis.result as Pick<AnalysisResultData, 'overallConfidence' | 'oneLineSummary'> | null
             const confidence = result?.overallConfidence ?? 'N/A'
             const summary = result?.oneLineSummary ?? 'No summary available'
             const date = new Date(analysis.created_at).toLocaleDateString('en-IN', {

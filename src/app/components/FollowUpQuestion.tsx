@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import ErrorMessage, { mapBackendError, type ErrorType } from "@/app/components/ErrorMessage";
+import { readApiError } from "@/lib/error-handling";
 
 type FollowUpResponse = {
   answer?: string;
@@ -18,7 +20,8 @@ export default function FollowUpQuestion({
   const [loading, setLoading] = useState(false);
   const [answer, setAnswer] = useState("");
   const [fromDocument, setFromDocument] = useState<boolean | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<ErrorType | "">("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -29,6 +32,7 @@ export default function FollowUpQuestion({
 
     setLoading(true);
     setError("");
+    setErrorMessage("");
     setAnswer("");
     setFromDocument(null);
 
@@ -45,28 +49,26 @@ export default function FollowUpQuestion({
         }),
       });
 
-      const data = (await response.json()) as FollowUpResponse & {
-        error?: string;
-      };
-
       if (!response.ok) {
-        throw new Error(
-          data.error || "Could not fetch follow-up answer."
-        );
+        const apiError = await readApiError(response, "api_failure");
+        setError(apiError.code);
+        setErrorMessage(apiError.message);
+        return;
       }
 
+      const data = (await response.json()) as FollowUpResponse;
+
       if (!data.answer) {
-        throw new Error("No answer was returned.");
+        setError("api_failure");
+        return;
       }
 
       setAnswer(data.answer);
       setFromDocument(Boolean(data.fromDocument));
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong while searching the document."
-      );
+      const errorMessage = err instanceof Error ? err.message : "Something went wrong while searching the document.";
+      setError(mapBackendError(errorMessage));
+      setErrorMessage(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -94,9 +96,14 @@ export default function FollowUpQuestion({
         </div>
 
         {error ? (
-          <p className="text-sm text-red-400" role="alert">
-            {error}
-          </p>
+          <ErrorMessage
+            errorType={error}
+            message={errorMessage || undefined}
+            onDismiss={() => {
+              setError("");
+              setErrorMessage("");
+            }}
+          />
         ) : null}
       </form>
 
