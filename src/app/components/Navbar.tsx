@@ -1,14 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Playfair_Display } from "next/font/google";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["600", "700"],
-});
+import BrandMark from "@/app/components/BrandMark";
 
 const NAV_LINKS = [
   { label: "About", href: "/about" },
@@ -31,17 +26,7 @@ export default function Navbar() {
       <header className="rounded-full border border-white/[0.06] bg-black/50 shadow-[0_12px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl transition-all duration-300">
         <nav className="flex w-full items-center justify-between px-5 py-3 sm:px-6">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            <span
-              className="inline-block h-2.5 w-2.5 animate-pulse-gold rounded-full bg-[#C9A84C] shadow-[0_0_10px_rgba(201,168,76,0.8)]"
-              aria-hidden
-            />
-            <span
-              className={`${playfair.className} text-lg font-bold tracking-[0.15em] text-[#C9A84C] sm:text-xl md:tracking-[0.2em]`}
-            >
-              LEXALYZE
-            </span>
-          </Link>
+          <BrandMark href="/" size="sm" className="shrink-0" />
 
           {/* Desktop nav links — centred */}
           <div className="hidden items-center gap-6 md:flex">

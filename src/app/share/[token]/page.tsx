@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Playfair_Display } from "next/font/google";
 import AnalysisResult from "@/app/components/AnalysisResult";
 import SharedFeedback from "@/app/components/SharedFeedback";
+import BrandMark from "@/app/components/BrandMark";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 
 const playfair = Playfair_Display({ subsets: ["latin"], weight: ["600", "700"] });
@@ -47,7 +48,7 @@ export default async function SharedAnalysisPage({
       <div className="mx-auto w-full max-w-3xl px-4 py-10">
         <div className="mb-8 flex flex-col gap-4 border-b border-white/[0.06] pb-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A84C]">Shared Lexalyze Report</p>
+            <BrandMark href="/" size="sm" subtitle="Shared report" />
             <h1 className={`${playfair.className} mt-2 text-2xl font-bold text-white`}>
               {analysis.result?.documentTitle || analysis.filename || "Document analysis"}
             </h1>
