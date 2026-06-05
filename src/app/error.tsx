@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import BrandMark from "@/app/components/BrandMark";
 
 export default function AppError({
   reset,
@@ -11,7 +12,7 @@ export default function AppError({
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#050507] px-4 text-white">
       <section className="w-full max-w-md rounded-2xl border border-white/10 bg-[#101010] p-7 text-center shadow-2xl">
-        <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#C9A84C]">Lexalyze</p>
+        <BrandMark href="/" size="sm" className="justify-center" />
         <h1 className="mt-3 text-2xl font-semibold">Something went wrong</h1>
         <p className="mt-3 text-sm leading-6 text-neutral-400">
           The page hit an unexpected error. You can retry the page or return home.

@@ -7,6 +7,7 @@ import { type FormEvent, useState, useEffect, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import { getAuthRedirectUrl } from "@/lib/site-url";
 import ErrorMessage from "@/app/components/ErrorMessage";
+import BrandMark from "@/app/components/BrandMark";
 
 const playfair = Playfair_Display({ subsets: ["latin"], weight: ["600", "700"] });
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -490,9 +491,7 @@ function LoginForm() {
         </div>
       )}
 
-      <p className={`${playfair.className} mb-10 text-center text-4xl font-bold tracking-[0.18em] text-[#C9A84C] sm:mb-12 sm:text-5xl`}>
-        LEXALYZE
-      </p>
+      <BrandMark href="/" size="lg" className="mb-10 justify-center sm:mb-12" />
 
       <div className="relative w-full max-w-md rounded-3xl border border-white/[0.07] bg-[#0E0E12]/80 p-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-xl sm:p-10">
         

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "./components/Navbar";
+import BrandMark from "./components/BrandMark";
 import AnalysisLoadingOverlay from "./components/AnalysisLoadingOverlay";
 import AnalysisResult from "@/app/components/AnalysisResult";
 import ErrorMessage, { type ErrorTone, type ErrorType } from "./components/ErrorMessage";
@@ -635,6 +636,9 @@ export default function HomePage() {
 
       <footer className="border-t border-white/10 px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-6xl">
+          <div className="mb-9">
+            <BrandMark href="/" size="md" subtitle="Legal document intelligence" />
+          </div>
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:gap-10">
             <div>
               <h3 className="text-sm font-semibold uppercase tracking-wide text-[#C9A84C]">

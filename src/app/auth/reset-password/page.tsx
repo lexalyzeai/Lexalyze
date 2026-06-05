@@ -4,6 +4,7 @@ import { Playfair_Display } from "next/font/google";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import BrandMark from "@/app/components/BrandMark";
 
 const playfair = Playfair_Display({ subsets: ["latin"], weight: ["600", "700"] });
 
@@ -105,11 +106,7 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#0A0A0A] px-4 py-16">
-      <p
-        className={`${playfair.className} mb-14 text-center text-4xl font-semibold tracking-tight text-white`}
-      >
-        Lexalyze
-      </p>
+      <BrandMark href="/" size="lg" className="mb-14 justify-center" />
 
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#121212] p-8 shadow-xl shadow-black/40">
         <h1
