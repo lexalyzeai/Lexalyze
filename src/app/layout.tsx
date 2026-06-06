@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import AuthRecovery from "@/app/components/AuthRecovery";
+import GoogleAnalytics from "@/app/components/GoogleAnalytics";
 import RouteLoadingIndicator from "@/app/components/RouteLoadingIndicator";
 
 export const metadata: Metadata = {
@@ -23,6 +24,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
+        <GoogleAnalytics />
         <AuthRecovery />
         <RouteLoadingIndicator />
         {children}
