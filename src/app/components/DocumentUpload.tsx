@@ -191,7 +191,7 @@ export default function DocumentUpload({ language, plan = "free", workspaceId = 
       />
 
       <div
-        className="group relative w-full max-w-lg rounded-3xl border border-dashed border-white/[0.08] bg-[#121216]/40 px-8 py-14 text-center shadow-[0_12px_36px_rgba(0,0,0,0.3)] backdrop-blur-md transition-all duration-500 hover:border-[#C9A84C]/45 hover:bg-[#121216]/70 hover:shadow-[0_15px_40px_rgba(201,168,76,0.04)] cursor-pointer outline-none"
+        className="group relative w-full max-w-lg cursor-pointer rounded-3xl border border-dashed border-white/[0.08] bg-[#121216]/40 px-4 py-10 text-center shadow-[0_12px_36px_rgba(0,0,0,0.3)] outline-none backdrop-blur-md transition-all duration-500 hover:border-[#C9A84C]/45 hover:bg-[#121216]/70 hover:shadow-[0_15px_40px_rgba(201,168,76,0.04)] sm:px-8 sm:py-14"
         role="button"
         tabIndex={0}
         onClick={openPicker}
@@ -225,9 +225,9 @@ export default function DocumentUpload({ language, plan = "free", workspaceId = 
         </p>
         
         {selectedFile && (
-          <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.02] px-4 py-1.5 text-xs text-neutral-300" aria-live="polite">
+          <div className="mt-5 inline-flex max-w-full items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.02] px-4 py-1.5 text-xs text-neutral-300" aria-live="polite">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Selected: <span className="font-semibold text-white">{selectedFile.name}</span>
+            <span className="shrink-0">Selected:</span> <span className="min-w-0 truncate font-semibold text-white">{selectedFile.name}</span>
           </div>
         )}
         
@@ -263,7 +263,7 @@ export default function DocumentUpload({ language, plan = "free", workspaceId = 
       </button>
 
       {loadingStage !== "idle" && (
-        <div className="mt-6 inline-flex items-center gap-2.5 rounded-full border border-white/[0.08] bg-white/[0.02] px-5 py-2.5 text-xs font-bold text-neutral-400" aria-live="polite">
+        <div className="mt-6 inline-flex max-w-full items-center gap-2.5 rounded-full border border-white/[0.08] bg-white/[0.02] px-4 py-2.5 text-xs font-bold text-neutral-400 sm:px-5" aria-live="polite">
           <span className="size-3.5 animate-spin rounded-full border-2 border-neutral-600 border-t-[#C9A84C]" aria-hidden />
           {loadingStage === "reading" && "Reading contract files..."}
           {loadingStage === "extracting" && "Extracting clause nodes..."}
