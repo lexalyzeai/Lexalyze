@@ -47,7 +47,7 @@ function getCreatedAtMs(value?: string) {
   return Number.isFinite(timestamp) ? timestamp : 0
 }
 
-async function recordAuthEvent(userId: string, event: 'signup' | 'login', method: 'google' | 'email') {
+async function recordAuthEvent(userId: string, email: string | null | undefined, event: 'signup' | 'login', method: 'google' | 'email') {
   try {
     const admin = createSupabaseAdmin()
     await admin
@@ -59,7 +59,7 @@ async function recordAuthEvent(userId: string, event: 'signup' | 'login', method
         source: 'server',
       })
 
-    await forwardToPostHog(event, userId, { method })
+    await forwardToPostHog(event, email || userId, email ? { method, email, $set: { email } } : { method })
   } catch (error) {
     console.error('Auth analytics failed:', error)
   }
@@ -154,7 +154,7 @@ export async function GET(request: NextRequest) {
             throw markerError
           }
 
-          await recordAuthEvent(data.user.id, 'signup', 'google')
+          await recordAuthEvent(data.user.id, data.user.email, 'signup', 'google')
         } catch (metadataError) {
           console.error('Could not mark completed Google signup:', metadataError)
 
@@ -189,7 +189,7 @@ export async function GET(request: NextRequest) {
       }
 
       if (flow === 'login') {
-        await recordAuthEvent(data.user.id, 'login', 'google')
+        await recordAuthEvent(data.user.id, data.user.email, 'login', 'google')
       }
     }
 

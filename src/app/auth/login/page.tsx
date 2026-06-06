@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { getAuthRedirectUrl } from "@/lib/site-url";
 import ErrorMessage from "@/app/components/ErrorMessage";
 import BrandMark from "@/app/components/BrandMark";
-import { trackEvent } from "@/lib/analytics";
+import { clearAnalyticsIdentity, identifyAnalyticsUser, trackEvent } from "@/lib/analytics";
 
 const playfair = Playfair_Display({ subsets: ["latin"], weight: ["600", "700"] });
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -229,6 +229,7 @@ function LoginForm() {
       }, (SESSION_TIMEOUT_MINUTES - 2) * 60 * 1000)
       logoutTimer = setTimeout(async () => {
         await supabase.auth.signOut()
+        clearAnalyticsIdentity()
         router.push('/auth/login?error=session_expired')
       }, SESSION_TIMEOUT_MINUTES * 60 * 1000)
     }
@@ -322,7 +323,7 @@ function LoginForm() {
       return;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: normalizedEmail,
       password,
     });
@@ -353,6 +354,7 @@ function LoginForm() {
     // Clear password-attempt lockout on any successful password sign-in.
     setLockedUntil(null);
     clearLockout(normalizedEmail);
+    identifyAnalyticsUser(data.user?.email || normalizedEmail);
     trackEvent("login", { method: "email" });
 
     // Feature 2 — return URL

@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { Suspense, type FormEvent, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { getAuthRedirectUrl } from "@/lib/site-url";
-import { trackEvent } from "@/lib/analytics";
+import { identifyAnalyticsUser, trackEvent } from "@/lib/analytics";
 import ErrorMessage from "@/app/components/ErrorMessage";
 import BrandMark from "@/app/components/BrandMark";
 
@@ -241,6 +241,7 @@ function SignupForm() {
       }
     }
     
+    identifyAnalyticsUser(data.user?.email || normalizedEmail);
     trackEvent("signup", { method: "email" });
     router.push("/dashboard")
     router.refresh()

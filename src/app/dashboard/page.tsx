@@ -11,6 +11,7 @@ import DocumentUpload from "../components/DocumentUpload";
 import AnalysisResult, { type AnalysisResultData } from "../components/AnalysisResult";
 import ErrorMessage from "../components/ErrorMessage";
 import BrandMark from "../components/BrandMark";
+import { clearAnalyticsIdentity, identifyAnalyticsUser } from "@/lib/analytics";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -284,7 +285,9 @@ export default function DashboardPage() {
   useEffect(() => {
     getSessionSafely()
       .then((session) => {
-        setEmail(session?.user?.email || "");
+        const sessionEmail = session?.user?.email || "";
+        setEmail(sessionEmail);
+        if (sessionEmail) identifyAnalyticsUser(sessionEmail);
         if (session) {
           registerCurrentSession();
         }
@@ -559,6 +562,7 @@ export default function DashboardPage() {
 
   function clearLocalSessionState() {
     if (typeof window === "undefined") return;
+    clearAnalyticsIdentity();
     Object.keys(window.localStorage)
       .filter((key) => key.startsWith("sb-") || key.startsWith("lexalyze-checklist:"))
       .forEach((key) => window.localStorage.removeItem(key));
