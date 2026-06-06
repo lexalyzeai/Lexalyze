@@ -28,7 +28,7 @@ export default function PrivacyPage() {
               <p><strong className="text-neutral-200">Account data:</strong> When you sign up, we collect your email address and, if you enter it during signup or profile setup, your name. This is stored securely in Supabase (a Postgres-based cloud database). We do not collect your phone number or other personal identifiers unless you voluntarily provide them.</p>
               <p><strong className="text-neutral-200">Document text:</strong> When you upload a document for analysis, we extract the text content and send it to Groq&apos;s API for AI processing. We store the analysis result (the AI-generated summary and findings) in your account. We do not permanently store the raw document file on our servers.</p>
               <p><strong className="text-neutral-200">Follow-up questions:</strong> Any follow-up questions you ask about a document, along with the AI&apos;s answers, are stored in your account so you can review them later.</p>
-              <p><strong className="text-neutral-200">Usage data:</strong> Basic server logs may be generated as part of normal web application operation. We do not use third-party analytics trackers or advertising cookies.</p>
+              <p><strong className="text-neutral-200">Usage data:</strong> Basic server logs and privacy-conscious analytics may be used to understand traffic, product usage, and reliability. We do not use advertising cookies.</p>
             </div>
           </section>
 
