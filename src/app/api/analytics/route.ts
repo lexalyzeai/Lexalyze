@@ -14,34 +14,6 @@ function cleanProperties(value: unknown) {
   return value as Record<string, unknown>;
 }
 
-async function forwardToPostHog(
-  event: string,
-  distinctId: string,
-  properties: Record<string, unknown>
-) {
-  const apiKey = process.env.POSTHOG_API_KEY || process.env.NEXT_PUBLIC_POSTHOG_KEY;
-  if (!apiKey || !distinctId) return;
-
-  const host = process.env.POSTHOG_HOST || process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com";
-
-  try {
-    await fetch(`${host.replace(/\/$/, "")}/capture/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        api_key: apiKey,
-        event,
-        properties: {
-          distinct_id: distinctId,
-          ...properties,
-        },
-      }),
-    });
-  } catch (error) {
-    console.error("PostHog forward failed:", error);
-  }
-}
-
 async function getUser() {
   const cookieStore = await cookies();
   const supabase = createServerClient(
@@ -93,8 +65,6 @@ export async function POST(req: NextRequest) {
       });
 
     if (error) throw error;
-
-    await forwardToPostHog(event, user?.id ?? anonymousId ?? "", properties);
 
     return NextResponse.json({ ok: true });
   } catch (error) {
