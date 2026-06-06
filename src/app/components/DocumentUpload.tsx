@@ -94,7 +94,6 @@ export default function DocumentUpload({ language, plan = "free", workspaceId = 
       setExtractedText(text);
       trackEvent("document_uploaded", {
         fileType: file.type || "unknown",
-        fileSize: file.size,
         workspace: workspaceId ? "team" : "personal",
         plan,
       });
