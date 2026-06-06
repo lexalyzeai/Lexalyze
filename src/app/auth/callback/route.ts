@@ -54,12 +54,12 @@ async function recordAuthEvent(userId: string, event: 'signup' | 'login', method
       .from('analytics_events')
       .insert({
         event,
-        properties: { method, path: '/auth/callback' },
+        properties: { method },
         user_id: userId,
         source: 'server',
       })
 
-    await forwardToPostHog(event, userId, { method, path: '/auth/callback' })
+    await forwardToPostHog(event, userId, { method })
   } catch (error) {
     console.error('Auth analytics failed:', error)
   }

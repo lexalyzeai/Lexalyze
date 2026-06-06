@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdmin } from "@/lib/supabase-admin";
 import { FRIENDLY_ERRORS } from "@/lib/error-handling";
-import { isLaunchAnalyticsEvent } from "@/lib/analytics-events";
+import { isLaunchAnalyticsEvent, sanitizeAnalyticsProperties } from "@/lib/analytics-events";
 
 function cleanText(value: unknown, max = 120) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     const admin = createSupabaseAdmin();
 
     const anonymousId = cleanText(body.anonymousId, 80) || null;
-    const properties = cleanProperties(body.properties);
+    const properties = sanitizeAnalyticsProperties(event, cleanProperties(body.properties));
 
     const { error } = await admin
       .from("analytics_events")

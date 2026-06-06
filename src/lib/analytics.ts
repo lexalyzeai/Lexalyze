@@ -1,6 +1,6 @@
 "use client";
 
-import { isLaunchAnalyticsEvent } from "@/lib/analytics-events";
+import { isLaunchAnalyticsEvent, sanitizeAnalyticsProperties } from "@/lib/analytics-events";
 
 type AnalyticsProperties = Record<string, unknown>;
 
@@ -32,10 +32,7 @@ export function trackEvent(event: string, properties: AnalyticsProperties = {}) 
   if (!isLaunchAnalyticsEvent(event)) return;
 
   const distinctId = anonymousId();
-  const eventProperties = {
-    path: window.location.pathname,
-    ...properties,
-  };
+  const eventProperties = sanitizeAnalyticsProperties(event, properties);
 
   const payload = {
     event,
