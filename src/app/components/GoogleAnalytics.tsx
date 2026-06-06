@@ -17,14 +17,35 @@ export default function GoogleAnalytics() {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (typeof window === "undefined" || !window.gtag || !pathname) return;
+    if (typeof window === "undefined" || !pathname) return;
 
     const pagePath = sanitizePath(pathname);
-    window.gtag("event", "page_view", {
-      page_path: pagePath,
-      page_location: `${window.location.origin}${pagePath}`,
-      page_title: document.title,
-    });
+    let cancelled = false;
+    let attempts = 0;
+
+    function sendPageView() {
+      if (cancelled) return;
+
+      if (window.gtag) {
+        window.gtag("event", "page_view", {
+          page_path: pagePath,
+          page_location: `${window.location.origin}${pagePath}`,
+          page_title: document.title,
+        });
+        return;
+      }
+
+      attempts += 1;
+      if (attempts <= 20) {
+        window.setTimeout(sendPageView, 250);
+      }
+    }
+
+    sendPageView();
+
+    return () => {
+      cancelled = true;
+    };
   }, [pathname]);
 
   return (
