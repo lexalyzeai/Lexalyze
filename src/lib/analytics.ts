@@ -46,6 +46,12 @@ export function trackEvent(event: string, properties: AnalyticsProperties = {}) 
     console.error("PostHog capture failed:", error);
   }
 
+  try {
+    window.gtag?.("event", event, eventProperties);
+  } catch (error) {
+    console.error("Google Analytics capture failed:", error);
+  }
+
   if (!window.posthog && POSTHOG_KEY) {
     fetch(`${POSTHOG_HOST.replace(/\/$/, "")}/capture/`, {
       method: "POST",
