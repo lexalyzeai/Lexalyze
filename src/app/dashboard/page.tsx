@@ -837,7 +837,7 @@ export default function DashboardPage() {
         <span className="rounded-full border border-white/[0.08] bg-white/[0.02] px-2.5 py-0.5 text-[10px] font-semibold text-neutral-400">{analyses.length}</span>
       </div>
 
-      <div className="hide-scrollbar flex-1 overflow-y-auto px-3" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+      <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto px-3 pb-2" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
         {historyLoading ? (
           <div className="flex items-center gap-2.5 px-3 py-4 text-xs text-neutral-500">
             <span className="size-3 animate-spin rounded-full border border-neutral-600 border-t-[#C9A84C]" />
@@ -893,7 +893,7 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   data-dropdown-trigger="true"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex size-6 shrink-0 items-center justify-center rounded-lg text-neutral-500 hover:bg-white/[0.06] hover:text-neutral-300"
+                  className="absolute right-2 top-1/2 flex size-8 shrink-0 -translate-y-1/2 items-center justify-center rounded-lg text-neutral-500 opacity-100 transition-opacity duration-200 hover:bg-white/[0.06] hover:text-neutral-300 md:size-6 md:opacity-0 md:group-hover:opacity-100"
                   aria-label="More options"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -969,7 +969,7 @@ export default function DashboardPage() {
   );
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#050507] text-white selection:bg-[#C9A84C]/25">
+    <div className="flex h-[100dvh] min-h-[100svh] overflow-hidden bg-[#050507] text-white selection:bg-[#C9A84C]/25">
 
       {linkedBanner && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-md rounded-full border border-emerald-500/30 bg-emerald-500/10 px-5 py-3 text-xs font-semibold text-emerald-300 shadow-2xl backdrop-blur-xl flex items-center justify-between gap-4">
@@ -982,7 +982,7 @@ export default function DashboardPage() {
         <button
           type="button"
           onClick={() => setIsMobileNavOpen(true)}
-          className="fixed top-4 left-4 z-40 flex size-11 items-center justify-center rounded-xl border border-white/[0.08] bg-[#0E0E12]/90 text-neutral-400 shadow-md transition-all duration-300 hover:border-[#C9A84C]/50 hover:bg-[#121216] hover:text-[#C9A84C] md:hidden"
+          className="fixed left-4 top-[max(1rem,env(safe-area-inset-top))] z-40 flex size-11 items-center justify-center rounded-xl border border-white/[0.08] bg-[#0E0E12]/90 text-neutral-400 shadow-md transition-all duration-300 hover:border-[#C9A84C]/50 hover:bg-[#121216] hover:text-[#C9A84C] md:hidden"
           aria-label="Open navigation"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="size-5">
@@ -994,13 +994,13 @@ export default function DashboardPage() {
       {/* Mobile drawer */}
       <div
         ref={drawerRef}
-        className={`fixed inset-0 z-50 h-screen overflow-y-auto md:hidden ${isMobileNavOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out`}
+        className={`fixed inset-0 z-50 h-[100dvh] overflow-hidden md:hidden ${isMobileNavOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out`}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsMobileNavOpen(false)} />
-        <aside className="absolute left-0 top-0 h-full w-[280px] max-w-[80vw] flex flex-col border-r border-white/[0.06] bg-[#0B0C0E]">
+        <aside className="absolute left-0 top-0 flex h-full w-[min(88vw,21rem)] flex-col border-r border-white/[0.06] bg-[#0B0C0E] pb-[env(safe-area-inset-bottom)]">
           <div className="flex items-center justify-between px-5 pt-8 pb-5">
             <BrandMark href="/" size="sm" subtitle="Workspace" />
             <button
@@ -1018,7 +1018,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Desktop sidebar */}
-      <aside className="hidden h-screen w-[280px] shrink-0 flex-col border-r border-white/[0.06] bg-[#0A0A0C] md:flex">
+      <aside className="hidden h-[100dvh] w-[280px] shrink-0 flex-col border-r border-white/[0.06] bg-[#0A0A0C] md:flex">
         <div className="px-5 pt-8 pb-5">
           <BrandMark href="/" size="md" subtitle="Document intelligence" />
         </div>
@@ -1026,19 +1026,19 @@ export default function DashboardPage() {
       </aside>
 
       {/* Main content area */}
-      <main className="flex-1 overflow-y-auto bg-[linear-gradient(135deg,#050507_0%,#0A0A0C_48%,#0B0E0D_100%)]">
+      <main className="min-w-0 flex-1 overflow-y-auto bg-[linear-gradient(135deg,#050507_0%,#0A0A0C_48%,#0B0E0D_100%)]">
         
         {/* Subtle decorative mesh circles */}
         <div className="pointer-events-none absolute right-0 top-0 h-[400px] w-[400px] rounded-full bg-[radial-gradient(circle,rgba(201,168,76,0.04)_0%,rgba(0,0,0,0)_70%)] blur-3xl" />
 
-        <div className="mx-auto flex min-h-full w-full max-w-6xl flex-col gap-6 px-4 pb-12 pt-24 sm:px-8 sm:pt-8 lg:px-10">
+        <div className="mx-auto flex min-h-full w-full max-w-6xl flex-col gap-5 px-3 pb-[calc(3rem+env(safe-area-inset-bottom))] pt-20 sm:gap-6 sm:px-8 sm:pt-8 lg:px-10">
 
-          <header className="flex flex-col gap-5 border-b border-white/[0.06] pb-6 lg:flex-row lg:items-end lg:justify-between">
-            <div>
+          <header className="flex min-w-0 flex-col gap-5 border-b border-white/[0.06] pb-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#C9A84C]">
                 {view === "history" ? "Saved Review" : "Workspace Hub"}
               </p>
-              <h1 className={`${playfair.className} mt-2.5 text-3xl font-bold leading-tight text-white sm:text-4xl`}>
+              <h1 className={`${playfair.className} mt-2.5 break-words text-2xl font-bold leading-tight text-white sm:text-4xl`}>
                 {view === "history" && selectedAnalysis ? cleanTitle(selectedAnalysis) : "Analyze legal contracts"}
               </h1>
               <p className="mt-2 max-w-2xl text-xs leading-relaxed text-neutral-400 sm:text-sm">
@@ -1050,15 +1050,15 @@ export default function DashboardPage() {
 
             {/* Metrics cards grid */}
             <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center">
-              <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] px-4 py-3 min-w-[70px] shadow-sm">
+              <div className="min-w-0 rounded-2xl border border-white/[0.05] bg-white/[0.02] px-3 py-3 shadow-sm sm:min-w-[70px] sm:px-4">
                 <p className="text-[8px] font-bold uppercase tracking-widest text-neutral-500">Reviews</p>
                 <p className="mt-1.5 text-lg font-bold text-white">{analyses.length}</p>
               </div>
-              <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] px-4 py-3 min-w-[70px] shadow-sm border-l-rose-500/40">
+              <div className="min-w-0 rounded-2xl border border-white/[0.05] bg-white/[0.02] px-3 py-3 shadow-sm border-l-rose-500/40 sm:min-w-[70px] sm:px-4">
                 <p className="text-[8px] font-bold uppercase tracking-widest text-neutral-500">High risk</p>
                 <p className="mt-1.5 text-lg font-bold text-rose-400">{highRiskCount}</p>
               </div>
-              <div className="rounded-2xl border border-white/[0.05] bg-white/[0.02] px-4 py-3 min-w-[70px] shadow-sm border-l-emerald-500/40">
+              <div className="min-w-0 rounded-2xl border border-white/[0.05] bg-white/[0.02] px-3 py-3 shadow-sm border-l-emerald-500/40 sm:min-w-[70px] sm:px-4">
                 <p className="text-[8px] font-bold uppercase tracking-widest text-neutral-500">Actions</p>
                 <p className="mt-1.5 text-lg font-bold text-emerald-400">{completedActionItems}/{totalActionItems || 0}</p>
               </div>
@@ -1078,7 +1078,7 @@ export default function DashboardPage() {
             <section className="grid flex-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
               
               {/* Workspace Card */}
-              <div className="rounded-3xl border border-white/[0.06] bg-[#0E0E12]/80 p-4 shadow-xl backdrop-blur-xl sm:p-6">
+              <div className="min-w-0 rounded-3xl border border-white/[0.06] bg-[#0E0E12]/80 p-4 shadow-xl backdrop-blur-xl sm:p-6">
                 <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-white/[0.05] pb-4">
                   <div>
                     <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#C9A84C]">Command Desk</span>
@@ -1101,7 +1101,7 @@ export default function DashboardPage() {
                       className={`rounded-full px-4.5 py-1.5 text-xs font-bold transition-all duration-300 ${language === "HI" ? "bg-gradient-to-r from-[#C9A84C] to-[#aa8426] text-black shadow-md" : "text-neutral-400 hover:text-white"}`}
                       aria-pressed={language === "HI"}
                     >
-                      हिन्दी
+                      Hindi
                     </button>
                   </div>
                 </div>
@@ -1119,7 +1119,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Sidebar stats widgets */}
-              <aside className="space-y-5">
+              <aside className="min-w-0 space-y-5">
                 <div className="rounded-3xl border border-white/[0.06] bg-[#0E0E12]/80 p-6 shadow-lg backdrop-blur-xl">
                   <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-neutral-500">Portfolio health</span>
                   <div className="mt-5 space-y-4">
@@ -1185,7 +1185,7 @@ export default function DashboardPage() {
 
           {view === "history" && selectedAnalysis && (
             <section className="space-y-6">
-              <div className="flex flex-col gap-4 rounded-3xl border border-white/[0.06] bg-[#0E0E12]/80 p-4 shadow-xl backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:px-6 py-4.5">
+              <div className="flex min-w-0 flex-col gap-4 rounded-3xl border border-white/[0.06] bg-[#0E0E12]/80 p-4 shadow-xl backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:px-6 py-4.5">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={`rounded-full border border-white/[0.08] bg-white/[0.03] px-3.5 py-1 text-[11px] font-bold tracking-wide ${riskTone(selectedAnalysis.result?.riskScore)}`}>
                     Risk {selectedAnalysis.result?.riskScore ?? "-"}/10
@@ -1234,13 +1234,13 @@ export default function DashboardPage() {
           />
 
           {/* Modal */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
             <div
-              className="relative flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[#111111] p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+              className="relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-[#111111] p-4 shadow-2xl animate-in fade-in zoom-in-95 duration-200 sm:max-h-[calc(100dvh-2rem)] sm:p-6"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="mb-6 flex shrink-0 items-center justify-between">
+              <div className="mb-4 flex shrink-0 items-center justify-between sm:mb-6">
                 <h2
                   className={`${playfair.className} text-2xl font-bold text-[#C9A84C]`}
                 >
@@ -1266,11 +1266,11 @@ export default function DashboardPage() {
               </div>
 
               {/* Tabs navigation */}
-              <div className="hide-scrollbar mb-6 flex shrink-0 gap-2 overflow-x-auto border-b border-white/[0.06] pb-4 [&>button]:shrink-0 [&>button]:whitespace-nowrap" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+              <div className="hide-scrollbar mb-4 flex shrink-0 gap-1 overflow-x-auto border-b border-white/[0.06] pb-3 sm:mb-6 sm:gap-2 sm:pb-4 [&>button]:shrink-0 [&>button]:whitespace-nowrap" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
                 <button
                   type="button"
                   onClick={() => switchSettingsTab("general")}
-                  className={`px-4 py-2 text-sm font-medium transition ${
+                  className={`px-3 py-2 text-sm font-medium transition sm:px-4 ${
                     selectedSettingsTab === "general"
                       ? "text-[#C9A84C]"
                       : "text-neutral-400 hover:text-neutral-200"
@@ -1281,7 +1281,7 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => switchSettingsTab("billing")}
-                  className={`px-4 py-2 text-sm font-medium transition ${
+                  className={`px-3 py-2 text-sm font-medium transition sm:px-4 ${
                     selectedSettingsTab === "billing"
                       ? "text-[#C9A84C]"
                       : "text-neutral-400 hover:text-neutral-200"
@@ -1292,7 +1292,7 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => switchSettingsTab("usage")}
-                  className={`px-4 py-2 text-sm font-medium transition ${
+                  className={`px-3 py-2 text-sm font-medium transition sm:px-4 ${
                     selectedSettingsTab === "usage"
                       ? "text-[#C9A84C]"
                       : "text-neutral-400 hover:text-neutral-200"
@@ -1304,7 +1304,7 @@ export default function DashboardPage() {
                   <button
                     type="button"
                     onClick={() => switchSettingsTab("team")}
-                    className={`px-4 py-2 text-sm font-medium transition ${
+                    className={`px-3 py-2 text-sm font-medium transition sm:px-4 ${
                       selectedSettingsTab === "team"
                         ? "text-[#C9A84C]"
                         : "text-neutral-400 hover:text-neutral-200"
@@ -1316,7 +1316,7 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => switchSettingsTab("security")}
-                  className={`px-4 py-2 text-sm font-medium transition ${
+                  className={`px-3 py-2 text-sm font-medium transition sm:px-4 ${
                     selectedSettingsTab === "security"
                       ? "text-[#C9A84C]"
                       : "text-neutral-400 hover:text-neutral-200"
@@ -1327,7 +1327,7 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => switchSettingsTab("deletion")}
-                  className={`px-4 py-2 text-sm font-medium transition ${
+                  className={`px-3 py-2 text-sm font-medium transition sm:px-4 ${
                     selectedSettingsTab === "deletion"
                       ? "text-[#C9A84C]"
                       : "text-neutral-400 hover:text-neutral-200"
@@ -1478,8 +1478,8 @@ export default function DashboardPage() {
               ) : selectedSettingsTab === "team" ? (
                 <div className="space-y-4">
                   <div className="rounded-lg border border-[#C9A84C]/20 bg-[#C9A84C]/5 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
                         <p className="text-[10px] font-semibold uppercase tracking-widest text-[#C9A84C] mb-2">Team Workspace</p>
                         <p className="text-sm text-neutral-300">
                           {teamMembers.length} / {teamSeatLimit} seats used. Roles control who can manage the workspace.
@@ -1507,12 +1507,12 @@ export default function DashboardPage() {
                         <p className="text-sm text-neutral-500">Open this tab to initialize your workspace.</p>
                       ) : (
                         teamMembers.map((member) => (
-                          <div key={member.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/[0.06] bg-black/15 px-3 py-2.5">
-                            <div>
-                              <p className="text-sm font-semibold text-neutral-200">{member.email}</p>
+                          <div key={member.id} className="flex flex-col gap-3 rounded-lg border border-white/[0.06] bg-black/15 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-neutral-200">{member.email}</p>
                               <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-neutral-600">{member.status}</p>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <select
                                 value={member.role}
                                 disabled={!canManageTeam || member.role === "owner" || teamLoading}
