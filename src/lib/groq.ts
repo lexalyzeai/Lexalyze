@@ -5,6 +5,67 @@ const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
 const MODEL = 'llama-3.3-70b-versatile'
 const MAX_CHARS = 12000
 
+const INDIAN_CONTEXT_RE = /\b(india|indian|bharat|rera|maharashtra|delhi|karnataka|tamil nadu|uttar pradesh|haryana|gujarat|rajasthan|kerala|contract act|consumer protection act|transfer of property act|rent control|arbitration and conciliation act|specific relief act|stamp duty|registration act|inr|rs\.?|rupees?)\b|₹/i
+const INDIAN_STATUTE_RE = /\b(indian contract act|consumer protection act|transfer of property act|real estate \(regulation and development\) act|rera|specific relief act|arbitration and conciliation act|information technology act|rent control act|registration act|stamp act|indian law)\b/i
+
+function hasIndianContext(text: string) {
+  return INDIAN_CONTEXT_RE.test(text)
+}
+
+function normalizeAmount(value: string) {
+  return value.replace(/\s+/g, '').replace(/,/g, '').toUpperCase()
+}
+
+function documentQualityContext(text: string) {
+  const notes: string[] = []
+  const amounts = Array.from(text.matchAll(/(?:₹|rs\.?|inr|\$)\s*[\d,]+(?:\.\d+)?/gi)).map((match) => normalizeAmount(match[0]))
+  const uniqueAmounts = Array.from(new Set(amounts))
+
+  if (uniqueAmounts.length > 1) {
+    notes.push(`The document contains multiple different money amounts (${uniqueAmounts.slice(0, 10).join(', ')}${uniqueAmounts.length > 10 ? ', ...' : ''}). Do not select one amount as the rent/deposit/fee unless the label is unique and unambiguous. Report conflicting values when needed.`)
+  }
+
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.replace(/\s+/g, ' ').trim())
+    .filter((line) => line.length >= 45)
+  const duplicateLines = new Map<string, number>()
+  for (const line of lines) duplicateLines.set(line, (duplicateLines.get(line) || 0) + 1)
+  const repeatedLineCount = Array.from(duplicateLines.values()).filter((count) => count >= 3).length
+
+  if (repeatedLineCount > 0) {
+    notes.push('The document appears to contain repeated pages or duplicate clauses. Treat repeated sample facts as duplicates, not separate properties, parties, or obligations.')
+  }
+
+  if (!hasIndianContext(text)) {
+    notes.push('No clear Indian jurisdiction, Indian currency, or Indian governing-law marker was detected. Do not cite Indian statutes unless the document itself supports them.')
+  }
+
+  notes.push('If addresses, rents, dates, or property counts conflict, put the conflict in keyNumbers/keyDeadlines/cannotDetermineList and lower overallConfidence instead of inventing a clean answer.')
+
+  return notes.map((note, index) => `${index + 1}. ${note}`).join('\n')
+}
+
+function removeUngroundedLaw(result: AnalysisResult, text: string) {
+  if (hasIndianContext(text)) return result
+
+  return {
+    ...result,
+    redFlags: result.redFlags.map((flag) => ({
+      ...flag,
+      legalContext: flag.legalContext && INDIAN_STATUTE_RE.test(flag.legalContext)
+        ? 'No specific governing statute is identified from the document; this is a drafting and negotiation risk.'
+        : flag.legalContext,
+    })),
+    consumerRightsNote: result.consumerRightsNote && INDIAN_STATUTE_RE.test(result.consumerRightsNote)
+      ? 'The document does not state a clear governing law, so statutory rights cannot be confirmed from the text. Confirm the applicable jurisdiction before relying on specific legal rights.'
+      : result.consumerRightsNote,
+    stampDutyNote: result.stampDutyNote && INDIAN_STATUTE_RE.test(result.stampDutyNote)
+      ? 'Stamping or registration requirements cannot be confirmed because the governing law and property location are unclear from the document.'
+      : result.stampDutyNote,
+  }
+}
+
 async function groqCall(
   messages: { role: string; content: string }[],
   jsonMode: boolean = false,
@@ -140,20 +201,27 @@ export async function analyzeDocument(
   language: string = 'en'
 ): Promise<AnalysisResult> {
   const trimmedText = text.slice(0, MAX_CHARS)
+  const qualityContext = documentQualityContext(trimmedText)
 
   const rawJson = await groqCall(
     [
       { role: 'system', content: SYSTEM_PROMPT(language) },
       {
         role: 'user',
-        content: `Analyse this legal document as a senior Indian advocate protecting a consumer. Think through every clause, every risk, every missing protection, then return the complete JSON.\n\nDOCUMENT:\n${trimmedText}`
+        content: `Analyse this legal document as a senior legal analyst protecting a consumer. Think through every clause, every risk, every missing protection, then return the complete JSON.
+
+DOCUMENT QUALITY CONTEXT:
+${qualityContext}
+
+DOCUMENT:
+${trimmedText}`
       }
     ],
     true,
     5000
   )
 
-  return parseJson(rawJson)
+  return removeUngroundedLaw(parseJson(rawJson), trimmedText)
 }
 
 export async function followUpQuestion(
