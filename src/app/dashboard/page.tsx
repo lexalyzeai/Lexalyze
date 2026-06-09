@@ -67,6 +67,7 @@ type TeamWorkspace = {
 };
 
 const DASHBOARD_TIMEOUT_MS = 8000;
+const SESSION_LOAD_TIMEOUT_MS = 15000;
 const authLoadError = "Your account details are taking too long to load. This is a Supabase connection delay, not the page itself. Refresh or try again in a moment.";
 const historyLoadError = "History is taking too long to load. Refresh or try again in a moment.";
 
@@ -98,8 +99,12 @@ function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, mess
 }
 
 async function getSessionSafely() {
-  const { data: { session } } = await withTimeout(supabase.auth.getSession(), authLoadError, 6000);
+  const { data: { session } } = await withTimeout(supabase.auth.getSession(), authLoadError, SESSION_LOAD_TIMEOUT_MS);
   return session;
+}
+
+function isAuthLoadDelay(error: unknown) {
+  return error instanceof Error && error.message === authLoadError;
 }
 
 function ConfidenceDot({ confidence }: { confidence: string }) {
@@ -283,8 +288,13 @@ export default function DashboardPage() {
   }, [settingsMsg]);
 
   useEffect(() => {
-    getSessionSafely()
+    let cancelled = false;
+    let attempts = 0;
+
+    const loadSessionDetails = () => {
+      getSessionSafely()
       .then((session) => {
+        if (cancelled) return;
         const sessionEmail = session?.user?.email || "";
         setEmail(sessionEmail);
         if (sessionEmail) identifyAnalyticsUser(sessionEmail);
@@ -294,13 +304,26 @@ export default function DashboardPage() {
       })
       .catch((error) => {
         console.error("Session load failed:", error);
-        setEmail("Unable to load");
-        setDashboardMsg({ type: "error", text: authLoadError });
+        if (cancelled) return;
+        attempts += 1;
+        if (isAuthLoadDelay(error) && attempts <= 2) {
+          window.setTimeout(() => {
+            if (!cancelled) loadSessionDetails();
+          }, 1500);
+          return;
+        }
+        setEmail("");
       });
+    };
+
+    loadSessionDetails();
     fetchHistory();
     fetchProfileUsage();
     fetchTeamWorkspace(true);
     // Session registration should run once when the dashboard mounts.
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -483,6 +506,7 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error("History load failed:", error);
+      if (isAuthLoadDelay(error)) return;
       setDashboardMsg({ type: "error", text: error instanceof Error ? error.message : historyLoadError });
     } finally {
       setHistoryLoading(false);
@@ -512,6 +536,7 @@ export default function DashboardPage() {
       setProfileUsage(data || { plan: "free", usage_month: currentUsageMonth(), monthly_analyses_used: 0 });
     } catch (error) {
       console.error("Profile usage load failed:", error);
+      if (isAuthLoadDelay(error)) return;
       setDashboardMsg({ type: "error", text: error instanceof Error ? error.message : "Plan and usage details could not be loaded. Refresh to try again." });
     }
   }
